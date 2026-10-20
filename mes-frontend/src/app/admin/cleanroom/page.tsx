@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { FormEvent, useMemo, useState } from "react";
 import {
   FaArrowRotateRight,
@@ -18,7 +17,7 @@ import {
 
 import * as S from "@/assets/css/admin/Cleanroom.styles";
 import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createEquipment, fetchEquipment, queryClient, updateEquipmentStatus } from "@/api/http";
 
@@ -103,7 +102,7 @@ export default function CleanroomPage() {
     }
   })
 
-  const {mutate, isPending: isSubmitting} = useMutation({
+  const {mutate, isPending:isSubmitting} = useMutation({
     mutationFn: createEquipment,
     onSuccess: ()=>{
       showAlert("설비 환경 정보가 등록되었습니다.", "success");
@@ -116,7 +115,7 @@ export default function CleanroomPage() {
     }
   })
 
-  const {mutate:updateStatusMutation, isPending} = useMutation({
+  const { mutate:updateStatusMutation } = useMutation({
     mutationFn: ({id, nextStatus}:{ id: number; nextStatus: string })=>
       updateEquipmentStatus(id,{status: nextStatus}),
     onSuccess: (_, variables)=>{
@@ -137,10 +136,6 @@ export default function CleanroomPage() {
         setUpdatingId(null);
     },
   })
-
-  
-  
-       
 
   const LoadEquipment = async (): Promise<EquipmentItem[]> => {
 
@@ -515,7 +510,7 @@ export default function CleanroomPage() {
                   <strong>{error instanceof Error ? error.message : "설비 데이터를 불러오지 못했습니다."}</strong>
                   <S.RetryButton
                     type="button"
-                    onClick={() => void fetchEquipment()}
+                    onClick={() => void refetch()}
                   >
                     다시 시도
                   </S.RetryButton>

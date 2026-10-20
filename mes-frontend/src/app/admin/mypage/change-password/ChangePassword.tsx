@@ -1,11 +1,12 @@
 "use client";
 
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FaLock } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/mypage/ChangePassword.styles";
+import { useMutation } from "@tanstack/react-query";
+import { changePassword } from "@/api/http";
 
 export default function ChangePassword() {
   const router = useRouter();
@@ -24,6 +25,18 @@ export default function ChangePassword() {
   const isPasswordMismatch =
     confirmPassword !== "" && newPassword !== confirmPassword;
 
+  const {mutate, isPending:isSubmitting} =useMutation({
+    mutationFn: changePassword,
+    onSuccess:()=>{
+      alert("비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.");
+      router.push("/");
+    },
+    onError:(error:any)=>{
+      console.error("비밀번호 변경 실패:", error);
+      alert(error.response?.data || "비밀번호 변경에 실패했습니다.");
+    }
+  })
+
   const handleChangePassword = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -39,41 +52,12 @@ export default function ChangePassword() {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    mutate({
+      oldPassword,
+      newPassword,
+    })
 
-    if (!token) {
-      alert("로그인이 필요합니다.");
-      router.push("/");
-      return;
-    }
-
-    try {
-      await axios.post(
-        "http://127.0.0.1:8080/api/members/change-password",
-        {
-          oldPassword,
-          newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      alert("비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.");
-
-      // 보안을 위해 기존 토큰 삭제
-      localStorage.removeItem("token");
-      delete axios.defaults.headers.common["Authorization"];
-
-      router.push("/");
-    } catch (error: any) {
-      console.error("비밀번호 변경 실패:", error);
-
-      alert(error.response?.data || "비밀번호 변경에 실패했습니다.");
-    }
-  };
+  }
 
   return (
     <S.PwContainer>
@@ -167,10 +151,11 @@ export default function ChangePassword() {
               !oldPassword ||
               !newPassword ||
               !confirmPassword ||
-              !isPasswordMatch
+              !isPasswordMatch ||
+              isSubmitting
             }
           >
-            비밀번호 변경하기
+            {isSubmitting? '변경중': "비밀번호 변경하기"}
           </S.PwButton>
         </S.PwForm>
       </S.PwCard>

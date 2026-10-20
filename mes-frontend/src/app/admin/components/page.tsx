@@ -1,7 +1,6 @@
 "use client";
 
-import axios from "axios";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   FaArrowRotateRight,
   FaBoxesStacked,
@@ -18,7 +17,10 @@ import {
 
 import * as S from "@/assets/css/admin/Scm.styles";
 import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createComponent, fetchComponents, queryClient } from "@/api/http";
+
 
 interface ComponentItem {
   id: number;
@@ -38,7 +40,7 @@ interface ComponentForm {
   supplier: string;
 }
 
-const initialForm: ComponentForm = {
+const INITIAL_STATE: ComponentForm = {
   componentName: "",
   category: "",
   stockQuantity: 0,
@@ -46,16 +48,11 @@ const initialForm: ComponentForm = {
   supplier: "",
 };
 
-const API_URL = "http://localhost:4000/api/scm/components";
-
 export default function ScmPage() {
-  const [components, setComponents] = useState<ComponentItem[]>([]);
-  const [form, setForm] = useState<ComponentForm>(initialForm);
+  
+  const [form, setForm] = useState<ComponentForm>({ ...INITIAL_STATE });
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [fetchError, setFetchError] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
@@ -75,42 +72,29 @@ export default function ScmPage() {
     });
   };
 
-  const fetchComponents = useCallback(async () => {
-    setLoading(true);
-    setFetchError("");
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
+  const {data: components=[], isLoading, isError, error, refetch} = useQuery<ComponentItem[]>({
+    queryKey: ['scm-components'],
+    queryFn: async()=>{
+      const payload = await fetchComponents();
+      if(!payload.success){
+        throw new Error('부품 목록 조회에 실패했습니다.');
       }
+      const data = payload.components ?? payload.data ?? [];
+      return Array.isArray(data) ? data : [];
+  }});
 
-      const response = await axios.get(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.data.success) {
-        throw new Error("부품 목록 조회에 실패했습니다.");
-      }
-
-      const data = response.data.components;
-
-      setComponents(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("부품 SCM 조회 오류:", error);
-      setFetchError("부품 정보를 불러오는 데 실패했습니다.");
-    } finally {
-      setLoading(false);
+  const { mutate, isPending:isSubmitting } =useMutation({
+    mutationFn: createComponent,
+    onSuccess: ()=>{
+      showAlert("부품 SCM 등록이 완료되었습니다.", "success");
+      queryClient.invalidateQueries({queryKey: ['scm-components']});
+      setForm({...INITIAL_STATE})
+    },
+    onError: (err)=>{
+      console.error("부품 SCM 등록 오류:", err);
+      showAlert("부품 SCM 등록에 실패했습니다.", "error");
     }
-  }, []);
-
-  useEffect(() => {
-    void fetchComponents();
-  }, [fetchComponents]);
-
+  })
   const handleChange = <K extends keyof ComponentForm>(
     field: K,
     value: ComponentForm[K],
@@ -123,8 +107,6 @@ export default function ScmPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (submitting) return;
 
     if (
       !form.componentName.trim() ||
@@ -147,42 +129,14 @@ export default function ScmPage() {
       return;
     }
 
-    setSubmitting(true);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
+    const formData = {
+      componentName: form.componentName.trim(),
+      category: form.category.trim(),
+      stockQuantity: form.stockQuantity,
+      minThreshold: form.minThreshold,
+      supplier: form.supplier.trim(),
       }
-
-      await axios.post(
-        API_URL,
-        {
-          componentName: form.componentName.trim(),
-          category: form.category.trim(),
-          stockQuantity: form.stockQuantity,
-          minThreshold: form.minThreshold,
-          supplier: form.supplier.trim(),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setForm({ ...initialForm });
-
-      showAlert("부품 SCM 등록이 완료되었습니다.", "success");
-
-      await fetchComponents();
-    } catch (error) {
-      console.error("부품 SCM 등록 오류:", error);
-      showAlert("부품 SCM 등록에 실패했습니다.", "error");
-    } finally {
-      setSubmitting(false);
-    }
+      mutate(formData);
   };
 
   const isWarning = (item: ComponentItem) =>
@@ -201,7 +155,7 @@ export default function ScmPage() {
   }, [components]);
 
   const filteredComponents = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = searchTerm.trim().toLowerCase();
 
     if (!keyword) return components;
 
@@ -210,7 +164,7 @@ export default function ScmPage() {
         value?.toLowerCase().includes(keyword),
       ),
     );
-  }, [components, search]);
+  }, [components, searchTerm]);
 
   return (
     <Layout>
@@ -227,11 +181,11 @@ export default function ScmPage() {
 
           <S.RefreshButton
             type="button"
-            onClick={() => void fetchComponents()}
-            disabled={loading}
+            onClick={() => void refetch()}
+            disabled={isLoading}
           >
             <FaArrowRotateRight />
-            {loading ? "조회 중..." : "새로고침"}
+            {isLoading ? "조회 중..." : "새로고침"}
           </S.RefreshButton>
         </S.PageHeader>
 
@@ -396,9 +350,9 @@ export default function ScmPage() {
                   <S.Required>*</S.Required> 필수 입력 항목
                 </S.FormHint>
 
-                <S.SubmitButton type="submit" disabled={submitting}>
+                <S.SubmitButton type="submit" disabled={isSubmitting}>
                   <FaCirclePlus />
-                  {submitting ? "등록 중..." : "자재 등록하기"}
+                  {isSubmitting ? "등록 중..." : "자재 등록하기"}
                 </S.SubmitButton>
               </S.FormFooter>
             </S.Form>
@@ -428,8 +382,8 @@ export default function ScmPage() {
                 <S.SearchInput
                   type="search"
                   placeholder="부품명, 카테고리, 공급사 검색"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </S.SearchWrapper>
 
@@ -439,19 +393,19 @@ export default function ScmPage() {
             </S.ListToolbar>
 
             <S.ComponentList>
-              {loading ? (
+              {isLoading ? (
                 <S.EmptyState>
                   <FaArrowRotateRight />
                   <strong>부품 정보를 불러오는 중입니다.</strong>
                 </S.EmptyState>
-              ) : fetchError ? (
+              ) : isError ? (
                 <S.EmptyState>
                   <FaTriangleExclamation />
-                  <strong>{fetchError}</strong>
+                  <strong>{(error as Error).message || '부품 데이터를 불러오지 못했습니다.'}</strong>
 
                   <S.RetryButton
                     type="button"
-                    onClick={() => void fetchComponents()}
+                    onClick={() => void refetch()}
                   >
                     다시 시도
                   </S.RetryButton>
@@ -460,12 +414,12 @@ export default function ScmPage() {
                 <S.EmptyState>
                   <FaBoxOpen />
                   <strong>
-                    {search
+                    {searchTerm
                       ? "검색 결과가 없습니다."
                       : "등록된 부품이 없습니다."}
                   </strong>
                   <span>
-                    {search
+                    {searchTerm
                       ? "다른 검색어를 입력해 주세요."
                       : "왼쪽 등록 양식에서 부품을 추가해 주세요."}
                   </span>

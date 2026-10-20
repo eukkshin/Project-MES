@@ -1,5 +1,5 @@
 "use client";
-
+//TODO: TanStack Query 적용 누락 나중에 리팩토링하기
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/auth/Register.styles";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
 
 interface FormData {
   firstName: string;

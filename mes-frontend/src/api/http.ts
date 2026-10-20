@@ -13,6 +13,11 @@ export const loginMember = async({email,password}:{email:string, password:string
     const response = await api.post('/api/auth/login', {email,password})
     return response.data;
 }
+//비밀번호찾기
+export const changePassword = async({oldPassword,newPassword}:{oldPassword:string, newPassword:string })=>{
+    const response = await api.post('/api/members/change-password', {oldPassword,newPassword})
+    return response.data;
+}
 
 
 //공정라인 목록조회

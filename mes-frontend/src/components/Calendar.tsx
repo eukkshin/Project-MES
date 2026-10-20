@@ -13,7 +13,7 @@ import { Holiday } from "@/types/holiday";
 import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 
-import ScheduleModal from "./modal/ScheduleModal";
+import ScheduleModal from "@/ui/modal/ScheduleModal";
 
 interface Schedule {
   id: string;

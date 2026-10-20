@@ -1,5 +1,5 @@
 "use client";
-
+//TODO: TanStack Query 적용 누락 나중에 리팩토링하기
 import axios from "axios";
 import { useEffect, useState } from "react";
 import {

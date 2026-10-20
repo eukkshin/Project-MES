@@ -1,7 +1,6 @@
 "use client";
-
-import axios from "axios";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {  useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   FaArrowRotateRight,
   FaBox,
@@ -14,7 +13,9 @@ import {
 
 import * as S from "@/assets/css/admin/Process.styles";
 import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
+import { fetchProcessLines, updateLineStatus, queryClient, createProcessLine } from "@/api/http";
+
 
 interface ProcessLine {
   id?: number;
@@ -30,7 +31,7 @@ type ProcessForm = Pick<
   "lineName" | "processType" | "currentProduct" | "operator"
 >;
 
-const initialForm: ProcessForm = {
+const INITIAL_STATE: ProcessForm = {
   lineName: "",
   processType: "",
   currentProduct: "",
@@ -38,12 +39,8 @@ const initialForm: ProcessForm = {
 };
 
 export default function ProcessPage() {
-  const [lines, setLines] = useState<ProcessLine[]>([]);
-  const [form, setForm] = useState<ProcessForm>(initialForm);
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [fetchError, setFetchError] = useState("");
+  const [form, setForm] = useState<ProcessForm>({...INITIAL_STATE});
 
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean;
@@ -63,45 +60,31 @@ export default function ProcessPage() {
     });
   };
 
-  const fetchLines = useCallback(async () => {
-    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
-    setLoading(true);
-    setFetchError("");
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      const response = await axios.get(
-        "http://localhost:4000/api/process/lines",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (!response.data.success) {
+  const {data: lines=[], isLoading, isError , error, refetch} = useQuery<ProcessLine[]>({
+    queryKey: ['process-lines'],
+    queryFn: async()=>{
+      const payload = await fetchProcessLines();
+      if(!payload.success){
         throw new Error("라인 목록을 불러오지 못했습니다.");
       }
-
-      const lineData = response.data.line;
-
-      setLines(Array.isArray(lineData) ? lineData : []);
-    } catch (error) {
-      console.error("라인 조회 실패:", error);
-      setFetchError("라인 정보를 불러오는 데 실패했습니다.");
-    } finally {
-      setLoading(false);
+      const lineData = payload.line ?? payload.data ?? [];
+      return Array.isArray(lineData) ? lineData : [];
     }
-  }, []);
+  })
 
-  useEffect(() => {
-    void fetchLines();
-  }, [fetchLines]);
+  const { mutate, isPending:isSubmitting }=useMutation({
+    mutationFn: createProcessLine,
+    onSuccess:()=>{
+      showAlert("라인공정 등록이 완료되었습니다.", "success");
+      queryClient.invalidateQueries({ queryKey: ['process-lines'] });
+      setForm({ ...INITIAL_STATE });
+    },
+    onError:(err)=>{
+      console.error("라인공정 등록 오류:", err);
+      showAlert("라인공정 등록에 실패했습니다.", "error");
+    }
+  })
+
 
   const handleChange = (field: keyof ProcessForm, value: string) => {
     setForm((prev) => ({
@@ -113,49 +96,19 @@ export default function ProcessPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (submitting) return;
-
     if (Object.values(form).some((value) => !value.trim())) {
       showAlert("모든 항목을 입력해 주세요.", "info");
       return;
     }
 
-    setSubmitting(true);
+    const formData= {
+      lineName: form.lineName.trim(),
+      processType: form.processType.trim(),
+      currentProduct: form.currentProduct.trim(),
+      operator: form.operator.trim(),
+    };
 
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      await axios.post(
-        "http://localhost:4000/api/process/lines",
-        {
-          lineName: form.lineName.trim(),
-          processType: form.processType.trim(),
-          currentProduct: form.currentProduct.trim(),
-          operator: form.operator.trim(),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setForm(initialForm);
-
-      showAlert("라인공정 등록이 완료되었습니다.", "success");
-
-      await fetchLines();
-    } catch (error) {
-      console.error("라인공정 등록 오류:", error);
-
-      showAlert("라인공정 등록에 실패했습니다.", "error");
-    } finally {
-      setSubmitting(false);
-    }
+    mutate(formData);
   };
 
   const summary = useMemo(() => {
@@ -189,11 +142,11 @@ export default function ProcessPage() {
 
           <S.RefreshButton
             type="button"
-            onClick={() => void fetchLines()}
-            disabled={loading}
+            onClick={() => void refetch()}
+            disabled={isLoading}
           >
             <FaArrowRotateRight />
-            {loading ? "조회 중..." : "새로고침"}
+            {isLoading ? "조회 중..." : "새로고침"}
           </S.RefreshButton>
         </S.PageHeader>
 
@@ -327,9 +280,9 @@ export default function ProcessPage() {
                   <S.Required>*</S.Required> 필수 입력 항목
                 </S.FormHint>
 
-                <S.SubmitButton type="submit" disabled={submitting}>
+                <S.SubmitButton type="submit" disabled={isSubmitting}>
                   <FaCirclePlus />
-                  {submitting ? "등록 중..." : "라인 등록하기"}
+                  {isSubmitting ? "등록 중..." : "라인 등록하기"}
                 </S.SubmitButton>
               </S.FormFooter>
             </S.Form>
@@ -354,18 +307,18 @@ export default function ProcessPage() {
             </S.PanelHeader>
 
             <S.LineList>
-              {loading ? (
+              {isLoading ? (
                 <S.EmptyState>
                   <FaArrowRotateRight />
                   <strong>라인 정보를 불러오는 중입니다.</strong>
                 </S.EmptyState>
-              ) : fetchError ? (
+              ) : isError ? (
                 <S.EmptyState>
                   <FaIndustry />
-                  <strong>{fetchError}</strong>
+                  <strong>{error instanceof Error ? error.message : '라인 정보를 불러오는 데 실패했습니다.'}</strong>
                   <S.RetryButton
                     type="button"
-                    onClick={() => void fetchLines()}
+                    onClick={() => void refetch()}
                   >
                     다시 시도
                   </S.RetryButton>

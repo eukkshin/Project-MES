@@ -7,9 +7,11 @@ import { useState } from "react";
 
 import * as S from "@/assets/css/auth/Login.styles";
 import AuthLayout from "@/components/auth/AuthLayout";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
 
 import type { ChangeEvent, FormEvent } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { loginMember } from "@/api/http";
 
 type AlertType = "success" | "error" | "info";
 
@@ -22,7 +24,7 @@ export default function LoginClientPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  // const [isLoading, setIsLoading] = useState(false);
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -44,6 +46,37 @@ export default function LoginClientPage() {
     }));
   };
 
+  const { mutate, isPending:isLoading }=useMutation({
+    mutationFn: loginMember,
+    onSuccess:(data)=>{
+      if(!data.success){
+        showAlert(data.message || "로그인에 실패했습니다.", "error");
+        return;
+      }
+      const token = data.token;
+      if (!token) {
+        showAlert("인증 토큰을 받지 못했습니다.", "error");
+        return;
+      } 
+      //zustand적용전 추후수정
+      localStorage.setItem("token", token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // useAuthStore.getState().login(token,data.role) //zustand적용시
+      setLoginSucceeded(true);
+      showAlert("로그인이 완료되었습니다!", "success");
+    },
+    onError:(error)=>{
+      let message = "서버 오류가 발생했습니다.";
+      if (axios.isAxiosError(error)) {
+        message = error.response?.data?.message || "이메일 또는 비밀번호를 확인해주세요.";
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      showAlert(message, "error");
+    },
+  })
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -57,49 +90,8 @@ export default function LoginClientPage() {
       return;
     }
 
-    setIsLoading(true);
-    setLoginSucceeded(false);
+    mutate({ email, password })
 
-    try {
-      const response = await axios.post(
-        "http://localhost:4000/api/auth/login",
-        { email, password },
-      );
-
-      if (!response.data.success) {
-        showAlert(response.data.message || "로그인에 실패했습니다.", "error");
-        return;
-      }
-
-      const token = response.data.token;
-
-      if (!token) {
-        throw new Error("인증 토큰을 받지 못했습니다.");
-      }
-
-      localStorage.setItem("token", token);
-
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-      window.dispatchEvent(new Event("login-success"));
-
-      setLoginSucceeded(true);
-      showAlert("로그인이 완료되었습니다!", "success");
-    } catch (error: unknown) {
-      let message = "서버 오류가 발생했습니다.";
-
-      if (axios.isAxiosError(error)) {
-        message =
-          error.response?.data?.message ||
-          "이메일 또는 비밀번호를 확인해주세요.";
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
-
-      showAlert(message, "error");
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleCloseModal = () => {

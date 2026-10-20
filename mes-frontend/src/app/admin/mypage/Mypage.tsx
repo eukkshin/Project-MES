@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import * as S from "@/assets/css/admin/mypage/MyPage.styles";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
 
 import ChangePassword from "./change-password/ChangePassword";
 import DefaultInfo from "./default-info/DefaultInfo";

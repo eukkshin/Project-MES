@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/components/modal/ScheduleModal.styles";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
 import { Temporal } from "@js-temporal/polyfill";
 
 import ModalLayout from "./ModalLayout";

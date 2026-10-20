@@ -15,7 +15,7 @@ import {
 
 import MyPage from "@/app/admin/mypage/Mypage";
 import * as S from "@/assets/css/components/HeaderFooter.style";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
 
 const menuGroups = [
   {

@@ -1,7 +1,6 @@
 "use client";
 
-import axios from "axios";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   FaArrowRotateRight,
   FaBarcode,
@@ -20,7 +19,10 @@ import {
 
 import * as S from "@/assets/css/admin/Quality.styles";
 import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
+import AlertModal from "@/ui/modal/AlertModal";
+import { createInspection, fetchInspection,queryClient } from "@/api/http";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
 
 interface InspectionItem {
   id: number;
@@ -34,7 +36,7 @@ interface InspectionItem {
 interface InspectionForm {
   serialNumber: string;
   inspectionType: string;
-  defectReason: string;
+  defectReason: string; 
   inspector: string;
   result: string;
 }
@@ -45,7 +47,7 @@ interface InspectionResponse {
   data?: InspectionItem[];
 }
 
-const initialForm: InspectionForm = {
+const INITIAL_STATE: InspectionForm = {
   serialNumber: "",
   inspectionType: "VISION_SCRATCH",
   result: "PASS",
@@ -53,7 +55,6 @@ const initialForm: InspectionForm = {
   inspector: "AI-VISION-Unit-01",
 };
 
-const API_URL = "http://localhost:4000/api/quality/inspections";
 
 const inspectionTypeLabel = (type: string) => {
   switch (type) {
@@ -67,13 +68,9 @@ const inspectionTypeLabel = (type: string) => {
 };
 
 export default function QualityPage() {
-  const [inspections, setInspections] = useState<InspectionItem[]>([]);
-  const [form, setForm] = useState<InspectionForm>({ ...initialForm });
+  const [form, setForm] = useState<InspectionForm>({ ...INITIAL_STATE });
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [fetchError, setFetchError] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [resultFilter, setResultFilter] = useState("ALL");
 
   const [alertModal, setAlertModal] = useState<{
@@ -94,42 +91,30 @@ export default function QualityPage() {
     });
   };
 
-  const fetchInspections = useCallback(async () => {
-    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
-    setLoading(true);
-    setFetchError("");
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      const response = await axios.get<InspectionResponse>(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.data.success) {
+  const { data:inspections=[], isError, isLoading, error, refetch }=useQuery({
+    queryKey: ['inspections'],
+    queryFn: async()=>{
+      const payload = await fetchInspection();
+      if(!payload.success){
         throw new Error("검사 이력 조회에 실패했습니다.");
       }
-
-      const data = response.data.inspections ?? response.data.data ?? [];
-
-      setInspections(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("품질 검사 조회 오류:", error);
-      setFetchError("검사 이력을 불러오는 데 실패했습니다.");
-    } finally {
-      setLoading(false);
+      const data = payload.inspections ?? payload.data ?? [];
+      return Array.isArray(data) ? data : [];
     }
-  }, []);
+  })
 
-  useEffect(() => {
-    void fetchInspections();
-  }, [fetchInspections]);
+  const {mutate, isPending: isSubmitting } =useMutation({
+    mutationFn: createInspection,
+    onSuccess:()=>{
+      showAlert("검사 결과가 등록되었습니다.", "success");
+      queryClient.invalidateQueries({ queryKey: ['inspections'] });
+      setForm({ ...INITIAL_STATE });
+    },
+    onError: (err)=>{
+      console.error("품질 검사 등록 오류:", err);
+      showAlert("검사 결과 등록에 실패했습니다.", "error");
+    }
+  })
 
   const handleChange = <K extends keyof InspectionForm>(
     field: K,
@@ -143,8 +128,6 @@ export default function QualityPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (submitting) return;
 
     if (!form.serialNumber.trim()) {
       showAlert("기기 시리얼 번호를 입력해 주세요.", "info");
@@ -161,41 +144,15 @@ export default function QualityPage() {
       return;
     }
 
-    setSubmitting(true);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      await axios.post(
-        API_URL,
-        {
+     const formData={
           serialNumber: form.serialNumber.trim(),
           inspectionType: form.inspectionType,
           result: form.result,
           defectReason: form.result === "FAIL" ? form.defectReason.trim() : "",
           inspector: form.inspector.trim(),
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setForm({ ...initialForm });
-      showAlert("검사 결과가 등록되었습니다.", "success");
-
-      await fetchInspections();
-    } catch (error) {
-      console.error("품질 검사 등록 오류:", error);
-      showAlert("검사 결과 등록에 실패했습니다.", "error");
-    } finally {
-      setSubmitting(false);
-    }
+        };
+      
+      mutate(formData);
   };
 
   const summary = useMemo(() => {
@@ -214,7 +171,7 @@ export default function QualityPage() {
 
   const filteredInspections = useMemo(() => {
     // 의존성 배열에 inspections, search, resultFilter (inspections, search, resultFilter 참조값 변경시 useMemo 실행)
-    const keyword = search.trim().toLowerCase();
+    const keyword = searchTerm.trim().toLowerCase();
 
     return inspections.filter((item) => {
       const matchesSearch =
@@ -232,7 +189,7 @@ export default function QualityPage() {
 
       return matchesSearch && matchesResult;
     });
-  }, [inspections, search, resultFilter]);
+  }, [inspections, searchTerm, resultFilter]);
 
   return (
     <Layout>
@@ -249,11 +206,11 @@ export default function QualityPage() {
 
           <S.RefreshButton
             type="button"
-            onClick={() => void fetchInspections()}
-            disabled={loading}
+            onClick={() => void refetch()}
+            disabled={isLoading}
           >
             <FaArrowRotateRight />
-            {loading ? "조회 중..." : "새로고침"}
+            {isLoading ? "조회 중..." : "새로고침"}
           </S.RefreshButton>
         </S.PageHeader>
 
@@ -462,9 +419,9 @@ export default function QualityPage() {
                 <S.FormHint>
                   <S.Required>*</S.Required> 필수 입력 항목
                 </S.FormHint>
-                <S.SubmitButton type="submit" disabled={submitting}>
+                <S.SubmitButton type="submit" disabled={isSubmitting}>
                   <FaCirclePlus />
-                  {submitting ? "전송 중..." : "검사 결과 등록하기"}
+                  {isSubmitting ? "전송 중..." : "검사 결과 등록하기"}
                 </S.SubmitButton>
               </S.FormFooter>
             </S.Form>
@@ -493,8 +450,8 @@ export default function QualityPage() {
                 <S.SearchInput
                   type="search"
                   placeholder="시리얼 번호, 검사 유형, 검사자 검색"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </S.SearchWrapper>
 
@@ -514,18 +471,18 @@ export default function QualityPage() {
             </S.ListToolbar>
 
             <S.InspectionList>
-              {loading ? (
+              {isLoading ? (
                 <S.EmptyState>
                   <FaArrowRotateRight />
                   <strong>검사 이력을 불러오는 중입니다.</strong>
                 </S.EmptyState>
-              ) : fetchError ? (
+              ) : isError ? (
                 <S.EmptyState>
                   <FaTriangleExclamation />
-                  <strong>{fetchError}</strong>
+                  <strong>{error instanceof Error ? error.message : '검사 이력을 불러오는 데 실패했습니다.' }</strong>
                   <S.RetryButton
                     type="button"
-                    onClick={() => void fetchInspections()}
+                    onClick={() => void refetch()}
                   >
                     다시 시도
                   </S.RetryButton>
@@ -534,12 +491,12 @@ export default function QualityPage() {
                 <S.EmptyState>
                   <FaClipboardList />
                   <strong>
-                    {search || resultFilter !== "ALL"
+                    {searchTerm || resultFilter !== "ALL"
                       ? "검색 결과가 없습니다."
                       : "등록된 검사 이력이 없습니다."}
                   </strong>
                   <span>
-                    {search || resultFilter !== "ALL"
+                    {searchTerm || resultFilter !== "ALL"
                       ? "검색어나 판정 필터를 변경해 주세요."
                       : "왼쪽 등록 양식에서 검사 결과를 추가해 주세요."}
                   </span>
