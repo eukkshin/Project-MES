@@ -19,6 +19,7 @@ import { Layout } from "@/components/layout/Layout";
 import { createRecords, fetchRecords, queryClient} from "@/api/http";
 
 import type { ChangeEvent, FormEvent } from "react";
+import { Select } from "@/ui/Select/Select";
 
 interface AnalyticsRecord {
   id: number;
@@ -37,6 +38,12 @@ interface AnalyticsForm {
 }
 
 type FilterType = "ALL" | "HIGH" | "LOW";
+
+const FILTER_OPTION=[
+    {label: "전체 수율", value:'ALL'},
+    {label: "95% 이상", value:'HIGH'},
+    {label: "95% 미만", value:'LOW'},
+]
 
 const INITIAL_STATE: AnalyticsForm = {
   lineName: "",
@@ -66,7 +73,8 @@ const getYieldTone = (rate: number) => {
 };
 
 export default function AnalyticsPage() {
-
+  
+  const [openSelectId, setOpenSelectId]=useState<string|null>(null);
   const [form, setForm] = useState<AnalyticsForm>(INITIAL_STATE);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -489,15 +497,13 @@ export default function AnalyticsPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </S.SearchWrapper>
-
-              <S.FilterSelect
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as FilterType)}
+              
+              <Select id="1" width={"130px"} options={FILTER_OPTION} value={filter}
+              onChange={(newValue)=>setFilter(newValue as FilterType)}
               >
-                <option value="ALL">전체 수율</option>
-                <option value="HIGH">95% 이상</option>
-                <option value="LOW">95% 미만</option>
-              </S.FilterSelect>
+                <Select.Toggle/>
+                <Select.Menu/>
+              </Select>
             </S.ListToolbar>
 
             <S.RecordList>
