@@ -4,7 +4,8 @@ import * as S from "@/assets/css/LayoutWrapper";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 
-import StyledComponentsRegistry from "./lib/registry";
+import StyledComponentsRegistry from "@/lib/registry";
+import QueryProvider from "@/components/QueryProvider";
 
 export const metadata: Metadata = {
   title: { template: "%s • MES", default: "MES 시스템" },
@@ -25,7 +26,9 @@ export default function RootLayout({
       <body>
         <StyledComponentsRegistry>
           <ThemeProviderWrapper>
-            <ConditionalLayout>{children}</ConditionalLayout>
+            <QueryProvider>
+              <ConditionalLayout>{children}</ConditionalLayout>
+            </QueryProvider>
           </ThemeProviderWrapper>
         </StyledComponentsRegistry>
       </body>

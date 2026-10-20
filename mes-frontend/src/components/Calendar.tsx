@@ -8,8 +8,8 @@ import {
   FaPlus,
 } from "react-icons/fa6";
 
-import { fetchHolidays } from "@/app/api/holidays";
-import { Holiday } from "@/app/types/holiday";
+import { fetchHolidays } from "@/api/holidays";
+import { Holiday } from "@/types/holiday";
 import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 

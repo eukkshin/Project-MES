@@ -1,7 +1,7 @@
 "use client";
 
-import axios from "axios";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   FaArrowRotateRight,
   FaBullseye,
@@ -16,8 +16,10 @@ import {
 
 import * as S from "@/assets/css/admin/Analytics.styles";
 import { Layout } from "@/components/layout/Layout";
+import { createRecords, fetchRecords, queryClient} from "@/api/http";
 
 import type { ChangeEvent, FormEvent } from "react";
+
 interface AnalyticsRecord {
   id: number;
   lineName: string;
@@ -36,9 +38,7 @@ interface AnalyticsForm {
 
 type FilterType = "ALL" | "HIGH" | "LOW";
 
-const API_URL = "http://localhost:4000/api/analytics/records";
-
-const initialForm: AnalyticsForm = {
+const INITIAL_STATE: AnalyticsForm = {
   lineName: "",
   targetCount: "1000",
   actualCount: "980",
@@ -66,67 +66,48 @@ const getYieldTone = (rate: number) => {
 };
 
 export default function AnalyticsPage() {
-  const [records, setRecords] = useState<AnalyticsRecord[]>([]);
-  const [form, setForm] = useState<AnalyticsForm>(initialForm);
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const [form, setForm] = useState<AnalyticsForm>(INITIAL_STATE);
 
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<FilterType>("ALL");
 
   const [notice, setNotice] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+  
 
-  const fetchRecords = useCallback(async () => {
-    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
-    setLoading(true);
-    setError("");
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("로그인이 필요합니다.");
-      }
-
-      const response = await axios.get(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
+   const {data: records=[], isLoading, refetch, error } = useQuery<AnalyticsRecord[]>({
+        queryKey: ['analyticsRecords'],
+        queryFn: async()=>{
+            const data = await fetchRecords();
+            if(data.success){
+                return data.records;
+            }
+            throw new Error("생산 실적 데이터를 불러오지 못했습니다."); 
+        }
+    })
+    
+    const {mutate, isPending:isSubmitting, isError } = useMutation({
+        mutationFn: createRecords,
+        onSuccess: ()=>{
+             setNotice({
+              type: "success",
+              message: "생산 실적이 정상적으로 등록되었습니다.",
+            });
+            setForm(INITIAL_STATE);
+            queryClient.invalidateQueries({queryKey: ['analyticsRecords'] })
         },
+        onError: (err)=>{
+            console.error("생산 실적 등록 실패:", err);
+             setNotice({
+              type: "error",
+              message: "생산 실적 등록에 실패했습니다.",
       });
-
-      const payload = response.data;
-
-      if (payload?.success === false) {
-        throw new Error(payload.message || "조회 실패");
-      }
-
-      const data = Array.isArray(payload)
-        ? payload
-        : (payload.records ?? payload.analytics ?? payload.data ?? []);
-
-      if (!Array.isArray(data)) {
-        throw new Error("잘못된 데이터 형식입니다.");
-      }
-
-      setRecords([...data].sort((a, b) => Number(b.id) - Number(a.id)));
-    } catch (err) {
-      console.error("생산 실적 조회 실패:", err);
-      setError("생산 실적 데이터를 불러오지 못했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // 의존성 배열에 records (records 참조값 변경시 useEffect 실행)
-    void fetchRecords();
-  }, [fetchRecords]);
-
+        }
+    })
+  
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -138,8 +119,6 @@ export default function AnalyticsPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (submitting) return;
 
     setNotice(null);
 
@@ -179,15 +158,6 @@ export default function AnalyticsPage() {
       return;
     }
 
-    setSubmitting(true);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("로그인이 필요합니다.");
-      }
-
       const totalProduced = actualCount + defectCount;
 
       const yieldRate =
@@ -195,40 +165,15 @@ export default function AnalyticsPage() {
           ? Number(((actualCount / totalProduced) * 100).toFixed(2))
           : 0;
 
-      await axios.post(
-        API_URL,
-        {
+      //전송
+      mutate({
           lineName,
           targetCount,
           actualCount,
           defectCount,
           yieldRate,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setForm(initialForm);
-
-      setNotice({
-        type: "success",
-        message: "생산 실적이 정상적으로 등록되었습니다.",
-      });
-
-      await fetchRecords();
-    } catch (err) {
-      console.error("생산 실적 등록 실패:", err);
-
-      setNotice({
-        type: "error",
-        message: "생산 실적 등록에 실패했습니다.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+        });
+ 
   };
 
   const summary = useMemo(() => {
@@ -260,7 +205,7 @@ export default function AnalyticsPage() {
   }, [records]);
 
   const filteredRecords = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = searchTerm.trim().toLowerCase();
 
     return records.filter((item) => {
       const rate = getYieldRate(item);
@@ -274,7 +219,7 @@ export default function AnalyticsPage() {
 
       return matchesSearch && matchesFilter;
     });
-  }, [records, search, filter]);
+  }, [records, searchTerm, filter]);
 
   const previewYield = useMemo(() => {
     const good = Number(form.actualCount);
@@ -300,11 +245,11 @@ export default function AnalyticsPage() {
 
           <S.RefreshButton
             type="button"
-            onClick={() => void fetchRecords()}
-            disabled={loading}
+            onClick={() => void refetch()}
+            disabled={isLoading}
           >
             <FaArrowRotateRight />
-            {loading ? "조회 중..." : "새로고침"}
+            {isLoading ? "조회 중..." : "새로고침"}
           </S.RefreshButton>
         </S.PageHeader>
 
@@ -509,9 +454,9 @@ export default function AnalyticsPage() {
                   <S.Required>*</S.Required> 필수 입력 항목
                 </S.FormHint>
 
-                <S.SubmitButton type="submit" disabled={submitting}>
+                <S.SubmitButton type="submit" disabled={isSubmitting}>
                   <FaCirclePlus />
-                  {submitting ? "등록 중..." : "생산 실적 등록하기"}
+                  {isSubmitting ? "등록 중..." : "생산 실적 등록하기"}
                 </S.SubmitButton>
               </S.FormFooter>
             </S.Form>
@@ -540,8 +485,8 @@ export default function AnalyticsPage() {
                 <FaMagnifyingGlass />
                 <S.SearchInput
                   placeholder="생산 라인명 검색"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </S.SearchWrapper>
 
@@ -556,19 +501,19 @@ export default function AnalyticsPage() {
             </S.ListToolbar>
 
             <S.RecordList>
-              {loading ? (
+              {isLoading ? (
                 <S.EmptyState>
                   <FaArrowRotateRight />
                   <strong>데이터를 불러오는 중...</strong>
                 </S.EmptyState>
-              ) : error ? (
+              ) : isError ? (
                 <S.EmptyState>
                   <FaTriangleExclamation />
-                  <strong>{error}</strong>
+                  <strong>{error instanceof Error ? error.message : "에러가 발생했습니다."}</strong>
 
                   <S.RetryButton
                     type="button"
-                    onClick={() => void fetchRecords()}
+                    onClick={() => void refetch}
                   >
                     다시 시도
                   </S.RetryButton>
@@ -577,7 +522,7 @@ export default function AnalyticsPage() {
                 <S.EmptyState>
                   <FaIndustry />
                   <strong>
-                    {search || filter !== "ALL"
+                    {searchTerm || filter !== "ALL"
                       ? "검색 결과가 없습니다."
                       : "등록된 생산 실적이 없습니다."}
                   </strong>
