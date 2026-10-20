@@ -22,6 +22,7 @@ import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/ui/modal/AlertModal";
 import { createInspection, fetchInspection,queryClient } from "@/api/http";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { Select } from "@/ui/Select/Select";
 
 
 interface InspectionItem {
@@ -55,6 +56,15 @@ const INITIAL_STATE: InspectionForm = {
   inspector: "AI-VISION-Unit-01",
 };
 
+const TYPE_OPTIONS=[
+  {label: '미세 스크래치 비전 검사', value:'VISION_SCRATCH'},
+  {label: '방수 씰링 기밀 검사', value:'WATERPROOF_TEST'},
+]
+
+const RESULT_OPTION=[
+  {label: '양품' , value:'PASS'},
+  {label: '불량' , value:'FAIL'},
+]
 
 const inspectionTypeLabel = (type: string) => {
   switch (type) {
@@ -317,21 +327,15 @@ export default function QualityPage() {
                 <S.Label htmlFor="inspectionType">
                   검사 유형 <S.Required>*</S.Required>
                 </S.Label>
-                <S.InputWrapper>
-                  <FaCamera />
-                  <S.Select
-                    id="inspectionType"
-                    value={form.inspectionType}
-                    onChange={(e) =>
-                      handleChange("inspectionType", e.target.value)
-                    }
-                  >
-                    <option value="VISION_SCRATCH">
-                      미세 스크래치 비전 검사
-                    </option>
-                    <option value="WATERPROOF_TEST">방수 씰링 기밀 검사</option>
-                  </S.Select>
-                </S.InputWrapper>
+   
+                <Select 
+                    id="type" value={form.inspectionType} 
+                    options={TYPE_OPTIONS}
+                    onChange={(newValue)=>setForm(prev=>({...prev, inspectionType: newValue}))}
+                    > 
+                      <Select.Toggle height="45px"><FaCamera/></Select.Toggle>
+                      <Select.Menu/>
+                  </Select>
               </S.FormGroup>
 
               <S.FormGroup>

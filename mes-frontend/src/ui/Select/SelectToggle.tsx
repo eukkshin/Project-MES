@@ -1,21 +1,24 @@
 
 import React from 'react';
-import { SelectTrigger} from './CustomSelect.style'
+import { SelectTrigger, SelectTriggerLeft} from './CustomSelect.style'
 import { useSelectContext } from './Select';
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa6';
 
 
-export default function SelectToggle({children}:{children?:React.ReactNode}){
+export default function SelectToggle({height,children}:{height?:string;children?:React.ReactNode}){
     
     const {isOpen, handleToggle, selectedLabel} = useSelectContext();
     
     return(
         <>
-        <SelectTrigger onClick={handleToggle}>
-            {selectedLabel}
-            <span style={{fontSize:'0.7rem', color:'#94a3b8'}}>
-                {isOpen ? '▲' : '▼'}
+        <SelectTrigger onClick={handleToggle} $height={height} $isOpen={isOpen}>
+            <SelectTriggerLeft>
+                {children}
+                {selectedLabel}
+            </SelectTriggerLeft>
+            <span>
+                {isOpen ? <FaChevronUp fontSize={10}/> : <FaChevronDown fontSize={10}/>}
             </span>
-            {children}
         </SelectTrigger>
         </>
     )

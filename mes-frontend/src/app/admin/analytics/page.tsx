@@ -74,7 +74,7 @@ const getYieldTone = (rate: number) => {
 
 export default function AnalyticsPage() {
   
-  const [form, setForm] = useState<AnalyticsForm>(INITIAL_STATE);
+  const [form, setForm] = useState<AnalyticsForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<FilterType>("ALL");
@@ -88,7 +88,7 @@ export default function AnalyticsPage() {
    const {data: records=[], isLoading, refetch, error } = useQuery<AnalyticsRecord[]>({
         queryKey: ['analyticsRecords'],
         queryFn: async()=>{
-            const data = await LoadRecords();
+            const data = await loadRecords();
             return data;
         }
     })
@@ -112,7 +112,7 @@ export default function AnalyticsPage() {
         }
     })
 
-  const LoadRecords = async (): Promise<AnalyticsRecord[]> => {
+  const loadRecords = async (): Promise<AnalyticsRecord[]> => {
   
     const payload = await fetchRecords();
 
