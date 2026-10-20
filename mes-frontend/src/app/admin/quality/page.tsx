@@ -95,6 +95,7 @@ export default function QualityPage() {
   };
 
   const fetchInspections = useCallback(async () => {
+    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
     setLoading(true);
     setFetchError("");
 
@@ -198,6 +199,7 @@ export default function QualityPage() {
   };
 
   const summary = useMemo(() => {
+    // 의존성 배열에 inspections (inspections 참조값 변경시 useMemo 실행)
     const total = inspections.length;
     const pass = inspections.filter((item) => item.result === "PASS").length;
     const fail = inspections.filter((item) => item.result === "FAIL").length;
@@ -211,6 +213,7 @@ export default function QualityPage() {
   }, [inspections]);
 
   const filteredInspections = useMemo(() => {
+    // 의존성 배열에 inspections, search, resultFilter (inspections, search, resultFilter 참조값 변경시 useMemo 실행)
     const keyword = search.trim().toLowerCase();
 
     return inspections.filter((item) => {

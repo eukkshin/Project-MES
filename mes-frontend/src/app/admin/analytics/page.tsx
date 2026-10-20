@@ -82,6 +82,7 @@ export default function AnalyticsPage() {
   } | null>(null);
 
   const fetchRecords = useCallback(async () => {
+    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
     setLoading(true);
     setError("");
 
@@ -122,6 +123,7 @@ export default function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
+    // 의존성 배열에 records (records 참조값 변경시 useEffect 실행)
     void fetchRecords();
   }, [fetchRecords]);
 

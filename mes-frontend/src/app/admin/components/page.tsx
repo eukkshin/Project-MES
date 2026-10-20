@@ -190,6 +190,7 @@ export default function ScmPage() {
     item.stockQuantity < item.minThreshold;
 
   const summary = useMemo(() => {
+    // 의존성 배열에 components (components 참조값 변경시 useMemo 실행)
     const warning = components.filter(isWarning).length;
 
     return {

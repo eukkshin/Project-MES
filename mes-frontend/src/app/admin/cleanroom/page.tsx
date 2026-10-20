@@ -101,6 +101,7 @@ export default function CleanroomPage() {
   };
 
   const fetchEquipment = useCallback(async () => {
+    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
     setLoading(true);
     setFetchError("");
 
@@ -144,6 +145,7 @@ export default function CleanroomPage() {
   }, []);
 
   useEffect(() => {
+    // 의존성 배열에 equipment (equipment 참조값 변경시 useEffect 실행)
     void fetchEquipment();
   }, [fetchEquipment]);
 
@@ -222,6 +224,7 @@ export default function CleanroomPage() {
   };
 
   const summary = useMemo(() => {
+    // 의존성 배열에 equipment (equipment 참조값 변경시 useMemo 실행)
     const total = equipment.length;
 
     const normal = equipment.filter(
