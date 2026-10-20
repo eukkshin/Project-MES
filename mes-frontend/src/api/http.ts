@@ -75,6 +75,12 @@ export const createEquipment =async(formData:any)=>{
 
     return response.data;
 }
+//클린룸 status 변경
+export const updateEquipmentStatus = async(id:number|string, status:any)=>{
+    const response = await api.patch(`/api/equipment/status/${id}`, status)
+
+    return response.data;
+}
 
 //생산실적조회
 
@@ -91,3 +97,4 @@ export const createRecords =async(formData:any)=>{
 
     return response.data;
 }
+

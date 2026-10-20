@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   FaArrowRotateRight,
   FaCircleCheck,
@@ -19,6 +19,8 @@ import {
 import * as S from "@/assets/css/admin/Cleanroom.styles";
 import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/components/modal/AlertModal";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createEquipment, fetchEquipment, queryClient, updateEquipmentStatus } from "@/api/http";
 
 interface EquipmentItem {
   id: number;
@@ -43,9 +45,7 @@ interface EquipmentResponse {
   data?: EquipmentItem[];
 }
 
-const API_URL = "http://localhost:4000/api/equipment/status";
-
-const initialForm: EquipmentForm = {
+const INITIAL_STATE: EquipmentForm = {
   equipmentName: "",
   cleanroomZone: "Zone A (Class 100)",
   temperature: "22.5",
@@ -70,14 +70,9 @@ const getStatusInfo = (status: string) => {
 };
 
 export default function CleanroomPage() {
-  const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
-  const [form, setForm] = useState<EquipmentForm>({ ...initialForm });
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [fetchError, setFetchError] = useState("");
-
-  const [search, setSearch] = useState("");
+  const [form, setForm] = useState<EquipmentForm>({ ...INITIAL_STATE });
+  const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
   const [alertModal, setAlertModal] = useState<{
@@ -100,28 +95,56 @@ export default function CleanroomPage() {
     setAlertModal({ isOpen: true, message, type });
   };
 
-  const fetchEquipment = useCallback(async () => {
-    // 의존성 배열 없으니 처음 마운트할때 함수 생성 후 리렌더링시 참조값 변경 없고 기존 값 재활용
-    setLoading(true);
-    setFetchError("");
+  const {data: equipment=[], isLoading, isError, error, refetch } = useQuery<EquipmentItem[]>({
+    queryKey: ['equipment'],
+    queryFn: async()=>{
+      const data = await LoadEquipment();
+      return data;
+    }
+  })
 
-    try {
-      const token = localStorage.getItem("token");
+  const {mutate, isPending: isSubmitting} = useMutation({
+    mutationFn: createEquipment,
+    onSuccess: ()=>{
+      showAlert("설비 환경 정보가 등록되었습니다.", "success");
+      queryClient.invalidateQueries({queryKey: ['equipment']})
+      setForm({...INITIAL_STATE})
+    },
+    onError: (err)=>{
+      console.error("클린룸 설비 등록 오류:", err);
+      showAlert("설비 환경 정보 등록에 실패했습니다.", "error");
+    }
+  })
 
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
+  const {mutate:updateStatusMutation, isPending} = useMutation({
+    mutationFn: ({id, nextStatus}:{ id: number; nextStatus: string })=>
+      updateEquipmentStatus(id,{status: nextStatus}),
+    onSuccess: (_, variables)=>{
+      showAlert("설비 상태가 변경되었습니다.", "success");
+      queryClient.invalidateQueries({queryKey: ['equipment']})
+      
+      setSelectedStatuses(prev=>{
+        const next = {...prev};
+        delete next[variables.id];
+        return next;
+      })
+    },
+    onError: (error)=>{
+      console.error("설비 상태 변경 오류:", error);
+      showAlert("설비 상태 변경에 실패했습니다.", "error");
+    },
+    onSettled: (_, __, variables)=> {
+        setUpdatingId(null);
+    },
+  })
 
-      const response = await axios.get<EquipmentResponse | EquipmentItem[]>(
-        API_URL,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+  
+  
+       
 
-      const payload = response.data;
+  const LoadEquipment = async (): Promise<EquipmentItem[]> => {
+
+      const payload = await fetchEquipment();
 
       if (!Array.isArray(payload) && payload.success === false) {
         throw new Error("설비 조회에 실패했습니다.");
@@ -134,20 +157,9 @@ export default function CleanroomPage() {
       if (!Array.isArray(data)) {
         throw new Error("설비 조회 응답 형식이 올바르지 않습니다.");
       }
+      return data;
+  };
 
-      setEquipment(data);
-    } catch (error) {
-      console.error("클린룸 설비 조회 오류:", error);
-      setFetchError("설비 데이터를 불러오지 못했습니다.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    // 의존성 배열에 equipment (equipment 참조값 변경시 useEffect 실행)
-    void fetchEquipment();
-  }, [fetchEquipment]);
 
   const handleChange = <K extends keyof EquipmentForm>(
     field: K,
@@ -161,8 +173,6 @@ export default function CleanroomPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (submitting) return;
 
     if (!form.equipmentName.trim() || !form.cleanroomZone.trim()) {
       showAlert("설비명과 클린룸 구역을 입력해 주세요.", "info");
@@ -186,41 +196,13 @@ export default function CleanroomPage() {
       showAlert("온도와 습도 값을 확인해 주세요. 습도는 0~100%입니다.", "info");
       return;
     }
-
-    setSubmitting(true);
-
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      await axios.post(
-        API_URL,
-        {
+    const formData = {
           equipmentName: form.equipmentName.trim(),
           cleanroomZone: form.cleanroomZone.trim(),
           temperature,
           humidity,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      setForm({ ...initialForm });
-      showAlert("설비 환경 정보가 등록되었습니다.", "success");
-
-      await fetchEquipment();
-    } catch (error) {
-      console.error("클린룸 설비 등록 오류:", error);
-      showAlert("설비 환경 정보 등록에 실패했습니다.", "error");
-    } finally {
-      setSubmitting(false);
-    }
+        }
+    mutate(formData); //전송
   };
 
   const summary = useMemo(() => {
@@ -254,7 +236,7 @@ export default function CleanroomPage() {
   }, [equipment]);
 
   const filteredEquipment = useMemo(() => {
-    const keyword = search.trim().toLowerCase();
+    const keyword = searchTerm.trim().toLowerCase();
 
     return equipment.filter((item) => {
       const matchesSearch =
@@ -273,7 +255,7 @@ export default function CleanroomPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [equipment, search, statusFilter]);
+  }, [equipment, searchTerm, statusFilter]);
 
   const handleStatusChange = async (item: EquipmentItem) => {
     const nextStatus = selectedStatuses[item.id] ?? item.status;
@@ -282,38 +264,7 @@ export default function CleanroomPage() {
 
     setUpdatingId(item.id);
 
-    try {
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      await axios.patch(
-        `${API_URL}/${item.id}`,
-        { status: nextStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      showAlert("설비 상태가 변경되었습니다.", "success");
-
-      setSelectedStatuses((prev) => {
-        const next = { ...prev };
-        delete next[item.id];
-        return next;
-      });
-
-      await fetchEquipment();
-    } catch (error) {
-      console.error("설비 상태 변경 오류:", error);
-      showAlert("설비 상태 변경에 실패했습니다.", "error");
-    } finally {
-      setUpdatingId(null);
-    }
+    updateStatusMutation({id: item.id,nextStatus})
   };
 
   return (
@@ -330,11 +281,11 @@ export default function CleanroomPage() {
 
           <S.RefreshButton
             type="button"
-            onClick={() => void fetchEquipment()}
-            disabled={loading}
+            onClick={() => void refetch()}
+            disabled={isLoading}
           >
             <FaArrowRotateRight />
-            {loading ? "조회 중..." : "새로고침"}
+            {isLoading ? "조회 중..." : "새로고침"}
           </S.RefreshButton>
         </S.PageHeader>
 
@@ -501,9 +452,9 @@ export default function CleanroomPage() {
                   <S.Required>*</S.Required> 필수 입력 항목
                 </S.FormHint>
 
-                <S.SubmitButton type="submit" disabled={submitting}>
+                <S.SubmitButton type="submit" disabled={isSubmitting}>
                   <FaCirclePlus />
-                  {submitting ? "전송 중..." : "설비 상태 등록하기"}
+                  {isSubmitting ? "전송 중..." : "설비 상태 등록하기"}
                 </S.SubmitButton>
               </S.FormFooter>
             </S.Form>
@@ -532,8 +483,8 @@ export default function CleanroomPage() {
                 <S.SearchInput
                   type="search"
                   placeholder="설비명 또는 클린룸 구역 검색"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </S.SearchWrapper>
 
@@ -553,15 +504,15 @@ export default function CleanroomPage() {
             </S.ListToolbar>
 
             <S.EquipmentList>
-              {loading ? (
+              {isLoading ? (
                 <S.EmptyState>
                   <FaArrowRotateRight />
                   <strong>설비 정보를 불러오는 중입니다.</strong>
                 </S.EmptyState>
-              ) : fetchError ? (
+              ) : isError ? (
                 <S.EmptyState>
                   <FaTriangleExclamation />
-                  <strong>{fetchError}</strong>
+                  <strong>{error instanceof Error ? error.message : "설비 데이터를 불러오지 못했습니다."}</strong>
                   <S.RetryButton
                     type="button"
                     onClick={() => void fetchEquipment()}
@@ -573,12 +524,12 @@ export default function CleanroomPage() {
                 <S.EmptyState>
                   <FaFan />
                   <strong>
-                    {search || statusFilter !== "ALL"
+                    {searchTerm || statusFilter !== "ALL"
                       ? "검색 결과가 없습니다."
                       : "등록된 설비가 없습니다."}
                   </strong>
                   <span>
-                    {search || statusFilter !== "ALL"
+                    {searchTerm || statusFilter !== "ALL"
                       ? "검색어나 상태 필터를 변경해 주세요."
                       : "왼쪽 등록 양식에서 설비를 추가해 주세요."}
                   </span>

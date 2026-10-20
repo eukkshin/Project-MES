@@ -74,7 +74,6 @@ const getYieldTone = (rate: number) => {
 
 export default function AnalyticsPage() {
   
-  const [openSelectId, setOpenSelectId]=useState<string|null>(null);
   const [form, setForm] = useState<AnalyticsForm>(INITIAL_STATE);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,11 +88,8 @@ export default function AnalyticsPage() {
    const {data: records=[], isLoading, refetch, error } = useQuery<AnalyticsRecord[]>({
         queryKey: ['analyticsRecords'],
         queryFn: async()=>{
-            const data = await fetchRecords();
-            if(data.success){
-                return data.records;
-            }
-            throw new Error("생산 실적 데이터를 불러오지 못했습니다."); 
+            const data = await LoadRecords();
+            return data;
         }
     })
     
@@ -115,6 +111,26 @@ export default function AnalyticsPage() {
       });
         }
     })
+
+  const LoadRecords = async (): Promise<AnalyticsRecord[]> => {
+  
+    const payload = await fetchRecords();
+
+    if (payload?.success === false) {
+      throw new Error(payload.message || "조회 실패");
+    }
+
+    const data = Array.isArray(payload)
+      ? payload
+      : (payload.records ?? payload.analytics ?? payload.data ?? []);
+
+    if (!Array.isArray(data)) {
+      throw new Error("잘못된 데이터 형식입니다.");
+    }
+    return [...data].sort((a, b) => Number(b.id) - Number(a.id));
+};
+
+  
   
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -515,11 +531,11 @@ export default function AnalyticsPage() {
               ) : isError ? (
                 <S.EmptyState>
                   <FaTriangleExclamation />
-                  <strong>{error instanceof Error ? error.message : "에러가 발생했습니다."}</strong>
+                  <strong>{error instanceof Error ? error.message : "생산 실적 데이터를 불러오지 못했습니다."}</strong>
 
                   <S.RetryButton
                     type="button"
-                    onClick={() => void refetch}
+                    onClick={() => void refetch()}
                   >
                     다시 시도
                   </S.RetryButton>
