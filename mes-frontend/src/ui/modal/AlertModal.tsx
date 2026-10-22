@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+// import { useEffect, useState } from "react";
+import { motion, AnimatePresence} from "motion/react";
+
 import {
   FaCircleCheck,
   FaCircleExclamation,
@@ -11,8 +13,8 @@ import * as S from "@/assets/css/components/modal/Modal.styles";
 
 interface AlertModalProps {
   isOpen: boolean;
-  title?: string;
   message: string;
+  title?: string;
   type?: "success" | "error" | "info";
   onClose: () => void;
   onConfirm?: () => void;
@@ -20,105 +22,132 @@ interface AlertModalProps {
 
 export default function AlertModal({
   isOpen,
-  title,
   message,
   type = "info",
+  title,
   onClose,
   onConfirm,
 }: AlertModalProps) {
-  const [isClosing, setIsClosing] = useState(false);
-  const [shouldRender, setShouldRender] = useState(false);
-
-  /**
-   * 모달 열기 / 닫기 상태
-   */
-  useEffect(() => {
-    if (isOpen) {
-      setShouldRender(true);
-      setIsClosing(false);
-    }
-  }, [isOpen]);
-
-  /**
-   * 모달 닫기
-   */
-  const handleClose = () => {
-    if (isClosing) return;
-
-    setIsClosing(true);
-
-    setTimeout(() => {
-      setShouldRender(false);
-      onClose();
-    }, 200);
-  };
-
-  /**
-   * 확인 버튼
-   */
-  const handleConfirm = () => {
-    if (isClosing) return;
-
-    setIsClosing(true);
-
-    setTimeout(() => {
-      setShouldRender(false);
-      onConfirm?.();
-    }, 200);
-  };
-
-  // 실제 DOM 제거
-  if (!shouldRender) return null;
 
   const isConfirm = !!onConfirm;
 
   return (
-    <S.AlertBackdrop $isClosing={isClosing} onClick={handleClose}>
-      <S.AlertContainer
-        $isClosing={isClosing}
-        onClick={(e) => e.stopPropagation()}
+    <AnimatePresence>
+    {isOpen && (
+      <S.AlertBackdrop 
+      // $isClosing={isClosing} 
+      onClick={onClose}
+      as={motion.div}
+      initial={{opacity:0}}
+      animate={{opacity:1}}
+      exit={{opacity:0}}
+      transition={{duration:0.2}}
       >
-        <S.AlertIcon $type={type}>
-          {type === "success" ? (
-            <FaCircleCheck />
-          ) : type === "error" ? (
-            <FaCircleExclamation />
+        <S.AlertContainer
+          // $isClosing={isClosing}
+          as={motion.div}
+          initial={{y:8, opacity:0}}
+          animate={{y:0, opacity:1}}
+          exit={{y:8, opacity:0}}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <S.AlertIcon $type={type}>
+            {type === "success" ? (
+              <FaCircleCheck />
+            ) : type === "error" ? (
+              <FaCircleExclamation />
+            ) : (
+              <FaCircleQuestion />
+            )}
+          </S.AlertIcon>
+  
+          <S.AlertContent>
+            <S.AlertTitle>
+              { title ?? (
+                type === 'success'
+                ? '완료'
+                : type === 'error'
+                ? '오류'
+                : '알림'
+              )}
+              {/* {title ??
+                (isConfirm
+                  ? "로그아웃 확인"
+                  : type === "success"
+                    ? "처리 완료"
+                    : type === "error"
+                      ? "처리 실패"
+                      : "알림")} */}
+            </S.AlertTitle>
+  
+            <S.AlertMessage>{message}</S.AlertMessage>
+          </S.AlertContent>
+  
+          {onConfirm ? (
+            <S.AlertButtonGroup>
+              <S.AlertCancelButton onClick={onClose}>
+                취소
+              </S.AlertCancelButton>
+  
+              <S.AlertConfirmButton onClick={onConfirm}>
+                확인
+              </S.AlertConfirmButton>
+            </S.AlertButtonGroup>
           ) : (
-            <FaCircleQuestion />
+            <S.AlertSingleButton>
+              <S.AlertButton onClick={onClose}>확인</S.AlertButton>
+            </S.AlertSingleButton>
           )}
-        </S.AlertIcon>
-
-        <S.AlertContent>
-          <S.AlertTitle>
-            {title ??
-              (isConfirm
-                ? "로그아웃 확인"
-                : type === "success"
-                  ? "처리 완료"
-                  : type === "error"
-                    ? "처리 실패"
-                    : "알림")}
-          </S.AlertTitle>
-
-          <S.AlertMessage>{message}</S.AlertMessage>
-        </S.AlertContent>
-
-        {onConfirm ? (
-          <S.AlertButtonGroup>
-            <S.AlertCancelButton onClick={handleClose}>
-              취소
-            </S.AlertCancelButton>
-
-            <S.AlertConfirmButton onClick={handleConfirm}>
-              확인
-            </S.AlertConfirmButton>
-          </S.AlertButtonGroup>
-        ) : (
-          <S.AlertSingleButton>
-            <S.AlertButton onClick={handleClose}>확인</S.AlertButton>
-          </S.AlertSingleButton>
-        )}
-      </S.AlertContainer>
-    </S.AlertBackdrop>
+        </S.AlertContainer>
+      </S.AlertBackdrop>
+    )}
+    </AnimatePresence>
   );
 }
+
+
+// const [isClosing, setIsClosing] = useState(false);
+// const [shouldRender, setShouldRender] = useState(false);
+
+// if(!isOpen) return null;
+
+/**
+ * 모달 열기 / 닫기 상태
+ */
+// useEffect(() => {
+//   if (isOpen) {
+//     setShouldRender(true);
+//     setIsClosing(false);
+//   }
+// }, [isOpen]);
+
+// /**
+//  * 모달 닫기
+//  */
+// const handleClose = () => {
+//   if (isClosing) return;
+
+//   setIsClosing(true);
+
+//   setTimeout(() => {
+//     setShouldRender(false);
+//     onClose();
+//   }, 200);
+// };
+
+// /**
+//  * 확인 버튼
+//  */
+// const handleConfirm = () => {
+//   if (isClosing) return;
+
+//   setIsClosing(true);
+
+//   setTimeout(() => {
+//     setShouldRender(false);
+//     onConfirm?.();
+//   }, 200);
+// };
+
+// // 실제 DOM 제거
+// if (!shouldRender) return null;

@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 interface AlertAnimationProps {
-  $isClosing: boolean;
+  $isClosing?: boolean;
 }
 
 export const AlertBackdrop = styled.div<AlertAnimationProps>`
