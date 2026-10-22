@@ -15,7 +15,7 @@ import {
 
 import MyPage from "@/app/admin/mypage/Mypage";
 import * as S from "@/assets/css/components/HeaderFooter.style";
-import AlertModal from "@/ui/modal/AlertModal";
+import { useAlertStore } from "@/store/useAlertStore";
 
 const menuGroups = [
   {
@@ -57,10 +57,11 @@ const pageTitles: Record<string, string> = {
 export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const { showAlert } = useAlertStore()
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
-  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  // const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -147,12 +148,21 @@ export const Header = () => {
 
     window.dispatchEvent(new Event("logout-success"));
 
-    setLogoutModalOpen(false);
+    // setLogoutModalOpen(false);
     setIsMobileMenuOpen(false);
 
     router.replace("/");
   };
 
+  const openLogoutConfirm = ()=>{
+    showAlert(
+      "정말 로그아웃하시겠습니까?",
+      "info",
+      "로그아웃 확인",
+      () => handleLogout()
+    )
+  }
+  
   return (
     <>
       <S.HeaderContainer>
@@ -186,7 +196,7 @@ export const Header = () => {
 
           <S.LogoutButton
             type="button"
-            onClick={() => setLogoutModalOpen(true)}
+            onClick={openLogoutConfirm}
             title="로그아웃"
           >
             <FaRightFromBracket />
@@ -249,7 +259,7 @@ export const Header = () => {
                 $danger
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  setLogoutModalOpen(true);
+                  openLogoutConfirm();
                 }}
               >
                 <FaRightFromBracket />
@@ -261,14 +271,6 @@ export const Header = () => {
       )}
 
       <MyPage isOpen={isMyPageOpen} onClose={() => setIsMyPageOpen(false)} />
-
-      <AlertModal
-        isOpen={logoutModalOpen}
-        message="정말 로그아웃하시겠습니까?"
-        type="info"
-        onClose={() => setLogoutModalOpen(false)}
-        onConfirm={handleLogout}
-      />
     </>
   );
 };

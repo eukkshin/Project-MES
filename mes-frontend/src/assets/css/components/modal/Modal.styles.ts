@@ -1,10 +1,11 @@
+import { motion } from 'motion/react'
 import styled from "styled-components";
 
 interface AlertAnimationProps {
   $isClosing?: boolean;
 }
 
-export const AlertBackdrop = styled.div<AlertAnimationProps>`
+export const AlertBackdrop = styled(motion.div)<AlertAnimationProps>`
   position: fixed;
   inset: 0;
 
@@ -16,7 +17,7 @@ export const AlertBackdrop = styled.div<AlertAnimationProps>`
 
   z-index: 10000;
 
-  animation: ${({ $isClosing }) =>
+  /* animation: ${({ $isClosing }) =>
     $isClosing
       ? "fadeOut 0.2s ease-in forwards"
       : "fadeIn 0.15s ease-out forwards"};
@@ -39,10 +40,10 @@ export const AlertBackdrop = styled.div<AlertAnimationProps>`
     to {
       opacity: 0;
     }
-  }
+  } */
 `;
 
-export const AlertContainer = styled.div<AlertAnimationProps>`
+export const AlertContainer = styled(motion.div)<AlertAnimationProps>`
   width: 360px;
 
   padding: 28px 28px 24px;
@@ -60,7 +61,11 @@ export const AlertContainer = styled.div<AlertAnimationProps>`
     0 12px 30px rgba(0, 0, 0, 0.12),
     0 2px 8px rgba(0, 0, 0, 0.05);
 
-  animation: ${({ $isClosing }) =>
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: opacity;
+
+  /* animation: ${({ $isClosing }) =>
     $isClosing
       ? "slideDown 0.2s ease-in forwards"
       : "slideUp 0.2s ease-out forwards"};
@@ -87,7 +92,7 @@ export const AlertContainer = styled.div<AlertAnimationProps>`
       transform: translateY(8px);
       opacity: 0;
     }
-  }
+  } */
 `;
 
 export const AlertIcon = styled.div<{

@@ -12,11 +12,13 @@ import AlertModal from "@/ui/modal/AlertModal";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { loginMember } from "@/api/http";
+import { useAlertStore } from "@/store/useAlertStore";
 
 type AlertType = "success" | "error" | "info";
 
 export default function LoginClientPage() {
   const router = useRouter();
+  const { showAlert }=useAlertStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -31,11 +33,11 @@ export default function LoginClientPage() {
   const [alertType, setAlertType] = useState<AlertType>("info");
   const [loginSucceeded, setLoginSucceeded] = useState(false);
 
-  const showAlert = (message: string, type: AlertType = "info") => {
-    setAlertMessage(message);
-    setAlertType(type);
-    setAlertOpen(true);
-  };
+  // const showAlert = (message: string, type: AlertType = "info") => {
+  //   setAlertMessage(message);
+  //   setAlertType(type);
+  //   setAlertOpen(true);
+  // };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -199,12 +201,6 @@ export default function LoginClientPage() {
         <S.BottomFooter>© SMART MES · Secure Enterprise Access</S.BottomFooter>
       </AuthLayout>
 
-      <AlertModal
-        isOpen={alertOpen}
-        message={alertMessage}
-        type={alertType}
-        onClose={handleCloseModal}
-      />
     </>
   );
 }

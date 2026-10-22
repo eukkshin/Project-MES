@@ -1,7 +1,7 @@
 "use client";
 
 // import { useEffect, useState } from "react";
-import { motion, AnimatePresence} from "motion/react";
+import { AnimatePresence } from "motion/react";
 
 import {
   FaCircleCheck,
@@ -32,23 +32,20 @@ export default function AlertModal({
   const isConfirm = !!onConfirm;
 
   return (
-    <AnimatePresence>
-    {isOpen && (
       <S.AlertBackdrop 
       // $isClosing={isClosing} 
       onClick={onClose}
-      as={motion.div}
       initial={{opacity:0}}
       animate={{opacity:1}}
       exit={{opacity:0}}
-      transition={{duration:0.2}}
+      transition={{duration:0.15}}
       >
         <S.AlertContainer
           // $isClosing={isClosing}
-          as={motion.div}
           initial={{y:8, opacity:0}}
           animate={{y:0, opacity:1}}
           exit={{y:8, opacity:0}}
+          transition={{ duration: 0.15 }}
           onClick={(e) => e.stopPropagation()}
         >
           <S.AlertIcon $type={type}>
@@ -83,7 +80,7 @@ export default function AlertModal({
             <S.AlertMessage>{message}</S.AlertMessage>
           </S.AlertContent>
   
-          {onConfirm ? (
+          {isConfirm ? (
             <S.AlertButtonGroup>
               <S.AlertCancelButton onClick={onClose}>
                 취소
@@ -100,8 +97,6 @@ export default function AlertModal({
           )}
         </S.AlertContainer>
       </S.AlertBackdrop>
-    )}
-    </AnimatePresence>
   );
 }
 

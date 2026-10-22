@@ -13,8 +13,8 @@ import {
 
 import * as S from "@/assets/css/admin/Process.styles";
 import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/ui/modal/AlertModal";
 import { fetchProcessLines, updateLineStatus, queryClient, createProcessLine } from "@/api/http";
+import { useAlertStore } from "@/store/useAlertStore";
 
 
 interface ProcessLine {
@@ -42,23 +42,7 @@ export default function ProcessPage() {
 
   const [form, setForm] = useState<ProcessForm>({...INITIAL_STATE});
 
-  const [alertModal, setAlertModal] = useState<{
-    isOpen: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    isOpen: false,
-    message: "",
-    type: "info",
-  });
-
-  const showAlert = (message: string, type: "success" | "error" | "info") => {
-    setAlertModal({
-      isOpen: true,
-      message,
-      type,
-    });
-  };
+  const { showAlert } = useAlertStore();
 
   const {data: lines=[], isLoading, isError , error, refetch} = useQuery<ProcessLine[]>({
     queryKey: ['process-lines'],
@@ -84,7 +68,6 @@ export default function ProcessPage() {
       showAlert("라인공정 등록에 실패했습니다.", "error");
     }
   })
-
 
   const handleChange = (field: keyof ProcessForm, value: string) => {
     setForm((prev) => ({
@@ -390,17 +373,6 @@ export default function ProcessPage() {
         </S.ContentGrid>
       </S.PageContainer>
 
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        message={alertModal.message}
-        type={alertModal.type}
-        onClose={() =>
-          setAlertModal((prev) => ({
-            ...prev,
-            isOpen: false,
-          }))
-        }
-      />
     </Layout>
   );
 }

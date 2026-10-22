@@ -4,9 +4,9 @@ type AlertType = "success" | "error" | "info";
 
 interface ModalState {
     isOpen: boolean;
-    title?: string;
     message: string;
     type: AlertType;
+    title?: string;
     onConfirm?: ()=>void;
 
     showAlert:(message:string, type?:AlertType, title?:string, onConfirm?:()=>void)=>void
@@ -16,9 +16,9 @@ interface ModalState {
 export const useAlertStore= create<ModalState>((set)=>({
     //초기값
     isOpen: false,
-    title: undefined,
     message: "",
     type: 'info',
+    title: undefined,
     onConfirm: undefined,
 
     showAlert: ( message, type='info',title, onConfirm)=>
@@ -26,9 +26,14 @@ export const useAlertStore= create<ModalState>((set)=>({
             isOpen:true,
             message,
             type,
-            title,
-            onConfirm,
+            title: title ?? undefined,
+            onConfirm: onConfirm ?? undefined,
         }),
-    hideAlert: ()=> set({isOpen:false}
+    hideAlert: ()=> 
+        set({
+            isOpen:false,
+            title: undefined,
+            onConfirm:undefined
+        }
     )
 }))

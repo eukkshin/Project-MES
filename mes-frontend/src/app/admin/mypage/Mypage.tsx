@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import * as S from "@/assets/css/admin/mypage/MyPage.styles";
-import AlertModal from "@/ui/modal/AlertModal";
 
 import ChangePassword from "./change-password/ChangePassword";
 import DefaultInfo from "./default-info/DefaultInfo";
+import { useAlertStore } from "@/store/useAlertStore";
 
 interface MyPageProps {
   isOpen: boolean;
@@ -17,9 +17,9 @@ interface MyPageProps {
 
 export default function MyPage({ isOpen, onClose }: MyPageProps) {
   const router = useRouter();
+  const { showAlert }=useAlertStore();
 
   const [activeMenu, setActiveMenu] = useState("기본정보");
-  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   // 실제 DOM을 유지하기 위한 상태
   const [shouldRender, setShouldRender] = useState(false);
@@ -40,7 +40,7 @@ export default function MyPage({ isOpen, onClose }: MyPageProps) {
       document.body.style.overflow = "hidden";
 
       if (!token) {
-        alert("로그인이 필요합니다.");
+        showAlert("로그인이 필요합니다.");
 
         setShouldRender(false);
         onClose();
@@ -72,7 +72,12 @@ export default function MyPage({ isOpen, onClose }: MyPageProps) {
   };
 
   const openLogoutModal = () => {
-    setLogoutModalOpen(true);
+    showAlert(
+      "정말 로그아웃하시겠습니까?",
+      'info',
+      '로그아웃확인',
+      ()=> handleLogout(),
+    )
   };
 
   const handleLogout = () => {
@@ -81,8 +86,6 @@ export default function MyPage({ isOpen, onClose }: MyPageProps) {
     delete axios.defaults.headers.common["Authorization"];
 
     window.dispatchEvent(new Event("logout-success"));
-
-    setLogoutModalOpen(false);
 
     handleClose();
 
@@ -165,15 +168,6 @@ export default function MyPage({ isOpen, onClose }: MyPageProps) {
           </S.MainContent>
         </S.MyPageContainer>
       </S.Backdrop>
-
-      {/* 로그아웃 확인 */}
-      <AlertModal
-        isOpen={logoutModalOpen}
-        message="정말 로그아웃하시겠습니까?"
-        type="info"
-        onClose={() => setLogoutModalOpen(false)}
-        onConfirm={handleLogout}
-      />
     </>
   );
 }
