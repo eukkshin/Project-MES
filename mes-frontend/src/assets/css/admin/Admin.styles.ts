@@ -432,6 +432,22 @@ export const ListToolbar = styled.div`
   }
 `;
 
+export const FilterWrapper = styled.div`
+display: flex;
+align-items: center;
+gap: 10px;
+
+  @media (max-width: 640px) {
+    justify-content: flex-end;
+    &:nth-child(2){
+      width: 200px;
+    }
+
+  }
+
+
+`;
+
 export const SearchWrapper = styled.div`
   display: flex;
 

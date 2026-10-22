@@ -16,9 +16,9 @@ export default function SelectToggle({height,children}:{height?:string;children?
                 {children}
                 {selectedLabel}
             </SelectTriggerLeft>
-            <span>
-                {isOpen ? <FaChevronUp fontSize={10}/> : <FaChevronDown fontSize={10}/>}
-            </span>
+
+                <FaChevronDown fontSize={10}/>
+                {/* {isOpen ? <FaChevronUp fontSize={10}/> : <FaChevronDown fontSize={10}/>} */}
         </SelectTrigger>
         </>
     )

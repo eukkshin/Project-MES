@@ -20,7 +20,7 @@ import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/ui/modal/AlertModal";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createEquipment, fetchEquipment, queryClient, updateEquipmentStatus } from "@/api/http";
-
+import { Select } from "@/ui/Select/Select";
 interface EquipmentItem {
   id: number;
   equipmentName: string;
@@ -50,6 +50,12 @@ const INITIAL_STATE: EquipmentForm = {
   temperature: "22.5",
   humidity: "45.0",
 };
+
+export const SELECT_OPTIONS = [
+  { label: '전체 상태', value: 'ALL' },
+  { label: '정상', value: 'NORMAL' },
+  { label: '주의 / 이상', value: 'ABNORMAL' },
+];
 
 const getStatusInfo = (status: string) => {
   switch (status.toUpperCase()) {
@@ -483,20 +489,19 @@ export default function CleanroomPage() {
                 />
               </S.SearchWrapper>
 
-              <S.FilterSelect
-                aria-label="설비 상태 필터"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="ALL">전체 상태</option>
-                <option value="NORMAL">정상</option>
-                <option value="ABNORMAL">주의 / 이상</option>
-              </S.FilterSelect>
-
-              <S.ResultCount>
-                검색 결과 {filteredEquipment.length}건
-              </S.ResultCount>
+              <S.FilterWrapper>
+                <S.ResultCount>
+                  검색 결과 {filteredEquipment.length}건
+                </S.ResultCount>
+                <Select id="1" options={SELECT_OPTIONS} value={statusFilter}
+                onChange={(newValue:string)=>setStatusFilter(newValue)}
+                >
+                  <Select.Toggle/>
+                  <Select.Menu/>
+                </Select>
+              </S.FilterWrapper>
             </S.ListToolbar>
+            
 
             <S.EquipmentList>
               {isLoading ? (

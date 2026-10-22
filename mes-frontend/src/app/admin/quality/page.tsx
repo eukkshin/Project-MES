@@ -48,6 +48,12 @@ interface InspectionResponse {
   data?: InspectionItem[];
 }
 
+export const SELECT_OPTIONS = [
+  { label: '전체 판정', value: 'ALL'},
+  { label: 'PASS', value: 'PASS' },
+  { label: 'FAIL', value: 'FAIL' },
+];
+
 const INITIAL_STATE: InspectionForm = {
   serialNumber: "",
   inspectionType: "VISION_SCRATCH",
@@ -59,11 +65,6 @@ const INITIAL_STATE: InspectionForm = {
 const TYPE_OPTIONS=[
   {label: '미세 스크래치 비전 검사', value:'VISION_SCRATCH'},
   {label: '방수 씰링 기밀 검사', value:'WATERPROOF_TEST'},
-]
-
-const RESULT_OPTION=[
-  {label: '양품' , value:'PASS'},
-  {label: '불량' , value:'FAIL'},
 ]
 
 const inspectionTypeLabel = (type: string) => {
@@ -459,19 +460,18 @@ export default function QualityPage() {
                 />
               </S.SearchWrapper>
 
-              <S.FilterSelect
-                aria-label="검사 결과 필터"
-                value={resultFilter}
-                onChange={(e) => setResultFilter(e.target.value)}
-              >
-                <option value="ALL">전체 판정</option>
-                <option value="PASS">PASS</option>
-                <option value="FAIL">FAIL</option>
-              </S.FilterSelect>
+              <S.FilterWrapper>
+                <S.ResultCount>
+                  검색 결과 {filteredInspections.length}건
+                </S.ResultCount>
+                <Select id="1"  options={SELECT_OPTIONS} value={resultFilter}
+                onChange={(newValue:string)=>setResultFilter(newValue)}
+                >
+                  <Select.Toggle/>
+                  <Select.Menu/>
+                </Select>
+              </S.FilterWrapper>
 
-              <S.ResultCount>
-                검색 결과 {filteredInspections.length}건
-              </S.ResultCount>
             </S.ListToolbar>
 
             <S.InspectionList>

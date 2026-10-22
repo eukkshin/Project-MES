@@ -13,6 +13,7 @@ export const SelectTrigger = styled.div<{ $height?:string; $isOpen?:boolean}>`
   box-sizing: border-box;
   height: ${props=> props.$height || 'auto'};
   width: 100%;
+  min-width: 120px;
 
   padding: 10px 15px;
   background-color: #fff;
@@ -29,11 +30,17 @@ export const SelectTrigger = styled.div<{ $height?:string; $isOpen?:boolean}>`
   align-items: center;
   ${NoDrag}
 
-  > svg, div svg {
+  > div svg {
     flex-shrink: 0;
     color: ${props => props.$isOpen ? '#2563eb' : '#94a3b8'};
     font-size: 12px;
   }
+
+  > svg{
+    transform: rotate(${({$isOpen})=> $isOpen ? '180deg': '0deg'});
+    transition: transform 0.3s ease;
+  }
+  
 
  
 `;
@@ -79,6 +86,7 @@ export const SelectItem = styled.li<SelectItemProps>`
   color: #475569;
   
   font-family: inherit;
+  white-space: nowrap;
 
   
   ${({$isSelected})=> $isSelected && `
