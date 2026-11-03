@@ -7,7 +7,7 @@ import { useState } from "react";
 
 import * as S from "@/assets/css/auth/Login.styles";
 import AuthLayout from "@/components/auth/AuthLayout";
-import AlertModal from "@/ui/modal/AlertModal";
+import AlertModal from "@/components/modal/AlertModal";
 
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";

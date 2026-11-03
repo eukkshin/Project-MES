@@ -13,11 +13,13 @@ import { Holiday } from "@/types/holiday";
 import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 
-import ScheduleModal from "@/ui/modal/ScheduleModal";
+import ScheduleModal from "@/components/modal/ScheduleModal";
+import { useSchedule } from "@/context/ScheduleContext";
 
 interface Schedule {
   id: string;
   date: number;
+  time?: string;
   content: string;
   status: "대기" | "진행" | "완료";
   createdAt: string;
@@ -38,6 +40,8 @@ export default function Calendar({ year, month }: CalendarProps) {
     });
   });
 
+   // 💡 전역 Context에서 스케줄 및 세팅 함수 가져오기
+  // const { schedules, setSchedules } = useSchedule();
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
 

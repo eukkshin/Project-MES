@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/auth/Register.styles";
-import AlertModal from "@/ui/modal/AlertModal";
+import AlertModal from "@/components/modal/AlertModal";
 
 interface FormData {
   firstName: string;
