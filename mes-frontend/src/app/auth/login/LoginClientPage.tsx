@@ -3,22 +3,21 @@
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import * as S from "@/assets/css/auth/Login.styles";
 import AuthLayout from "@/components/auth/AuthLayout";
-import AlertModal from "@/components/modal/AlertModal";
 
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { loginMember } from "@/api/http";
+import { loginMember } from "@/api/auth.http";
 import { useAlertStore } from "@/store/useAlertStore";
-
-type AlertType = "success" | "error" | "info";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function LoginClientPage() {
   const router = useRouter();
   const { showAlert }=useAlertStore();
+  const { login } =useAuthStore();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -26,27 +25,9 @@ export default function LoginClientPage() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-  // const [isLoading, setIsLoading] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(false);
 
-  const [alertOpen, setAlertOpen] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
-  const [alertType, setAlertType] = useState<AlertType>("info");
-  const [loginSucceeded, setLoginSucceeded] = useState(false);
-
-  // const showAlert = (message: string, type: AlertType = "info") => {
-  //   setAlertMessage(message);
-  //   setAlertType(type);
-  //   setAlertOpen(true);
-  // };
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+ 
 
   const { mutate, isPending:isLoading }=useMutation({
     mutationFn: loginMember,
@@ -60,24 +41,57 @@ export default function LoginClientPage() {
         showAlert("인증 토큰을 받지 못했습니다.", "error");
         return;
       } 
-      //zustand적용전 추후수정
-      localStorage.setItem("token", token);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // useAuthStore.getState().login(token,data.role) //zustand적용시
-      setLoginSucceeded(true);
-      showAlert("로그인이 완료되었습니다!", "success");
+      if (rememberEmail) {
+        localStorage.setItem("savedEmail", formData.email.trim());
+      } else {
+        localStorage.removeItem("savedEmail");
+      }
+      
+      login(token, data.user.name); //zustand로그인
+      
+      const redirectPath = sessionStorage.getItem("postLoginRedirect");
+      sessionStorage.removeItem('postLoginRedirect');
+      
+      const destination= 
+      redirectPath?.startsWith('/') && !redirectPath.startsWith('//')
+      ? redirectPath
+      : '/admin'
+
+      showAlert("로그인이 완료되었습니다!", "success", undefined, 
+        ()=> router.replace(destination)
+      );
     },
     onError:(error)=>{
       let message = "서버 오류가 발생했습니다.";
+
       if (axios.isAxiosError(error)) {
         message = error.response?.data?.message || "이메일 또는 비밀번호를 확인해주세요.";
-      } else if (error instanceof Error) {
-        message = error.message;
-      }
+      } 
       showAlert(message, "error");
     },
   })
+
+  useEffect(()=>{
+    const savedEmail = localStorage.getItem('savedEmail');
+
+    if(savedEmail){
+      setFormData(prev=> ({
+        ...prev,
+        email: savedEmail
+      }))
+      setRememberEmail(true);
+    }
+  } ,[])
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -91,18 +105,8 @@ export default function LoginClientPage() {
       showAlert("이메일과 비밀번호를 입력해주세요.", "error");
       return;
     }
-
+   
     mutate({ email, password })
-
-  };
-
-  const handleCloseModal = () => {
-    setAlertOpen(false);
-
-    if (loginSucceeded) {
-      setLoginSucceeded(false);
-      router.push("/admin");
-    }
   };
 
   return (
@@ -171,8 +175,11 @@ export default function LoginClientPage() {
 
           <S.FormOptions>
             <S.RememberLabel>
-              <input type="checkbox" />
-              로그인 유지
+              <input type="checkbox" 
+              checked={rememberEmail}
+              onChange={(e)=> setRememberEmail(e.target.checked)}
+              />
+                아이디 저장
             </S.RememberLabel>
 
             <Link href="/forgot">비밀번호를 잊으셨나요?</Link>

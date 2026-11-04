@@ -6,7 +6,7 @@ import { FaLock } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/mypage/ChangePassword.styles";
 import { useMutation } from "@tanstack/react-query";
-import { changePassword } from "@/api/http";
+import { changePassword } from "@/api/auth.http";
 
 export default function ChangePassword() {
   const router = useRouter();

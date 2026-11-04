@@ -1,6 +1,6 @@
 "use client";
 import React, {  useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowRotateRight,
   FaBox,
@@ -14,7 +14,7 @@ import {
 import * as S from "@/assets/css/admin/Process.styles";
 import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/components/modal/AlertModal";
-import { fetchProcessLines, updateLineStatus, queryClient, createProcessLine } from "@/api/http";
+import { fetchProcessLines, updateLineStatus, createProcessLine } from "@/api/mes.http";
 import { useAlertStore } from "@/store/useAlertStore";
 
 
@@ -40,6 +40,8 @@ const INITIAL_STATE: ProcessForm = {
 };
 
 export default function ProcessPage() {
+
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState<ProcessForm>({...INITIAL_STATE});
 

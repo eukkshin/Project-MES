@@ -1,7 +1,7 @@
 'use client';
 
 import { useSchedule } from "@/context/ScheduleContext";
-import * as S from './alarm.style'
+import * as S from '@/assets/css/components/alarm.style'
 
 export function AlarmToast(){
 

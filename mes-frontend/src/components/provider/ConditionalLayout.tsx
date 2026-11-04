@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 
 import * as S from "@/assets/css/LayoutWrapper";
 
-import { Footer } from "./layout/Footer";
-import { Header } from "./layout/Header";
+import { Footer } from "../layout/Footer";
+import { Header } from "../layout/Header";
 
 export default function ConditionalLayout({
   children,

@@ -1,8 +1,5 @@
 "use client";
 
-// import { useEffect, useState } from "react";
-import { AnimatePresence } from "motion/react";
-
 import {
   FaCircleCheck,
   FaCircleExclamation,
@@ -33,7 +30,6 @@ export default function AlertModal({
 
   return (
       <S.AlertBackdrop 
-      // $isClosing={isClosing} 
       onClick={onClose}
       initial={{opacity:0}}
       animate={{opacity:1}}
@@ -41,7 +37,6 @@ export default function AlertModal({
       transition={{duration:0.15}}
       >
         <S.AlertContainer
-          // $isClosing={isClosing}
           initial={{y:8, opacity:0}}
           animate={{y:0, opacity:1}}
           exit={{y:8, opacity:0}}

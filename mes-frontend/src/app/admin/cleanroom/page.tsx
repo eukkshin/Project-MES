@@ -18,8 +18,8 @@ import {
 import * as S from "@/assets/css/admin/Cleanroom.styles";
 import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/components/modal/AlertModal";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createEquipment, fetchEquipment, queryClient, updateEquipmentStatus } from "@/api/http";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createEquipment, fetchEquipment, updateEquipmentStatus } from "@/api/mes.http";
 import { Select } from "@/ui/Select/Select";
 interface EquipmentItem {
   id: number;
@@ -75,6 +75,8 @@ const getStatusInfo = (status: string) => {
 };
 
 export default function CleanroomPage() {
+
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState<EquipmentForm>({ ...INITIAL_STATE });
   const [searchTerm, setSearchTerm] = useState("");

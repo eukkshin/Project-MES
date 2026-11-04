@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 import * as S from "@/assets/css/LayoutWrapper";
-import ConditionalLayout from "@/components/ConditionalLayout";
-import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
+import ConditionalLayout from "@/components/provider/ConditionalLayout";
+import ThemeProviderWrapper from "@/components/provider/ThemeProviderWrapper";
 
 import StyledComponentsRegistry from "@/lib/registry";
-import QueryProvider from "@/components/QueryProvider";
+import QueryAlertProvider from "@/components/provider/QueryAlertProvider";
 import { ScheduleProvider } from "@/context/ScheduleContext";
 import { AlarmToast } from "@/components/sheduleAlarm/Alarm";
 
@@ -28,12 +28,12 @@ export default function RootLayout({
       <body>
         <StyledComponentsRegistry>
           <ThemeProviderWrapper>
-            <QueryProvider>
+            <QueryAlertProvider>
               <ScheduleProvider>
                 <AlarmToast/>
                 <ConditionalLayout>{children}</ConditionalLayout>
               </ScheduleProvider>
-            </QueryProvider>
+            </QueryAlertProvider>
           </ThemeProviderWrapper>
         </StyledComponentsRegistry>
       </body>

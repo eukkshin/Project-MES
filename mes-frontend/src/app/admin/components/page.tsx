@@ -18,8 +18,8 @@ import {
 import * as S from "@/assets/css/admin/Scm.styles";
 import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/components/modal/AlertModal";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { createComponent, fetchComponents, queryClient } from "@/api/http";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createComponent, fetchComponents } from "@/api/mes.http";
 
 
 interface ComponentItem {
@@ -49,6 +49,7 @@ const INITIAL_STATE: ComponentForm = {
 };
 
 export default function ScmPage() {
+  const queryClient = useQueryClient();
   
   const [form, setForm] = useState<ComponentForm>({ ...INITIAL_STATE });
 

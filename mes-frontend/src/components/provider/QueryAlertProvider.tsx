@@ -1,20 +1,31 @@
 'use client'
 
-import { QueryClientProvider } from "@tanstack/react-query"
-import { queryClient } from "@/api/http"
-
+import { useEffect, useState } from "react";
+import { QueryClientProvider, QueryClient} from "@tanstack/react-query"
 import { useAlertStore } from "@/store/useAlertStore";
-import AlertModal from "@/ui/modal/AlertModal";
+import { useAuthStore } from "@/store/useAuthStore";
+import AlertModal from "@/components/modal/AlertModal";
 import { AnimatePresence } from "motion/react";
 
 export default function QueryAlertProvider ({children}:{children: React.ReactNode}){
+    
+    const [queryClient] = useState(() => new QueryClient());
 
-        return(
-            <QueryClientProvider client={queryClient}>
-                {children}
-                <GlobalAlert/>
-            </QueryClientProvider>
-        )
+    const initializeAuth = useAuthStore(
+        (state)=> state.initializeAuth
+    )
+    
+    //앱시작할때 로그인 상태 복구
+    useEffect(()=>{
+        initializeAuth();
+    },[initializeAuth])
+    
+    return(
+        <QueryClientProvider client={queryClient}>
+            {children}
+            <GlobalAlert/>
+        </QueryClientProvider>
+    )
 }
 
 function GlobalAlert(){

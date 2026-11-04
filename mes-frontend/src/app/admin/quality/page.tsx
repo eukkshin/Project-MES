@@ -20,8 +20,8 @@ import {
 import * as S from "@/assets/css/admin/Quality.styles";
 import { Layout } from "@/components/layout/Layout";
 import AlertModal from "@/components/modal/AlertModal";
-import { createInspection, fetchInspection,queryClient } from "@/api/http";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { createInspection, fetchInspection } from "@/api/mes.http";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Select } from "@/ui/Select/Select";
 
 
@@ -79,6 +79,8 @@ const inspectionTypeLabel = (type: string) => {
 };
 
 export default function QualityPage() {
+  const queryClient = useQueryClient();
+
   const [form, setForm] = useState<InspectionForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");

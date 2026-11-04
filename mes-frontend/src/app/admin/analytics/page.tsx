@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowRotateRight,
   FaBullseye,
@@ -16,7 +16,7 @@ import {
 
 import * as S from "@/assets/css/admin/Analytics.styles";
 import { Layout } from "@/components/layout/Layout";
-import { createRecords, fetchRecords, queryClient} from "@/api/http";
+import { createRecords, fetchRecords } from "@/api/mes.http";
 
 import type { ChangeEvent, FormEvent } from "react";
 import { Select } from "@/ui/Select/Select";
@@ -73,6 +73,8 @@ const getYieldTone = (rate: number) => {
 };
 
 export default function AnalyticsPage() {
+
+  const queryClient = useQueryClient();
   
   const [form, setForm] = useState<AnalyticsForm>({ ...INITIAL_STATE });
 
