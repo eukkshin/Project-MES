@@ -277,6 +277,16 @@ export const SaveButton = styled.button`
     background: #93c5fd;
     cursor: not-allowed;
   }
+
+  .spin{
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to{
+      transform: rotate(360deg);
+    }
+  }
 `;
 
 export const ListSection = styled.div`

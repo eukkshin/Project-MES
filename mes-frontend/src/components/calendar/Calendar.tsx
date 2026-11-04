@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FaCalendarDays,
   FaChevronLeft,
@@ -9,19 +9,30 @@ import {
 } from "react-icons/fa6";
 
 import { fetchHolidays } from "@/api/holidays";
-import { Holiday } from "@/types/holiday";
-import type { Schedule } from "@/types/schedule";
+import type { Holiday } from "@/types/holiday";
+import type { ApiSchedule, ApiScheduleStatus, Schedule, ScheduleStatus } from "@/types/schedule";
 import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 
 import ScheduleModal from "@/components/calendar/ScheduleModal";
-import { useSchedule } from "@/context/ScheduleContext";
+import { useGetSchedules } from "@/hooks/queries/useSchedule";
 
 
 interface CalendarProps {
   year?: number;
   month?: number;
 }
+
+const statusMap: Record<ApiScheduleStatus, ScheduleStatus> = {
+  PENDING: "대기",
+  IN_PROGRESS: "진행",
+  COMPLETED: "완료",
+};
+
+// API의 alarmEnabled 값을 boolean으로 변환
+const isAlarmEnabled = (value: ApiSchedule["alarmEnabled"]) => {
+  return value === true || value === 1 || value === "1" || value === "true";
+};
 
 export default function Calendar({ year, month }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -33,22 +44,40 @@ export default function Calendar({ year, month }: CalendarProps) {
     });
   });
 
-   // 💡 전역 Context에서 스케줄 및 세팅 함수 가져오기
-  const { schedules, setSchedules } = useSchedule();
+  const { data:apiSchedules = [] } = useGetSchedules();
+
   const [holidays, setHolidays] = useState<Holiday[]>([]);
-  // const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const schedules: Schedule[] = useMemo(()=>{
+    return apiSchedules.map((sch:ApiSchedule)=>{
+      const [year,month,date] = sch.scheduleDate.split("-").map(Number);
+
+      return {
+        id: sch.id,
+        scheduleType: sch.scheduleType,
+        title: sch.title ?? undefined,
+        content: sch.content,
+        year,
+        month,
+        date,
+        time: sch.time,
+        alarmEnabled: isAlarmEnabled(sch.alarmEnabled),
+        status: statusMap[sch.status],
+        createdAt: sch.createdAt,
+      };
+    });
+  }, [apiSchedules]);
+  
 
   const currentYear = currentMonth.year;
   const currentMonthNumber = currentMonth.month;
 
   const today = Temporal.Now.plainDateISO();
 
-  const isThisMonth =
-    today.year === currentYear && today.month === currentMonthNumber;
-
+  // 외부에서 year, month props가 변경되면 달력도 변경
   useEffect(() => {
     if (year === undefined && month === undefined) return;
 
@@ -291,13 +320,12 @@ export default function Calendar({ year, month }: CalendarProps) {
       </S.CalTopMargin>
 
       <ScheduleModal
+        key={`${currentYear}-${currentMonthNumber}-${selectedDate}`}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         year={currentYear}
         month={currentMonthNumber}
         selectedDate={selectedDate}
-        schedules={schedules}
-        setSchedules={setSchedules}
       />
     </>
   );

@@ -1,24 +1,21 @@
 import { api } from "@/lib/axios";
-import type { Schedule } from "@/types/schedule";
+import type { ApiSchedule, ScheduleRequest } from "@/types/schedule";
 
 // 일정 목록 조회
-export const getSchedules = async () => {
+export const getSchedules = async (): Promise<ApiSchedule[]> => {
   const response = await api.get("/api/schedules");
   return response.data;
 };
 
 // 일정 등록
-export const createSchedule = async (scheduleData: Omit<Schedule, "id" | "createdAt">) => {
-  const response = await api.post("/api/schedules", scheduleData);
+export const createSchedule = async (data: ScheduleRequest) => {
+  const response = await api.post("/api/schedules", data);
   return response.data;
 };
 
 // 일정 수정
-export const updateSchedule = async (
-  id: number,
-  scheduleData: Partial<Omit<Schedule, "id" | "createdAt">>
-) => {
-  const response = await api.patch(`/api/schedules/${id}`, scheduleData);
+export const updateSchedule = async (id: number,data: Partial<ScheduleRequest>) => {
+  const response = await api.patch(`/api/schedules/${id}`, data);
   return response.data;
 };
 

@@ -1,25 +1,27 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import {
   FaBell,
   FaCalendarDay,
   FaCheck,
+  FaCircleNotch,
   FaClock,
   FaPen,
   FaPlus,
   FaTrash,
+  FaTriangleExclamation,
   FaXmark,
 } from "react-icons/fa6";
 
-import type { Schedule } from "@/types/schedule";
+import type { ApiScheduleStatus, Schedule } from "@/types/schedule";
 import * as S from "@/assets/css/components/modal/ScheduleModal.styles";
-import AlertModal from "@/components/modal/AlertModal";
-import { Temporal } from "@js-temporal/polyfill";
 
 import ModalLayout from "../modal/ModalLayout";
 import { Select } from "@/ui/Select/Select";
 import { useAlertStore } from "@/store/useAlertStore";
+import { useCreateSchedule, useDeleteSchedule, useGetSchedules, useUpdateSchedule } from "@/hooks/queries/useSchedule";
+import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -27,8 +29,6 @@ interface ScheduleModalProps {
   year: number;
   month: number;
   selectedDate: number | null;
-  schedules: Schedule[];
-  setSchedules: React.Dispatch<React.SetStateAction<Schedule[]>>;
 }
 
 type ScheduleStatus = Schedule["status"];
@@ -56,54 +56,59 @@ const minuteOptions = Array.from(
   }
 );
 
+const toApiStatus = (status: Schedule['status'])=>{
+  const statusMap = {
+    대기: "PENDING",
+    진행: "IN_PROGRESS",
+    완료: "COMPLETED",
+  } as const;
+
+  return statusMap[status];
+}
+
+const toFrontendStatus = (status:ApiScheduleStatus) : Schedule['status'] =>{
+  const statusMap: Record<ApiScheduleStatus, Schedule['status']> = {
+    PENDING: "대기",
+    IN_PROGRESS: "진행",
+    COMPLETED: "완료",
+  };
+  return statusMap[status] ?? '대기';
+}
+
 export default function ScheduleModal({
   isOpen,
   onClose,
   year,
   month,
   selectedDate,
-  schedules,
-  setSchedules,
 }: ScheduleModalProps) {
+
+  //React Query
+  const { data: scheduleData = [], isLoading, isError, error } = useGetSchedules();
+
+  if(isError){
+    console.error("일정 조회 실패", error);
+  }
+  const createMutation = useCreateSchedule();
+  const updateMutation = useUpdateSchedule();
+  const deleteMutation = useDeleteSchedule();
+
+  //zustand
+  const { showAlert } =useAlertStore()
+
   const [formContent, setFormContent] = useState("");
   const [formStatus, setFormStatus] = useState<ScheduleStatus>("대기");
 
   const [hour, setHour]= useState("09")
   const [minute, setMinute] = useState("00");
-  const formattedTime = `${hour}:${minute}`;
 
   const [alarmEnabled, setAlarmEnabled] = useState(false);
 
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const wheelCleanupRef = useRef<(() => void) | null>(null);
-
-  const { showAlert } =useAlertStore()
 
   //select용
   const [openSelectId, setOpenSelectId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setAlarmEnabled(false);
-      setFormContent("");
-      setFormStatus("대기");
-      setHour("09");
-      setMinute("00");
-      setEditingId(null);
-    }
-  }, [isOpen, selectedDate]);
-
-  const formatDisplayTime = (time?: string|null)=>{
-    if(!time) return "시간 미설정"
-
-    const [savedHour, savedMinute] = time.split(":");
-    
-    const h = Number(savedHour);
-    const ampm = h < 12 ? "AM" : "PM";
-    const displayHour = h % 12 || 12;
-
-    return `${ampm} ${displayHour} : ${savedMinute}`;
-  }
 
   const setScheduleListRef = useCallback((element: HTMLDivElement | null) => {
     // 이전 이벤트 제거
@@ -152,8 +157,48 @@ export default function ScheduleModal({
       element.removeEventListener("wheel", handleWheel);
     };
   }, []);
+  
+  const schedules: Schedule[] = scheduleData.map((item)=>{
 
+    const  [scheduleYear, scheduleMonth, scheduleDay]=
+    item.scheduleDate.slice(0,10).split("-").map(Number);
+
+    return{
+      id: item.id,
+      scheduleType: item.scheduleType,
+      title: item.title ?? '',
+      content: item.content,
+      year: scheduleYear,
+      month: scheduleMonth,
+      date: scheduleDay,
+      time: item.time,
+      alarmEnabled:
+      item.alarmEnabled ===  true ||
+      item.alarmEnabled === 1 ||
+      item.alarmEnabled === "1",
+      status: toFrontendStatus(item.status),
+      createdAt: item.createdAt.substring(0,10)
+    }
+  })
+  
   if (selectedDate === null) return null;
+
+  const formattedTime = `${hour}:${minute}`;
+
+  const scheduleDate =
+    `${year}-${String(month).padStart(2,"0")}-${String(selectedDate).padStart(2,'0')}`
+
+  const formatDisplayTime = (time?: string|null)=>{
+    if(!time) return "시간 미설정"
+
+    const [savedHour, savedMinute] = time.split(":");
+    
+    const h = Number(savedHour);
+    const ampm = h < 12 ? "AM" : "PM";
+    const displayHour = h % 12 || 12;
+
+    return `${ampm} ${displayHour} : ${savedMinute}`;
+  }
 
   const filteredSchedules = schedules.filter(
     (schedule) => 
@@ -169,48 +214,40 @@ export default function ScheduleModal({
     setMinute("00");
     setEditingId(null);
     setAlarmEnabled(false);
+    setOpenSelectId(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async() => {
     const content = formContent.trim();
 
     if (!content) return;
 
-    const currentTime = Temporal.Now.plainTimeISO().toString().split(".")[0];
-
-    if (editingId) {
-      setSchedules((prev) =>
-        prev.map((schedule) =>
-          schedule.id === editingId
-            ? {
-                ...schedule,
-                time: alarmEnabled ? formattedTime : null,
-                alarmEnabled,
-                content,
-                status: formStatus,
-              }
-            : schedule,
-        ),
-      );
-    } else {
-      setSchedules((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          year,
-          month,
-          scheduleType,
-          date: selectedDate,
-          time: alarmEnabled ? formattedTime : null,
-          alarmEnabled,
-          content,
-          status: formStatus,
-          createdAt: currentTime,
-        },
-      ]);
+    const requestData  ={
+      scheduleType: 'PERSONAL' as const,
+      content,
+      scheduleDate,  //2026-11-04
+      time: alarmEnabled ? `${formattedTime}` : null,
+      alarmEnabled,
+      status: toApiStatus(formStatus),
     }
+    
+    try{
+      if(editingId !== null){
+        await updateMutation.mutateAsync({
+          id: editingId, 
+          data: requestData
+        });
 
-    resetForm();
+        showAlert("일정이 수정되었습니다.", "success");
+      }else{
+        await createMutation.mutateAsync(requestData);
+        showAlert("일정이 등록되었습니다.", "success");
+      }
+      resetForm()
+    } catch (error){
+      console.error("일정 저장 실패:", error);
+      showAlert("일정 저장에 실패했습니다.", "error");
+    }
   };
 
   const handleEdit = (schedule: Schedule) => {
@@ -222,19 +259,25 @@ export default function ScheduleModal({
     const [savedHour, savedMinute] = (schedule.time || "09:00").split(":");
     setHour(savedHour);
     setMinute(savedMinute);
-
   };
 
-  const handleDelete = (id:string) => {
+  const handleDelete = async (id:number) => {
 
-    setSchedules((prev) =>
-      prev.filter((schedule) => schedule.id !== id),
-    );
+    try{
+      await deleteMutation.mutateAsync(id);
+      showAlert("일정이 삭제되었습니다.", "success");
 
-    if (editingId === id) {
-      resetForm();
+      if (editingId === id) {
+        resetForm();
+      }
+    }catch(error){
+      console.error("일정 삭제 실패:", error);
+      showAlert("일정 삭제에 실패했습니다.", "error");
     }
   };
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
 
   return (
     <>
@@ -262,7 +305,7 @@ export default function ScheduleModal({
           <S.Section>
             <S.SectionHeader>
               <S.SectionTitle>
-                {editingId ? (
+                {editingId !== null ? (
                   <>
                     <FaPen />
                     일정 수정
@@ -274,7 +317,7 @@ export default function ScheduleModal({
                 )}
               </S.SectionTitle>
 
-              {editingId && (
+              {editingId !== null && (
                 <S.CancelEditButton type="button" onClick={resetForm}>
                   <FaXmark />
                   수정 취소
@@ -377,10 +420,23 @@ export default function ScheduleModal({
             <S.SaveButton
               type="button"
               onClick={handleSave}
-              disabled={!formContent.trim()}
-            >
-              {editingId ? <FaCheck /> : <FaPlus />}
-              {editingId ? "수정 완료" : "일정 등록하기"}
+              disabled={!formContent.trim() || isSaving}
+            > { isSaving ? (
+              <>
+              <FaCircleNotch className="spin"/>
+              저장중...
+              </>
+            ) : editingId !== null ? (
+              <>
+              <FaCheck />
+              수정 완료
+              </>
+            ) : (
+              <>
+              <FaPlus />
+              일정 등록하기
+              </>
+             )}
             </S.SaveButton>
           </S.Section>
 
@@ -394,75 +450,85 @@ export default function ScheduleModal({
               <S.ListCount>총 {filteredSchedules.length}건</S.ListCount>
             </S.ListHeader>
 
-            {filteredSchedules.length === 0 ? (
+            {isLoading ? (
+              <EqualizerLoader/>
+            ) : isError ? (
               <S.EmptyState>
                 <S.EmptyIcon>
-                  <FaCalendarDay />
+                  <FaTriangleExclamation />
                 </S.EmptyIcon>
-
-                <strong>등록된 일정이 없습니다.</strong>
-                <span>위 입력란에서 새로운 업무 일정을 등록해 보세요.</span>
+                <strong>일정을 불러오지 못했습니다.</strong>
+                <span>잠시 후 다시 시도해 주세요.</span>
               </S.EmptyState>
             ) : (
-              <S.ScheduleList ref={setScheduleListRef}>
-                {filteredSchedules.map((schedule) => (
-                  <S.ScheduleCard
-                    key={schedule.id}
-                    $editing={editingId === schedule.id}
-                  >
-                    <S.CardHeader>
-                      <S.StatusBadge $status={schedule.status}>
-                        <S.StatusDot />
-                        {schedule.status}
-                      </S.StatusBadge>
-
-                     <S.AlarmTime $enabled={schedule.alarmEnabled}>
-                      <FaBell size={10}/>
-                      {schedule.alarmEnabled 
-                      ? formatDisplayTime(schedule.time)
-                      : "" }
-                    </S.AlarmTime>
-
-                    </S.CardHeader>
-
-                    <S.ScheduleContent>{schedule.content}</S.ScheduleContent>
-
-                    <S.CardFooter>
-                      <S.CreatedAt>
-                        {schedule.createdAt}
-                      </S.CreatedAt>
-
-                      <S.CardAction
-                        type="button"
-                        onClick={() => handleEdit(schedule)}
-                      >
-                        <FaPen />
-                        수정
-                      </S.CardAction>
-
-                      <S.CardAction
-                        type="button"
-                        $danger
-                        onClick={() => {
-                          showAlert(
-                            "선택한 일정을 삭제하시겠습니까?", "info", "일정 삭제",
-                             () => handleDelete(schedule.id),
-                            // handleDelete
-                          )
-                        }}
-                      >
-                        <FaTrash />
-                        삭제
-                      </S.CardAction>
-                    </S.CardFooter>
-                  </S.ScheduleCard>
-                ))}
-              </S.ScheduleList>
+              filteredSchedules.length === 0 ? (
+                <S.EmptyState>
+                  <S.EmptyIcon>
+                    <FaCalendarDay />
+                  </S.EmptyIcon>
+                  <strong>등록된 일정이 없습니다.</strong>
+                  <span>위 입력란에서 새로운 업무 일정을 등록해 보세요.</span>
+                </S.EmptyState>
+              ) : (
+                <S.ScheduleList ref={setScheduleListRef}>
+                  {filteredSchedules.map((schedule) => (
+                    <S.ScheduleCard
+                      key={schedule.id}
+                      $editing={editingId === schedule.id}
+                    >
+                      <S.CardHeader>
+                        <S.StatusBadge $status={schedule.status}>
+                          <S.StatusDot />
+                          {schedule.status}
+                        </S.StatusBadge>
+              
+                       <S.AlarmTime $enabled={schedule.alarmEnabled}>
+                        <FaBell size={10}/>
+                        {schedule.alarmEnabled 
+                        ? formatDisplayTime(schedule.time)
+                        : "" }
+                      </S.AlarmTime>
+              
+                      </S.CardHeader>
+              
+                      <S.ScheduleContent>{schedule.content}</S.ScheduleContent>
+              
+                      <S.CardFooter>
+                        <S.CreatedAt>
+                          {schedule.createdAt}
+                        </S.CreatedAt>
+              
+                        <S.CardAction
+                          type="button"
+                          onClick={() => handleEdit(schedule)}
+                        >
+                          <FaPen />
+                          수정
+                        </S.CardAction>
+              
+                        <S.CardAction
+                          type="button"
+                          $danger
+                          disabled={isDeleting}
+                          onClick={() => {
+                            showAlert(
+                              "선택한 일정을 삭제하시겠습니까?", "info", "일정 삭제",
+                               () => handleDelete(schedule.id),
+                            )
+                          }}
+                        >
+                          <FaTrash />
+                          {isDeleting ? "삭제중..." : "삭제"}
+                        </S.CardAction>
+                      </S.CardFooter>
+                    </S.ScheduleCard>
+                  ))}
+                </S.ScheduleList>
+              )
             )}
           </S.ListSection>
         </S.Container>
       </ModalLayout>
-     
     </>
   );
 }

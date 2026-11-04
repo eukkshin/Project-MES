@@ -2,7 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Temporal } from "@js-temporal/polyfill";
-import type { Schedule } from "@/types/schedule";
+import type { ApiSchedule } from "@/types/schedule";
+import { useGetSchedules } from "@/hooks/queries/useSchedule";
 
 interface ToastInfo {
   id: string;
@@ -11,117 +12,141 @@ interface ToastInfo {
 }
 
 interface ScheduleContextType {
-  schedules: Schedule[];
-  setSchedules: React.Dispatch<React.SetStateAction<Schedule[]>>;
   currentToast: ToastInfo | null;
   setCurrentToast: (toast: ToastInfo | null) => void;
 }
 
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
+const isAlarmEnabled = (value: ApiSchedule['alarmEnabled'])=>{
+  return value === true || value === 1 || value === '1' || value === 'true';
+}
+
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
-
+  // 최신 토스트 상태를 알람 감시 로직에서 참조
+  const currentToastRef = useRef<ToastInfo|null>(null);
   const [currentToast, setCurrentToast] = useState<ToastInfo | null>(null);
-  const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const schedulesRef = useRef(schedules);
 
-  //마운트 직후(브라우저 환경)에만 localStorage에서 스케줄 로드
-  useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem("erp_schedules");
-    if (saved) {
-      try {
-        setSchedules(JSON.parse(saved));
-      } catch (e) {
-        console.error("스케줄 파싱 실패:", e);
-      }
-    }
-  }, []);
+  const updateCurrentToast = (toast: ToastInfo | null) => {
+    currentToastRef.current = toast;
+    setCurrentToast(toast);
+  };
+  
+  const { data: schedules=[] } = useGetSchedules();
 
-  // schedules가 변경되고 마운트된 상태일 때만 localStorage에 자동 저장
-  useEffect(() => {
-    schedulesRef.current = schedules;
-    if (isMounted) {
-      localStorage.setItem("erp_schedules", JSON.stringify(schedules));
-    }
-  }, [schedules, isMounted]);
-
+  // 알람이 이미 울린 일정을 중복해서 울리지 않도록 기록
+  const triggeredAlarmsRef = useRef<Set<string>>(new Set());
+  
+ 
+  // 알람 소리 재생
   const playSingleTone = () => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as Window & {
+          webkitAudioContext?: typeof AudioContext;
+        }).webkitAudioContext;
+
+      if (!AudioContextClass) return;
+
+      const audioCtx = new AudioContextClass();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
+
       osc.type = "sine";
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(
+        587.33,
+        audioCtx.currentTime,
+      );
+
       gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        audioCtx.currentTime + 0.6,
+      );
+
       osc.connect(gain);
       gain.connect(audioCtx.destination);
+
       osc.start();
       osc.stop(audioCtx.currentTime + 0.6);
-    } catch (e) {
-      console.error(e);
+
+      osc.onended = () => {
+        void audioCtx.close();
+      };
+    } catch (error) {
+      console.error("알람 소리 재생 실패:", error);
     }
   };
 
+  // 토스트가 열리면 소리는 5초만 재생
   useEffect(() => {
-    if (currentToast) {
+    if (!currentToast) return;
+
+    playSingleTone();
+
+    const interval = window.setInterval(() => {
       playSingleTone();
-      alarmIntervalRef.current = setInterval(() => {
-        playSingleTone();
-      }, 1200);
-    } else {
-      if (alarmIntervalRef.current) {
-        clearInterval(alarmIntervalRef.current);
-        alarmIntervalRef.current = null;
-      }
-    }
+    }, 1200);
+
+    const timeout = window.setTimeout(() => {
+      window.clearInterval(interval);
+    }, 5000);
 
     return () => {
-      if (alarmIntervalRef.current) {
-        clearInterval(alarmIntervalRef.current);
-      }
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
     };
   }, [currentToast]);
 
+  // React Query 일정 데이터를 기준으로 알람 감시
   useEffect(() => {
-    const interval = setInterval(() => {
+    const checkAlarms = () => {
       const now = Temporal.Now.plainDateTimeISO();
-      const currentY = now.year;
-      const currentM = now.month;
-      const currentD = now.day;
-      const currentTimeStr = `${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`;
 
-      schedulesRef.current.forEach((sch) => {
+      const today = now.toPlainDate().toString();
+
+      const currentTime =
+        `${String(now.hour).padStart(2, "0")}:` +
+        `${String(now.minute).padStart(2, "0")}`;
+
+      schedules.forEach((schedule) => {
+        const alarmKey =
+          `${schedule.id}-${schedule.scheduleDate}-${schedule.time}`;
+
         if (
-          sch.alarmEnabled && 
-          Number(sch.year) === currentY &&
-          Number(sch.month) === currentM &&
-          Number(sch.date) === currentD &&
-          sch.time === currentTimeStr &&
-          sch.status !== "완료" &&
-          currentToast?.id !== sch.id
+          !isAlarmEnabled(schedule.alarmEnabled) ||
+          schedule.scheduleDate !== today ||
+          schedule.time?.slice(0, 5) !== currentTime ||
+          schedule.status === "COMPLETED" ||
+          triggeredAlarmsRef.current.has(alarmKey) ||
+          currentToastRef.current !== null
         ) {
-          setCurrentToast({
-            id: sch.id,
-            title: "일정 알림",
-            content: sch.content || "예정된 시간이 되었습니다.",
-          });
+          return;
         }
-      });
-    }, 1000);
 
-    return () => clearInterval(interval);
-  }, [currentToast]);
+        triggeredAlarmsRef.current.add(alarmKey);
+
+        const toast = {
+          id: String(schedule.id),
+          title: schedule.title || "일정 알림",
+          content: schedule.content || "예정된 시간이 되었습니다.",
+        };
+        updateCurrentToast(toast);
+      });
+    };
+
+    checkAlarms();
+
+    const interval = window.setInterval(checkAlarms, 10000);
+
+    return () => window.clearInterval(interval);
+  }, [schedules]);
 
   const ctxValue={ 
-    schedules, 
-    setSchedules, 
     currentToast, 
-    setCurrentToast 
+    setCurrentToast : updateCurrentToast,
   }
 
   return (

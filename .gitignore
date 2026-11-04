@@ -5,8 +5,8 @@ node_modules/
 
 # --- 환경변수 및 보안 파일 ---
 .env
-*.env
-.env*.local
+.env.*
+!.env.example
 
 # --- 운영체제/IDE 부산물 ---
 .DS_Store

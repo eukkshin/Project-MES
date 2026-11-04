@@ -41,17 +41,17 @@ const Schedule = sequelize.define(
       field: "SCHEDULE_DATE",
     },
 
-    // 일정 시간: HH:mm:ss
+    // 일정 시간: HH:mm
     time: {
-      type: DataTypes.TIME,
+      type: DataTypes.STRING(8),
       allowNull: true,
       field: "TIME",
     },
 
     alarmEnabled: {
-      type: DataTypes.BOOLEAN,
+      type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: false,
+      defaultValue: 0,
       field: "ALARM_ENABLED",
     },
 
