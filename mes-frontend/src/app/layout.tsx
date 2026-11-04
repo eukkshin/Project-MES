@@ -5,8 +5,9 @@ import ConditionalLayout from "@/components/ConditionalLayout";
 import ThemeProviderWrapper from "@/components/ThemeProviderWrapper";
 
 import StyledComponentsRegistry from "@/lib/registry";
-import QueryAlertProvider from "@/components/QueryProvider";
-
+import QueryProvider from "@/components/QueryProvider";
+import { ScheduleProvider } from "@/context/ScheduleContext";
+import { AlarmToast } from "@/components/sheduleAlarm/Alarm";
 
 export const metadata: Metadata = {
   title: { template: "%s • MES", default: "MES 시스템" },
@@ -27,9 +28,12 @@ export default function RootLayout({
       <body>
         <StyledComponentsRegistry>
           <ThemeProviderWrapper>
-            <QueryAlertProvider>
-              <ConditionalLayout>{children}</ConditionalLayout>
-            </QueryAlertProvider>
+            <QueryProvider>
+              <ScheduleProvider>
+                <AlarmToast/>
+                <ConditionalLayout>{children}</ConditionalLayout>
+              </ScheduleProvider>
+            </QueryProvider>
           </ThemeProviderWrapper>
         </StyledComponentsRegistry>
       </body>

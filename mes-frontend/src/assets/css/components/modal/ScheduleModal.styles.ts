@@ -471,3 +471,126 @@ export const CardAction = styled.button<{
     background: ${({ $danger }) => ($danger ? "#fee2e2" : "#f1f5f9")};
   }
 `;
+
+export const AlarmTime = styled.div<{$enabled:boolean}>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+
+  svg {
+    color: ${({ $enabled }) => $enabled ? "#4e73df" : "#9ca3af"};
+  }
+`;
+
+export const TimeSelectorWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between; 
+  background-color: rgba(245, 245, 247, 0.8);
+
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  width: 100%;
+  box-sizing: border-box;
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+  padding: 0 20px;
+`;
+
+export const TimeLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  white-space: nowrap;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    fill: #4e73df;
+  }
+`;
+
+export const TimeSelectGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+`;
+
+export const StyledSelect = styled.select`
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  color: #1d1d1f;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 76px; 
+  text-align: center;
+
+  &:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.12);
+  }
+`;
+
+export const TimeColon = styled.span`
+  font-size: 14px;
+  font-weight: 700;
+  color: #86868b;
+`;
+
+export const AlarmToggle = styled.label`
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+
+  input {
+    appearance: none;
+    position: relative;
+    width: 36px;
+    height: 20px;
+    margin: 0;
+    border-radius: 20px;
+    background: #dbe2ea;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s ease;
+    }
+
+    &:checked {
+      background: #2563eb;
+    }
+
+    &:checked::before {
+      transform: translateX(16px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: 3px;
+    }
+  }
+`;
+
+///
+

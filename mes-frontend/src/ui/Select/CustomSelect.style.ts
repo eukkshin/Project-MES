@@ -4,6 +4,8 @@ import styled from "styled-components";
 
 export const CustomSelectContainer = styled.div<{$isOpen?:boolean; $width?: string;}>`
   position: relative;
+  min-width: 0;
+  flex-shrink: 0;
   width: ${props => props.$width || '100%'};
   z-index: ${props=> props.$isOpen ? 9999: 1 };
  
@@ -13,7 +15,6 @@ export const SelectTrigger = styled.div<{ $height?:string; $isOpen?:boolean}>`
   box-sizing: border-box;
   height: ${props=> props.$height || 'auto'};
   width: 100%;
-  min-width: 120px;
 
   padding: 10px 15px;
   background-color: #fff;
@@ -62,9 +63,11 @@ export const SelectList = styled.ul`
   width: 100%;
 
   font-family: inherit;
-
   padding: 0; 
   margin: -1px 0 0 0;
+
+  max-height: 350px;
+  overflow-y: auto;
 
   border-radius: 16px;
   background-color: #fff;
@@ -72,8 +75,26 @@ export const SelectList = styled.ul`
   list-style: none;
   box-shadow: 0 4px 6px rgba(0,0,0,.1);
   z-index: 99999;
-  overflow: hidden;
   cursor: pointer;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    margin: 30px 0;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    background: #bfdbfe;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+     background: #93c5fd;
+  }
 `;
 
 interface SelectItemProps {

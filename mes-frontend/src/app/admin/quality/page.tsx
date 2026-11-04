@@ -19,7 +19,7 @@ import {
 
 import * as S from "@/assets/css/admin/Quality.styles";
 import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/ui/modal/AlertModal";
+import AlertModal from "@/components/modal/AlertModal";
 import { createInspection, fetchInspection,queryClient } from "@/api/http";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Select } from "@/ui/Select/Select";

@@ -10,18 +10,13 @@ import {
 
 import { fetchHolidays } from "@/api/holidays";
 import { Holiday } from "@/types/holiday";
+import type { Schedule } from "@/types/schedule";
 import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 
-import ScheduleModal from "@/ui/modal/ScheduleModal";
+import ScheduleModal from "@/components/modal/ScheduleModal";
+import { useSchedule } from "@/context/ScheduleContext";
 
-interface Schedule {
-  id: string;
-  date: number;
-  content: string;
-  status: "대기" | "진행" | "완료";
-  createdAt: string;
-}
 
 interface CalendarProps {
   year?: number;
@@ -38,8 +33,10 @@ export default function Calendar({ year, month }: CalendarProps) {
     });
   });
 
+   // 💡 전역 Context에서 스케줄 및 세팅 함수 가져오기
+  const { schedules, setSchedules } = useSchedule();
   const [holidays, setHolidays] = useState<Holiday[]>([]);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  // const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -122,7 +119,8 @@ export default function Calendar({ year, month }: CalendarProps) {
 
   const scheduledDays = schedules.filter(
     (schedule) =>
-      schedule.date >= 1 && schedule.date <= currentMonth.daysInMonth,
+      schedule.year === currentYear &&
+      schedule.month === currentMonthNumber,
   ).length;
 
   return (
@@ -214,7 +212,11 @@ export default function Calendar({ year, month }: CalendarProps) {
                 : undefined;
 
               const daySchedules = isCurrentMonth
-                ? schedules.filter((schedule) => schedule.date === date.day)
+                ? schedules.filter((schedule) => 
+                  schedule.year === date.year &&
+                  schedule.month === date.month &&
+                  schedule.date === date.day
+                )
                 : [];
 
               const hasSchedule = daySchedules.length > 0;
@@ -291,6 +293,7 @@ export default function Calendar({ year, month }: CalendarProps) {
       <ScheduleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        year={currentYear}
         month={currentMonthNumber}
         selectedDate={selectedDate}
         schedules={schedules}
