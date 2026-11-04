@@ -32,6 +32,7 @@ export {
   ResultCount,
   EmptyState,
   RetryButton,
+  FilterWrapper,
 } from "./Admin.styles";
 
 export const EnvironmentGrid = styled.div`

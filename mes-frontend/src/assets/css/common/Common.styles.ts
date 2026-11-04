@@ -161,3 +161,10 @@ export const Top0 = css`
 export const Mauto = css`
   margin: 0 auto;
 `;
+
+export const NoDrag = css`
+user-select: none; 
+  -webkit-user-select: none; /* 사파리/크롬(구버전) */
+  -moz-user-select: none;    /* 파이어폭스 */
+  -ms-user-select: none;     /* 익스플로러/엣지(구버전) */
+`;

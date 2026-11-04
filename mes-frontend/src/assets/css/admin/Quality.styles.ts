@@ -37,6 +37,7 @@ export {
   SummaryCard,
   SummaryIcon,
   SummaryContent,
+  FilterWrapper,
 } from "./Admin.styles";
 
 export const Select = styled.select`
