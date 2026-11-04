@@ -7,7 +7,7 @@ import ThemeProviderWrapper from "@/components/provider/ThemeProviderWrapper";
 import StyledComponentsRegistry from "@/lib/registry";
 import QueryAlertProvider from "@/components/provider/QueryAlertProvider";
 import { ScheduleProvider } from "@/context/ScheduleContext";
-import { AlarmToast } from "@/components/sheduleAlarm/Alarm";
+import { AlarmToast } from "@/components/calendar/sheduleAlarm/Alarm";
 
 export const metadata: Metadata = {
   title: { template: "%s • MES", default: "MES 시스템" },

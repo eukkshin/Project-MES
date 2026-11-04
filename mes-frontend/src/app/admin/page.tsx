@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import * as S from "@/assets/css/admin/Admin.styles";
-import Calendar from "@/components/Calendar";
+import Calendar from "@/components/calendar/Calendar";
 import { Layout } from "@/components/layout/Layout";
 
 export const metadata: Metadata = {
