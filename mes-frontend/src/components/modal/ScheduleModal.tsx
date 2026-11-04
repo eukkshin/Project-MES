@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  FaBell,
   FaCalendarDay,
   FaCheck,
   FaClock,
@@ -17,6 +18,7 @@ import AlertModal from "@/components/modal/AlertModal";
 import { Temporal } from "@js-temporal/polyfill";
 
 import ModalLayout from "./ModalLayout";
+import { Select } from "@/ui/Select/Select";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -31,6 +33,27 @@ interface ScheduleModalProps {
 type ScheduleStatus = Schedule["status"];
 
 const STATUS_OPTIONS: ScheduleStatus[] = ["대기", "진행", "완료"];
+
+const hourOptions = Array.from({ length: 24 }, (_, i) => {
+  const h = String(i).padStart(2, "0");
+
+  return {
+    label: `${h}시`,
+    value: h,
+  };
+});
+
+const minuteOptions = Array.from(
+  { length: 12 },
+  (_, i) => {
+    const m = String(i * 5).padStart(2, "0");
+
+    return {
+      label: `${m}분`,
+      value: m,
+    };
+  }
+);
 
 export default function ScheduleModal({
   isOpen,
@@ -47,13 +70,18 @@ export default function ScheduleModal({
   const [hour, setHour]= useState("09")
   const [minute, setMinute] = useState("00");
   const formattedTime = `${hour}:${minute}`;
+  const [alarmEnabled, setAlarmEnabled] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const wheelCleanupRef = useRef<(() => void) | null>(null);
 
+  //select용
+  const [openSelectId, setOpenSelectId] = useState<string | null>(null);
+
   useEffect(() => {
     if (isOpen) {
+      setAlarmEnabled(false);
       setFormContent("");
       setFormStatus("대기");
       setHour("09");
@@ -63,7 +91,7 @@ export default function ScheduleModal({
     }
   }, [isOpen, selectedDate]);
 
-  const formatDisplayTime = (time?: string)=>{
+  const formatDisplayTime = (time?: string|null)=>{
     if(!time) return "시간 미설정"
 
     const [savedHour, savedMinute] = time.split(":");
@@ -138,6 +166,7 @@ export default function ScheduleModal({
     setHour("09");
     setMinute("00");
     setEditingId(null);
+    setAlarmEnabled(false);
   };
 
   const handleSave = () => {
@@ -153,7 +182,8 @@ export default function ScheduleModal({
           schedule.id === editingId
             ? {
                 ...schedule,
-                time: formattedTime,
+                time: alarmEnabled ? formattedTime : null,
+                alarmEnabled,
                 content,
                 status: formStatus,
               }
@@ -168,7 +198,8 @@ export default function ScheduleModal({
           year,
           month,
           date: selectedDate,
-          time: formattedTime,
+          time: alarmEnabled ? formattedTime : null,
+          alarmEnabled,
           content,
           status: formStatus,
           createdAt: currentTime,
@@ -183,6 +214,7 @@ export default function ScheduleModal({
     setFormContent(schedule.content);
     setFormStatus(schedule.status);
     setEditingId(schedule.id);
+    setAlarmEnabled(schedule.alarmEnabled ?? false);
 
     const [savedHour, savedMinute] = (schedule.time || "09:00").split(":");
     setHour(savedHour);
@@ -252,38 +284,60 @@ export default function ScheduleModal({
             
             <S.TimeSelectorWrapper>
               <S.TimeLabel>
-                <FaClock/>
+                <FaBell/>
                 알람 시간 
               </S.TimeLabel>
+              
+              {!alarmEnabled ? (
+               <S.AlarmToggle>
+                <input
+                  type="checkbox"
+                  checked={alarmEnabled}
+                  onChange={ (e)=>{
+                    const enabled = e.target.checked;
+                    setAlarmEnabled(enabled)
 
-              <S.TimeSelectGroup>
-                <S.StyledSelect 
-                value={hour}
-                onChange={(e)=> setHour(e.target.value)}
-                >
-                  {Array.from({length:24}, (_,i)=>{
-                    const h = String(i).padStart(2,"0");
+                    if(!enabled){
+                      setOpenSelectId(null);
+                    }
+                  }}
+                />
+              </S.AlarmToggle>
+              ): (
+               <S.TimeSelectGroup>
+                 <Select id="hour" options={hourOptions} 
+                 openSelectId={openSelectId}  setOpenSelectId={setOpenSelectId}
+                 value={hour} onChange={setHour} width="80px"
+                 >
+                   <Select.Toggle/>
+                   <Select.Menu/>
+                 </Select>
+                 <S.TimeColon>:</S.TimeColon>
 
-                    return(
-                      <option key={h} value={h}>
-                        {h}시
-                      </option>
-                    )
-                  })}
-                </S.StyledSelect>
-                <S.TimeColon>:</S.TimeColon>
+                 <Select id="minute" options={minuteOptions}
+                 openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
+                 value={minute} onChange={setMinute}  width="80px"
+                 >
+                   <Select.Toggle/>
+                   <Select.Menu/>
+                 </Select>
 
-                <S.StyledSelect value={minute} 
-                onChange={e=> setMinute(e.target.value)}
-                >
-                  {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map(m=>(
-                    <option value={m} key={m}>
-                      {m}분
-                    </option>
-                  ))}
+                  <S.AlarmToggle>
+                    <input
+                      type="checkbox"
+                      checked={alarmEnabled}
+                      onChange={ (e)=>{
+                        const enabled = e.target.checked;
+                        setAlarmEnabled(enabled)
 
-                </S.StyledSelect>
-              </S.TimeSelectGroup>
+                        if(!enabled){
+                          setOpenSelectId(null);
+                        }
+                      }}
+                    />
+                  </S.AlarmToggle>
+               </S.TimeSelectGroup>
+             )}
             </S.TimeSelectorWrapper>
 
             <S.FormGroup>
@@ -362,20 +416,22 @@ export default function ScheduleModal({
                         {schedule.status}
                       </S.StatusBadge>
 
-                     <S.CreatedAt>
-                      <FaClock />
-                      {formatDisplayTime(schedule.time)}
-                    </S.CreatedAt>
+                     <S.AlarmTime $enabled={schedule.alarmEnabled}>
+                      <FaBell size={10}/>
+                      {schedule.alarmEnabled 
+                      ? formatDisplayTime(schedule.time)
+                      : "" }
+                    </S.AlarmTime>
 
-                      {/* <S.CreatedAt>
-                        <FaClock />
-                        {schedule.createdAt}
-                      </S.CreatedAt> */}
                     </S.CardHeader>
 
                     <S.ScheduleContent>{schedule.content}</S.ScheduleContent>
 
                     <S.CardFooter>
+                      <S.CreatedAt>
+                        {schedule.createdAt}
+                      </S.CreatedAt>
+
                       <S.CardAction
                         type="button"
                         onClick={() => handleEdit(schedule)}

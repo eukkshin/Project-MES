@@ -28,7 +28,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   const alarmIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const schedulesRef = useRef(schedules);
 
-  // 💡 마운트 직후(브라우저 환경)에만 localStorage에서 스케줄 로드
+  //마운트 직후(브라우저 환경)에만 localStorage에서 스케줄 로드
   useEffect(() => {
     setIsMounted(true);
     const saved = localStorage.getItem("erp_schedules");
@@ -97,6 +97,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
       schedulesRef.current.forEach((sch) => {
         if (
+          sch.alarmEnabled && 
           Number(sch.year) === currentY &&
           Number(sch.month) === currentM &&
           Number(sch.date) === currentD &&
@@ -106,7 +107,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
         ) {
           setCurrentToast({
             id: sch.id,
-            title: sch.title,
+            title: "일정 알림",
             content: sch.content || "예정된 시간이 되었습니다.",
           });
         }

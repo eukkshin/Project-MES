@@ -472,17 +472,32 @@ export const CardAction = styled.button<{
   }
 `;
 
+export const AlarmTime = styled.div<{$enabled:boolean}>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+
+  svg {
+    color: ${({ $enabled }) => $enabled ? "#4e73df" : "#9ca3af"};
+  }
+`;
 
 export const TimeSelectorWrapper = styled.div`
   display: flex;
   align-items: center;
-  justify-content: space-between; /* 양 끝으로 여유 있게 배치 */
+  justify-content: space-between; 
   background-color: rgba(245, 245, 247, 0.8);
-  padding: 12px 16px;
-  border-radius: 14px;
+
+  border-radius: 10px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   width: 100%;
   box-sizing: border-box;
+  height: 50px;
+  min-height: 50px;
+  flex-shrink: 0;
+  padding: 0 20px;
 `;
 
 export const TimeLabel = styled.div`
@@ -494,11 +509,10 @@ export const TimeLabel = styled.div`
   color: #1d1d1f;
   white-space: nowrap;
 
-  /* 💡 폰트어썸 느낌의 미니멀한 단색 시계 아이콘 (SVG) */
   svg {
-    width: 16px;
-    height: 16px;
-    fill: #515154; /* 단색 미니멀 톤 */
+    width: 14px;
+    height: 14px;
+    fill: #4e73df;
   }
 `;
 
@@ -506,6 +520,7 @@ export const TimeSelectGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 `;
 
 export const StyledSelect = styled.select`
@@ -533,3 +548,49 @@ export const TimeColon = styled.span`
   font-weight: 700;
   color: #86868b;
 `;
+
+export const AlarmToggle = styled.label`
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+
+  input {
+    appearance: none;
+    position: relative;
+    width: 36px;
+    height: 20px;
+    margin: 0;
+    border-radius: 20px;
+    background: #dbe2ea;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s ease;
+    }
+
+    &:checked {
+      background: #2563eb;
+    }
+
+    &:checked::before {
+      transform: translateX(16px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #93c5fd;
+      outline-offset: 3px;
+    }
+  }
+`;
+
+///
+

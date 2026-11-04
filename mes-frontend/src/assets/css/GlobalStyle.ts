@@ -82,4 +82,26 @@ export const GlobalStyle = createGlobalStyle`
   ol, ul, li {
     list-style: none;
   }
+
+  button, input, select, textarea{
+    font: inherit;
+  }
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    margin: 30px 0;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #bfdbfe;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+     background: #93c5fd;
+  }
 `;
