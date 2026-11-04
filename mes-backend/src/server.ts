@@ -13,7 +13,39 @@ const ComponentSCM = require("./model/ComponentSCM");
 const QualityInspection = require("./model/QualityInspection");
 const Equipment = require("./model/Equipment");
 const ProductionRecord = require("./model/ProductionRecord");
+const Employee = require('./model/Employee');
+const Schedule = require('./model/Schedule');
 
+//============================================
+// 👇 모델 관계 설정
+//============================================
+//User ↔ Employee
+User.belongsTo(Employee, {
+  foreignKey: "empId",
+  targetKey: "id",
+  as: "employee",
+});
+
+Employee.hasOne(User, {
+  foreignKey: "empId",
+  sourceKey: "id",
+  as: "user",
+});
+
+// Employee ↔ Schedule
+Schedule.belongsTo(Employee, {
+  foreignKey: "createdBy",
+  targetKey: "id",
+  as: "creator",
+});
+
+Employee.hasMany(Schedule, {
+  foreignKey: "createdBy",
+  sourceKey: "id",
+  as: "schedules",
+});
+
+//========================================
 const app = express();
 
 // 기본 미들웨어

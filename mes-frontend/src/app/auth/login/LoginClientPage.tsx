@@ -47,7 +47,7 @@ export default function LoginClientPage() {
       } else {
         localStorage.removeItem("savedEmail");
       }
-      
+
       login(token, data.user.name); //zustand로그인
       
       const redirectPath = sessionStorage.getItem("postLoginRedirect");
@@ -181,8 +181,10 @@ export default function LoginClientPage() {
               />
                 아이디 저장
             </S.RememberLabel>
-
-            <Link href="/forgot">비밀번호를 잊으셨나요?</Link>
+            
+            <S.ForgotPasswordLink
+              href="/forgot">비밀번호를 잊으셨나요?
+            </S.ForgotPasswordLink>
           </S.FormOptions>
 
           <S.SubmitButton type="submit" disabled={isLoading}>

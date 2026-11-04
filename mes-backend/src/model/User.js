@@ -53,6 +53,12 @@ const User = sequelize.define(
       type: DataTypes.STRING(20),
       field: "GENDER",
     },
+    // 직원 테이블과 연결할 사번
+    empId: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      field: "EMP_ID",
+    },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,

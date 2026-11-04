@@ -17,8 +17,9 @@ import * as S from "@/assets/css/components/modal/ScheduleModal.styles";
 import AlertModal from "@/components/modal/AlertModal";
 import { Temporal } from "@js-temporal/polyfill";
 
-import ModalLayout from "./ModalLayout";
+import ModalLayout from "../modal/ModalLayout";
 import { Select } from "@/ui/Select/Select";
+import { useAlertStore } from "@/store/useAlertStore";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -66,15 +67,17 @@ export default function ScheduleModal({
 }: ScheduleModalProps) {
   const [formContent, setFormContent] = useState("");
   const [formStatus, setFormStatus] = useState<ScheduleStatus>("대기");
-  // const [formTime, setFormTime] = useState("09:00");
+
   const [hour, setHour]= useState("09")
   const [minute, setMinute] = useState("00");
   const formattedTime = `${hour}:${minute}`;
+
   const [alarmEnabled, setAlarmEnabled] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const wheelCleanupRef = useRef<(() => void) | null>(null);
+
+  const { showAlert } =useAlertStore()
 
   //select용
   const [openSelectId, setOpenSelectId] = useState<string | null>(null);
@@ -87,7 +90,6 @@ export default function ScheduleModal({
       setHour("09");
       setMinute("00");
       setEditingId(null);
-      setDeleteTargetId(null);
     }
   }, [isOpen, selectedDate]);
 
@@ -197,6 +199,7 @@ export default function ScheduleModal({
           id: crypto.randomUUID(),
           year,
           month,
+          scheduleType,
           date: selectedDate,
           time: alarmEnabled ? formattedTime : null,
           alarmEnabled,
@@ -222,18 +225,15 @@ export default function ScheduleModal({
 
   };
 
-  const handleDelete = () => {
-    if (!deleteTargetId) return;
+  const handleDelete = (id:string) => {
 
     setSchedules((prev) =>
-      prev.filter((schedule) => schedule.id !== deleteTargetId),
+      prev.filter((schedule) => schedule.id !== id),
     );
 
-    if (editingId === deleteTargetId) {
+    if (editingId === id) {
       resetForm();
     }
-
-    setDeleteTargetId(null);
   };
 
   return (
@@ -443,7 +443,13 @@ export default function ScheduleModal({
                       <S.CardAction
                         type="button"
                         $danger
-                        onClick={() => setDeleteTargetId(schedule.id)}
+                        onClick={() => {
+                          showAlert(
+                            "선택한 일정을 삭제하시겠습니까?", "info", "일정 삭제",
+                             () => handleDelete(schedule.id),
+                            // handleDelete
+                          )
+                        }}
                       >
                         <FaTrash />
                         삭제
@@ -456,15 +462,7 @@ export default function ScheduleModal({
           </S.ListSection>
         </S.Container>
       </ModalLayout>
-
-      <AlertModal
-        isOpen={deleteTargetId !== null}
-        title="일정 삭제"
-        message="선택한 일정을 삭제하시겠습니까?"
-        type="info"
-        onClose={() => setDeleteTargetId(null)}
-        onConfirm={handleDelete}
-      />
+     
     </>
   );
 }

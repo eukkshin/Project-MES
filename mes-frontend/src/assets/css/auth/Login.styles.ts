@@ -1,5 +1,4 @@
-"use client";
-
+import Link from "next/link";
 import styled from "styled-components";
 
 import {
@@ -245,13 +244,29 @@ export const RememberLabel = styled.label`
     cursor: pointer;
   }
 `;
-export const TextLink = styled.a`
+export const TextLink = styled(Link)`
   color: #2563eb;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   &:hover {
     text-decoration: underline;
+  }
+`;
+
+export const ForgotPasswordLink = styled(Link)`
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  list-style: none;
+
+
+  &:hover {
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 `;
 export const SubmitButton = styled.button`

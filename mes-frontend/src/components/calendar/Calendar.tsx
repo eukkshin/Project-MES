@@ -14,7 +14,7 @@ import type { Schedule } from "@/types/schedule";
 import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 
-import ScheduleModal from "@/components/modal/ScheduleModal";
+import ScheduleModal from "@/components/calendar/ScheduleModal";
 import { useSchedule } from "@/context/ScheduleContext";
 
 
