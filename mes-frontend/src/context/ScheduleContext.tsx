@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Temporal } from "@js-temporal/polyfill";
-import { Schedule } from "@/components/modal/ScheduleModal";
+import type { Schedule } from "@/types/schedule";
 
 interface ToastInfo {
   id: string;
@@ -20,7 +20,7 @@ interface ScheduleContextType {
 const ScheduleContext = createContext<ScheduleContextType | undefined>(undefined);
 
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
-  // 💡 서버와 클라이언트의 첫 렌더링 불일치(Hydration Mismatch)를 막기 위해 초기값은 빈 배열로 시작
+
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -116,8 +116,15 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [currentToast]);
 
+  const ctxValue={ 
+    schedules, 
+    setSchedules, 
+    currentToast, 
+    setCurrentToast 
+  }
+
   return (
-    <ScheduleContext.Provider value={{ schedules, setSchedules, currentToast, setCurrentToast }}>
+    <ScheduleContext.Provider value={ctxValue}>
       {children}
     </ScheduleContext.Provider>
   );

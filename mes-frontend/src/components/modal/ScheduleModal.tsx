@@ -11,23 +11,17 @@ import {
   FaXmark,
 } from "react-icons/fa6";
 
+import type { Schedule } from "@/types/schedule";
 import * as S from "@/assets/css/components/modal/ScheduleModal.styles";
 import AlertModal from "@/components/modal/AlertModal";
 import { Temporal } from "@js-temporal/polyfill";
 
 import ModalLayout from "./ModalLayout";
 
-export interface Schedule {
-  id: string;
-  date: number;
-  content: string;
-  status: "대기" | "진행" | "완료";
-  createdAt: string;
-}
-
 interface ScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
+  year: number;
   month: number;
   selectedDate: number | null;
   schedules: Schedule[];
@@ -41,6 +35,7 @@ const STATUS_OPTIONS: ScheduleStatus[] = ["대기", "진행", "완료"];
 export default function ScheduleModal({
   isOpen,
   onClose,
+  year,
   month,
   selectedDate,
   schedules,
@@ -48,6 +43,10 @@ export default function ScheduleModal({
 }: ScheduleModalProps) {
   const [formContent, setFormContent] = useState("");
   const [formStatus, setFormStatus] = useState<ScheduleStatus>("대기");
+  // const [formTime, setFormTime] = useState("09:00");
+  const [hour, setHour]= useState("09")
+  const [minute, setMinute] = useState("00");
+  const formattedTime = `${hour}:${minute}`;
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -57,10 +56,24 @@ export default function ScheduleModal({
     if (isOpen) {
       setFormContent("");
       setFormStatus("대기");
+      setHour("09");
+      setMinute("00");
       setEditingId(null);
       setDeleteTargetId(null);
     }
   }, [isOpen, selectedDate]);
+
+  const formatDisplayTime = (time?: string)=>{
+    if(!time) return "시간 미설정"
+
+    const [savedHour, savedMinute] = time.split(":");
+    
+    const h = Number(savedHour);
+    const ampm = h < 12 ? "AM" : "PM";
+    const displayHour = h % 12 || 12;
+
+    return `${ampm} ${displayHour} : ${savedMinute}`;
+  }
 
   const setScheduleListRef = useCallback((element: HTMLDivElement | null) => {
     // 이전 이벤트 제거
@@ -113,12 +126,17 @@ export default function ScheduleModal({
   if (selectedDate === null) return null;
 
   const filteredSchedules = schedules.filter(
-    (schedule) => schedule.date === selectedDate,
+    (schedule) => 
+      schedule.year === year &&
+      schedule.month === month &&
+      schedule.date === selectedDate,
   );
 
   const resetForm = () => {
     setFormContent("");
     setFormStatus("대기");
+    setHour("09");
+    setMinute("00");
     setEditingId(null);
   };
 
@@ -135,6 +153,7 @@ export default function ScheduleModal({
           schedule.id === editingId
             ? {
                 ...schedule,
+                time: formattedTime,
                 content,
                 status: formStatus,
               }
@@ -146,7 +165,10 @@ export default function ScheduleModal({
         ...prev,
         {
           id: crypto.randomUUID(),
+          year,
+          month,
           date: selectedDate,
+          time: formattedTime,
           content,
           status: formStatus,
           createdAt: currentTime,
@@ -161,6 +183,11 @@ export default function ScheduleModal({
     setFormContent(schedule.content);
     setFormStatus(schedule.status);
     setEditingId(schedule.id);
+
+    const [savedHour, savedMinute] = (schedule.time || "09:00").split(":");
+    setHour(savedHour);
+    setMinute(savedMinute);
+
   };
 
   const handleDelete = () => {
@@ -222,6 +249,42 @@ export default function ScheduleModal({
                 </S.CancelEditButton>
               )}
             </S.SectionHeader>
+            
+            <S.TimeSelectorWrapper>
+              <S.TimeLabel>
+                <FaClock/>
+                알람 시간 
+              </S.TimeLabel>
+
+              <S.TimeSelectGroup>
+                <S.StyledSelect 
+                value={hour}
+                onChange={(e)=> setHour(e.target.value)}
+                >
+                  {Array.from({length:24}, (_,i)=>{
+                    const h = String(i).padStart(2,"0");
+
+                    return(
+                      <option key={h} value={h}>
+                        {h}시
+                      </option>
+                    )
+                  })}
+                </S.StyledSelect>
+                <S.TimeColon>:</S.TimeColon>
+
+                <S.StyledSelect value={minute} 
+                onChange={e=> setMinute(e.target.value)}
+                >
+                  {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map(m=>(
+                    <option value={m} key={m}>
+                      {m}분
+                    </option>
+                  ))}
+
+                </S.StyledSelect>
+              </S.TimeSelectGroup>
+            </S.TimeSelectorWrapper>
 
             <S.FormGroup>
               <S.Label>진행 상태</S.Label>
@@ -299,10 +362,15 @@ export default function ScheduleModal({
                         {schedule.status}
                       </S.StatusBadge>
 
-                      <S.CreatedAt>
+                     <S.CreatedAt>
+                      <FaClock />
+                      {formatDisplayTime(schedule.time)}
+                    </S.CreatedAt>
+
+                      {/* <S.CreatedAt>
                         <FaClock />
                         {schedule.createdAt}
-                      </S.CreatedAt>
+                      </S.CreatedAt> */}
                     </S.CardHeader>
 
                     <S.ScheduleContent>{schedule.content}</S.ScheduleContent>

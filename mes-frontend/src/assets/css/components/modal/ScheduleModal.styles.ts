@@ -471,3 +471,65 @@ export const CardAction = styled.button<{
     background: ${({ $danger }) => ($danger ? "#fee2e2" : "#f1f5f9")};
   }
 `;
+
+
+export const TimeSelectorWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 양 끝으로 여유 있게 배치 */
+  background-color: rgba(245, 245, 247, 0.8);
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  width: 100%;
+  box-sizing: border-box;
+`;
+
+export const TimeLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  white-space: nowrap;
+
+  /* 💡 폰트어썸 느낌의 미니멀한 단색 시계 아이콘 (SVG) */
+  svg {
+    width: 16px;
+    height: 16px;
+    fill: #515154; /* 단색 미니멀 톤 */
+  }
+`;
+
+export const TimeSelectGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const StyledSelect = styled.select`
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  color: #1d1d1f;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 76px; 
+  text-align: center;
+
+  &:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.12);
+  }
+`;
+
+export const TimeColon = styled.span`
+  font-size: 14px;
+  font-weight: 700;
+  color: #86868b;
+`;
