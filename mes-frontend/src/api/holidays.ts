@@ -1,18 +1,19 @@
 import { Holiday } from "../types/holiday";
+import { api } from "@/lib/axios";
+
 
 export const fetchHolidays = async (
   year: number,
   month: number,
 ): Promise<Holiday[]> => {
-  if (month === 9) {
-    return [
-      { date: 24, name: "추석 연휴" },
-      { date: 25, name: "추석" },
-      { date: 26, name: "추석 연휴" },
-    ];
-  }
-  if (month === 12) {
-    return [{ date: 25, name: "성탄절" }];
-  }
-  return [];
+  const response = await api.get('/api/holidays',{
+    params:{
+      year,month
+    }
+  });
+
+  return response.data.holidays.map((item:any)=>({
+    date: Number(String(item.locdate).slice(-2)),
+    name: item.dateName,
+  }))
 };

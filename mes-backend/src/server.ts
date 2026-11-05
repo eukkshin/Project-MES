@@ -57,6 +57,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use("/api/holidays", require("./routes/holiday"));
 
 // JWT 비밀키
 const JWT_SECRET = process.env.JWT_SECRET;
