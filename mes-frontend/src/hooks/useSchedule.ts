@@ -8,10 +8,11 @@ export const scheduleKeys = {
 }
 
 // 일정 목록 조회
-export const useGetSchedules = ()=>{
+export const useGetSchedules = (enabled=true)=>{
   return useQuery<ApiSchedule[]>({
     queryKey: scheduleKeys.all,
     queryFn: getSchedules,
+    enabled,
   })
 }
 

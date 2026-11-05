@@ -7,7 +7,7 @@ import { loginMember } from "@/api/auth.http";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useAlertStore } from "@/store/useAlertStore";
 
-export const useAuthLogin = () => {
+export const useLoginMember = () => {
     
   const login = useAuthStore((state) => state.login);
   const { showAlert } = useAlertStore();

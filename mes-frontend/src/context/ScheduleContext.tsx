@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import { Temporal } from "@js-temporal/polyfill";
 import type { ApiSchedule } from "@/types/schedule";
 import { useGetSchedules } from "@/hooks/useSchedule";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ToastInfo {
   id: string;
@@ -28,12 +29,17 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
   const currentToastRef = useRef<ToastInfo|null>(null);
   const [currentToast, setCurrentToast] = useState<ToastInfo | null>(null);
 
+  const isAuth = useAuthStore(state=>state.isAuth);
+  const isInitialized = useAuthStore(state=> state.isInitialized);
+
   const updateCurrentToast = (toast: ToastInfo | null) => {
     currentToastRef.current = toast;
     setCurrentToast(toast);
   };
   
-  const { data: schedules=[] } = useGetSchedules();
+  const { data: schedules=[] } = useGetSchedules(
+    isAuth && isInitialized
+  );
 
   // 알람이 이미 울린 일정을 중복해서 울리지 않도록 기록
   const triggeredAlarmsRef = useRef<Set<string>>(new Set());

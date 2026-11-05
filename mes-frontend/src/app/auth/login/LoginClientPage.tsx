@@ -9,7 +9,7 @@ import AuthLayout from "@/components/auth/AuthLayout";
 
 import type { ChangeEvent, FormEvent } from "react";
 import { useAlertStore } from "@/store/useAlertStore";
-import { useAuthLogin } from "@/hooks/useAuthLogin";
+import { useLoginMember } from "@/hooks/useLoginMember";
 
 export default function LoginClientPage() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function LoginClientPage() {
   const [rememberEmail, setRememberEmail] = useState(false);
 
  
-  const { mutate, isPending: isLoading } = useAuthLogin();
+  const { mutate, isPending: isLoading } = useLoginMember();
 
   useEffect(()=>{
     const savedEmail = localStorage.getItem('savedEmail');
@@ -185,7 +185,7 @@ export default function LoginClientPage() {
 
         <S.BottomText>
           아직 계정이 없으신가요?
-          <Link href="/member">회원가입</Link>
+          <Link href="/auth/member">회원가입</Link>
         </S.BottomText>
 
         <S.BottomFooter>© SMART MES · Secure Enterprise Access</S.BottomFooter>

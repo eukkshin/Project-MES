@@ -1,4 +1,4 @@
-"use client";
+import { motion } from 'motion/react';
 
 import styled from "styled-components";
 
@@ -155,6 +155,19 @@ export const Stepper = styled.div`
 
   margin-bottom: 24px;
 `;
+export const StepBar = styled(motion.div)`
+  width: 100%;
+  height: 4px;
+  border-radius: 100px;
+  background: #e2e8f0;
+  overflow: hidden;
+`;
+
+export const StepBarFill = styled(motion.div)<{$color:string}>`
+  height: 100%;
+  border-radius: 100px;
+  background: ${({ $color }) => $color};
+`;
 
 export const StepItem = styled.div<{
   $active: boolean;
@@ -169,7 +182,7 @@ export const StepItem = styled.div<{
 
   min-width: 0;
 
-  &::before {
+  /* &::before {
     content: "";
 
     display: block;
@@ -184,10 +197,10 @@ export const StepItem = styled.div<{
       $active || $completed ? "#2563eb" : "#e2e8f0"};
 
     transition: background 0.2s ease;
-  }
+  } */
 `;
 
-export const StepLabel = styled.div<{ $active: boolean }>`
+export const StepLabel = styled(motion.div)<{ $active: boolean }>`
   display: flex;
 
   align-items: center;
@@ -207,10 +220,11 @@ export const StepLabel = styled.div<{ $active: boolean }>`
   }
 `;
 
-export const StepNumber = styled.span<{ $active: boolean }>`
+export const StepNumber = styled(motion.span)<{ $active: boolean }>`
   color: ${({ $active }) => ($active ? "#2563eb" : "#94a3b8")};
-
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
 `;
 
 export const Card = styled.section`

@@ -1,10 +1,10 @@
 "use client";
-//TODO: TanStack Query 적용 누락 나중에 리팩토링하기
 import axios from "axios";
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
-import { ChangeEvent, FormEvent, MouseEvent, useState } from "react";
+import type { ChangeEvent, FormEvent, MouseEvent } from "react";
 import {
   FaArrowLeft,
   FaArrowRight,
@@ -22,21 +22,10 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/auth/Register.styles";
-import AlertModal from "@/components/modal/AlertModal";
-
-interface FormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  repeatPassword: string;
-  companyName: string;
-  position: string;
-  tel: string;
-  address: string;
-  detailAddress: string;
-  gender: string;
-}
+import { useAlertStore } from "@/store/useAlertStore";
+import { useRegisterMember } from "@/hooks/useRegister";
+import { AnimatePresence,motion} from "motion/react";
+import type { RegisterFormData } from "@/api/auth.http";
 
 interface DaumAddressData {
   roadAddress: string;
@@ -55,16 +44,7 @@ interface DaumWindow {
   };
 }
 
-type AlertType = "success" | "error" | "info";
-
-interface AlertState {
-  isOpen: boolean;
-  message: string;
-  type: AlertType;
-  redirectOnClose: boolean;
-}
-
-const initialForm: FormData = {
+const initialForm: RegisterFormData = {
   firstName: "",
   lastName: "",
   email: "",
@@ -83,50 +63,20 @@ const steps = [
   { number: 2, label: "계정 보안" },
   { number: 3, label: "회사 정보" },
 ];
+const stepColors = ["#93C5FD", "#60A5FA", "#2563EB"];
 
 export default function MemberClientPage() {
   const router = useRouter();
 
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>(initialForm);
+  const { showAlert, isOpen } = useAlertStore();
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { mutate, isPending:isSubmitting } = useRegisterMember();
+  
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState<RegisterFormData>(initialForm);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showRepeatPassword, setShowRepeatPassword] = useState(false);
-
-  const [alertState, setAlertState] = useState<AlertState>({
-    isOpen: false,
-    message: "",
-    type: "info",
-    redirectOnClose: false,
-  });
-
-  const showAlert = (
-    message: string,
-    type: AlertType = "info",
-    redirectOnClose = false,
-  ) => {
-    setAlertState({
-      isOpen: true,
-      message,
-      type,
-      redirectOnClose,
-    });
-  };
-
-  const handleAlertClose = () => {
-    const shouldRedirect = alertState.redirectOnClose;
-
-    setAlertState((prev) => ({
-      ...prev,
-      isOpen: false,
-      redirectOnClose: false,
-    }));
-
-    if (shouldRedirect) {
-      router.push("/");
-    }
-  };
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -190,7 +140,7 @@ export default function MemberClientPage() {
   };
 
   const handleNext = () => {
-    if (alertState.isOpen || isSubmitting) return;
+    if ( isOpen || isSubmitting) return;
 
     if (!validateStep(step)) return;
 
@@ -200,7 +150,7 @@ export default function MemberClientPage() {
   };
 
   const handleBack = () => {
-    if (alertState.isOpen || isSubmitting) return;
+    if ( isOpen || isSubmitting ) return;
 
     if (step > 1) {
       setStep((prev) => prev - 1);
@@ -209,6 +159,8 @@ export default function MemberClientPage() {
 
   const handleAddressSearch = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
+
+    if (isOpen || isSubmitting) return;
 
     const daum = (window as Window & DaumWindow).daum;
 
@@ -232,10 +184,10 @@ export default function MemberClientPage() {
     }).open();
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (isSubmitting || alertState.isOpen) return;
+    if (isOpen || isSubmitting) return;
 
     if (step < 3) {
       handleNext();
@@ -255,35 +207,30 @@ export default function MemberClientPage() {
     if (!validateStep(3)) {
       return;
     }
+    const { repeatPassword, ...registerData }=formData;
 
-    try {
-      setIsSubmitting(true);
-
-      const response = await axios.post(
-        "http://localhost:4000/api/auth/register",
-        formData,
-      );
-
-      if (response.data.success) {
-        showAlert(
-          "회원가입이 완료되었습니다. 로그인 화면으로 이동합니다.",
-          "success",
-          true,
-        );
-      } else {
-        showAlert(response.data.message || "회원가입에 실패했습니다.", "error");
+    mutate(registerData, {
+      onSuccess: (data)=>{
+        if(data.success){
+          showAlert(
+            "회원가입이 완료되었습니다. 로그인 화면으로 이동합니다.",
+            "success",
+            "회원가입 완료",
+            ()=>router.push('/')
+          );
+          return;
+        }
+        showAlert(data.message || "회원가입에 실패했습니다.", 'error')
+      },
+      onError: (error)=>{
+        console.error("회원가입 오류:", error);
+        let errorMessage = "회원가입 중 오류가 발생했습니다.";
+        if (axios.isAxiosError(error)) {
+          errorMessage = error.response?.data?.message || errorMessage;
+        }
+        showAlert(errorMessage, "error");
       }
-    } catch (error: unknown) {
-      let errorMessage = "회원가입 중 오류가 발생했습니다.";
-
-      if (axios.isAxiosError(error)) {
-        errorMessage = error.response?.data?.message || errorMessage;
-      }
-
-      showAlert(errorMessage, "error");
-    } finally {
-      setIsSubmitting(false);
-    }
+    })
   };
 
   return (
@@ -319,24 +266,65 @@ export default function MemberClientPage() {
         </S.Intro>
 
         <S.Stepper>
-          {steps.map((item) => (
+        {steps.map((item) => {
+          const active = step === item.number;
+          const completed = step > item.number;
+          return (
             <S.StepItem
               key={item.number}
-              $active={step === item.number}
-              $completed={step > item.number}
+              $active={active}
+              $completed={completed}
             >
-              <S.StepLabel $active={step === item.number}>
-                {step > item.number ? (
-                  <FaCheck />
-                ) : (
-                  <S.StepNumber $active={step === item.number}>
-                    {String(item.number).padStart(2, "0")}
-                  </S.StepNumber>
-                )}
+              {/* 막대기 */}
+              <S.StepBar>
+                <S.StepBarFill
+                  $color={stepColors[item.number-1]}
+                  initial={false}
+                  animate={{
+                    width: active || completed ? "100%" : "0%",
+                  }}
+                  transition={{
+                    duration: 0.6,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                />
+              </S.StepBar>
+
+              <S.StepLabel
+                $active={active}
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {completed ? (
+                    <motion.span
+                      key="check"
+                      initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      <FaCheck />
+                    </motion.span>
+                  ) : (
+                    <S.StepNumber 
+                      key="number"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{
+                        opacity: 1,
+                        scale: active ? 1.15 : 1,
+                      }}
+                      exit={{ opacity: 0, scale: 0.7 }}
+                      transition={{ duration: 0.25 }}
+                      $active={active}
+                      >
+                        {String(item.number).padStart(2, "0")}
+                    </S.StepNumber>
+                  )}
+                </AnimatePresence>
                 {item.label}
               </S.StepLabel>
             </S.StepItem>
-          ))}
+          );
+        })}
         </S.Stepper>
 
         <S.Card>
@@ -570,6 +558,7 @@ export default function MemberClientPage() {
                     <S.AddressButton
                       type="button"
                       onClick={handleAddressSearch}
+                      disabled={isOpen || isSubmitting}
                     >
                       주소 검색
                     </S.AddressButton>
@@ -601,7 +590,7 @@ export default function MemberClientPage() {
                 <S.BackButton
                   type="button"
                   onClick={handleBack}
-                  disabled={isSubmitting}
+                  disabled={isOpen || isSubmitting}
                 >
                   <FaArrowLeft />
                   이전
@@ -612,7 +601,7 @@ export default function MemberClientPage() {
 
               <S.SubmitButton
                 type="submit"
-                disabled={isSubmitting || alertState.isOpen}
+                disabled={isOpen || isSubmitting}
               >
                 {isSubmitting
                   ? "처리 중..."
@@ -633,13 +622,6 @@ export default function MemberClientPage() {
 
         <S.Footer>© 2026 Smart MES. All rights reserved.</S.Footer>
       </S.Content>
-
-      <AlertModal
-        isOpen={alertState.isOpen}
-        message={alertState.message}
-        type={alertState.type}
-        onClose={handleAlertClose}
-      />
     </S.Container>
   );
 }

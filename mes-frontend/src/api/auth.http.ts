@@ -1,7 +1,23 @@
 import { api } from "@/lib/axios";
 
+export interface RegisterFormData  {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    repeatPassword: string;
+    companyName: string;
+    position: string;
+    tel: string;
+    address: string;
+    detailAddress: string;
+    gender: string;
+}
+
+export type RegisterRequest = Omit<RegisterFormData, "repeatPassword">
+
 //회원가입
-export const createMember = async(formData:any)=>{
+export const registerMember = async(formData: RegisterRequest)=>{
     const response = await api.post('/api/auth/register', formData)
     return response.data;
 }
