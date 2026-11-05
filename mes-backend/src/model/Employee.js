@@ -23,7 +23,12 @@ const Employee = sequelize.define(
     role: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      field: "ROLE",
+      field: "ROLE",  //ADMIN, EMPLOYEE
+    },
+    position: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+      field: "POSITION",  //직책
     },
     status: {
       type: DataTypes.STRING(20),
@@ -37,7 +42,7 @@ const Employee = sequelize.define(
     },
   },
   {
-    tableName: "EMPLOYEES", // 실제 DB 테이블명 확인 필요
+    tableName: "EMPLOYEES", 
     timestamps: false,
   }
 );

@@ -92,16 +92,18 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   &::-webkit-scrollbar-track {
-    margin: 30px 0;
-    background: transparent;
+    background: #f1f5f9;
+    border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #bfdbfe;
+    background: #cbd5e1;
+    border: 2px solid #f1f5f9;
     border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-     background: #93c5fd;
+    background: #94a3b8;
   }
+  
 `;

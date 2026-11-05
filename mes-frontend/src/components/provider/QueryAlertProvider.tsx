@@ -11,9 +11,7 @@ export default function QueryAlertProvider ({children}:{children: React.ReactNod
     
     const [queryClient] = useState(() => new QueryClient());
 
-    const initializeAuth = useAuthStore(
-        (state)=> state.initializeAuth
-    )
+    const initializeAuth = useAuthStore((state)=> state.initializeAuth)
     
     //앱시작할때 로그인 상태 복구
     useEffect(()=>{

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Temporal } from "@js-temporal/polyfill";
 import type { ApiSchedule } from "@/types/schedule";
-import { useGetSchedules } from "@/hooks/queries/useSchedule";
+import { useGetSchedules } from "@/hooks/useSchedule";
 
 interface ToastInfo {
   id: string;

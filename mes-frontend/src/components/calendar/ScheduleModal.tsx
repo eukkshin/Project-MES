@@ -20,7 +20,7 @@ import * as S from "@/assets/css/components/modal/ScheduleModal.styles";
 import ModalLayout from "../modal/ModalLayout";
 import { Select } from "@/ui/Select/Select";
 import { useAlertStore } from "@/store/useAlertStore";
-import { useCreateSchedule, useDeleteSchedule, useGetSchedules, useUpdateSchedule } from "@/hooks/queries/useSchedule";
+import { useCreateSchedule, useDeleteSchedule, useGetSchedules, useUpdateSchedule } from "@/hooks/useSchedule";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 
 interface ScheduleModalProps {

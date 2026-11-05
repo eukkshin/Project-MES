@@ -175,6 +175,10 @@ api.interceptors.response.use(
     const responseBody = error.response?.data ?? null;
 
     // 로그인 요청인지 확인
+    const isLoginPage =
+      typeof window !== "undefined" &&
+      window.location.pathname === "/";
+
     const isLoginRequest = /\/login(?:\/|$|\?)/i.test(
       error.config?.url ?? ""
     );
@@ -193,9 +197,21 @@ api.interceptors.response.use(
         console.groupEnd();
       }
     }
-
+    // 토큰 만료 또는 유효하지 않은 토큰인지 확인
+    const responseMessage = pickDisplayMessage(error.response?.data, status)
+    const isInvalidToken = status === 403 &&
+      responseMessage === "유효하지 않거나 만료된 토큰입니다.";
+    
+    // 401 또는 토큰이 유효하지 않은 403
+    const isAuthExpired = status === 401 || isInvalidToken;
+    
     // 401: 인증 만료
-    if (status === 401 && typeof window !== "undefined" && !isLoginRequest) {
+    if (
+      isAuthExpired && 
+      typeof window !== "undefined" && 
+      !isLoginRequest &&  
+      !isLoginPage
+    ) {
       try {
         // 로그인 후 원래 접근하려던 페이지로 돌아가기
         const currentPath =
@@ -218,8 +234,12 @@ api.interceptors.response.use(
       }
     }
 
-    // 403: 권한 부족
-    if (status === 403 && typeof window !== "undefined") {
+    // 403:인증 만료가 아닌 실제 권한 부족
+    if (
+      status === 403 && 
+      typeof window !== "undefined" &&
+      !isInvalidToken
+    ) {
       const message = "접근 권한이 없습니다.";
 
       useAlertStore.getState().showAlert(message, "error");

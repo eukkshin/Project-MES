@@ -6,6 +6,13 @@ import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
+export interface AuthPayload {
+  id: number;
+  email: string;
+  empId: string;
+  role: "ADMIN" | "EMPLOYEE";
+}
+
 const sequelize = require("./db");
 const User = require("./model/User");
 const ProcessLine = require("./model/ProcessLine");
@@ -89,12 +96,14 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
 
     if (
       typeof decoded === "string" ||
       typeof decoded.id !== "number" ||
-      typeof decoded.email !== "string"
+      typeof decoded.email !== "string"||
+      typeof decoded.empId !== 'string' ||
+      !["ADMIN", "EMPLOYEE"].includes(decoded.role as string)
     ) {
       res.status(403).json({
         success: false,
@@ -105,6 +114,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
 
     req.user = decoded;
     next();
+    
   } catch (error) {
     res.status(403).json({
       success: false,
@@ -112,6 +122,17 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
     });
   }
 };
+
+const verifyAdmin = (req: Request, res: Response, next:NextFunction,): void => {
+  if( req.user?.role !== 'ADMIN'){
+      res.status(403).json({
+      success: false,
+      message: "관리자 권한이 필요합니다.",
+    });
+    return;
+  }
+  next();
+}
 
 // 회원가입 API
 app.post(
@@ -202,6 +223,13 @@ app.post(
       // 사용자 조회
       const user = await User.findOne({
         where: { email },
+        include: [
+            {
+              model: Employee,
+              as: "employee",
+              attributes: ["id", "role"],
+            },
+          ],
       });
 
       if (!user) {
@@ -222,6 +250,15 @@ app.post(
         });
         return;
       }
+      const role = user.employee?.role;
+
+      if (!role) {
+        res.status(403).json({
+          success: false,
+          message: "직원 권한 정보를 찾을 수 없습니다.",
+        });
+        return;
+      }
 
       // JWT 생성
       const token = jwt.sign(
@@ -229,6 +266,7 @@ app.post(
           id: user.id,
           email: user.email,
           empId: user.empId,
+          role,
         },
         JWT_SECRET,
         {
@@ -835,6 +873,62 @@ app.delete(
       res.status(500).json({
         success: false,
         message: "일정을 삭제하지 못했습니다.",
+      });
+    }
+  },
+);
+
+//===============================
+// 관리자 전용 public 일정
+//===============================
+app.post("/api/schedules/public",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const {
+        title,
+        content,
+        scheduleDate,
+        time,
+        alarmEnabled,
+        status,
+      } = req.body;
+
+      // 필수값 확인
+      if (!title || !scheduleDate || !content) {
+        res.status(400).json({
+          success: false,
+          message: "일정 제목, 날짜, 내용은 필수입니다.",
+        });
+        return;
+      }
+
+      // 로그인한 관리자 정보
+      const admin = req.user!;
+
+      const schedule = await Schedule.create({
+        scheduleType: "PUBLIC",
+        title,
+        content,
+        scheduleDate,
+        time,
+        alarmEnabled: alarmEnabled ? 1 : 0,
+        status: status ?? "PENDING",
+        createdBy: admin.empId,
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "공용 일정이 등록되었습니다.",
+        schedule,
+      });
+    } catch (error) {
+      console.error("공용 일정 등록 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "공용 일정을 등록하지 못했습니다.",
       });
     }
   },

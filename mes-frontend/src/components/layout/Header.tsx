@@ -1,9 +1,8 @@
 "use client";
 
-import axios from "axios";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaBars,
   FaChevronRight,
@@ -16,6 +15,8 @@ import {
 import MyPage from "@/app/admin/mypage/Mypage";
 import * as S from "@/assets/css/components/HeaderFooter.style";
 import { useAlertStore } from "@/store/useAlertStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { AnimatePresence } from "motion/react";
 
 const menuGroups = [
   {
@@ -57,14 +58,16 @@ const pageTitles: Record<string, string> = {
 export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { showAlert } = useAlertStore()
 
+  const showAlert = useAlertStore(state=>state.showAlert);
+
+  const username = useAuthStore(state=> state.username);
+  const logout = useAuthStore(state=>state.logout);
+  const isInitialized = useAuthStore(state=>state.isInitialized);
+  const isAuth = useAuthStore(state=> state.isAuth);
+  
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
-  // const [logoutModalOpen, setLogoutModalOpen] = useState(false);
-
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(true);
 
   const currentPage =
     pageTitles[pathname] ||
@@ -72,59 +75,6 @@ export const Header = () => {
       .filter(([path]) => path !== "/admin")
       .find(([path]) => pathname.startsWith(`${path}/`))?.[1] ||
     "관리자";
-
-  const fetchUserInfo = useCallback(async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setName("");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await axios.get(
-        "http://localhost:4000/api/user/profile",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      if (response.data.success && response.data.user) {
-        const user = response.data.user;
-
-        const fullName = `${user.lastName ?? ""}${user.firstName ?? ""}`.trim();
-
-        setName(fullName || "사용자");
-      } else {
-        setName("사용자");
-      }
-    } catch (error) {
-      console.error("유저 정보 에러:", error);
-      setName("");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUserInfo();
-
-    window.addEventListener("login-success", fetchUserInfo);
-
-    const handleLogoutSuccess = () => setName("");
-
-    window.addEventListener("logout-success", handleLogoutSuccess);
-
-    return () => {
-      window.removeEventListener("login-success", fetchUserInfo);
-      window.removeEventListener("logout-success", handleLogoutSuccess);
-    };
-  }, [fetchUserInfo]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -142,16 +92,9 @@ export const Header = () => {
   }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-
-    delete axios.defaults.headers.common["Authorization"];
-
-    window.dispatchEvent(new Event("logout-success"));
-
-    // setLogoutModalOpen(false);
-    setIsMobileMenuOpen(false);
-
-    router.replace("/");
+      logout();
+      setIsMobileMenuOpen(false);
+      router.replace("/");
   };
 
   const openLogoutConfirm = ()=>{
@@ -188,7 +131,7 @@ export const Header = () => {
           </S.UserAvatar>
 
           <S.UserInfoButton type="button" onClick={() => setIsMyPageOpen(true)}>
-            <strong>{loading ? "불러오는 중..." : name || "사용자"}</strong>
+            <strong>{ !isInitialized ? "불러오는중..." : username || "사용자"}</strong>
             <span>내 정보 관리</span>
           </S.UserInfoButton>
 
@@ -270,7 +213,10 @@ export const Header = () => {
         </S.MobileOverlay>
       )}
 
-      <MyPage isOpen={isMyPageOpen} onClose={() => setIsMyPageOpen(false)} />
+      <AnimatePresence>
+        {isMyPageOpen && isAuth && isInitialized &&
+          <MyPage onClose={() => setIsMyPageOpen(false)} />}
+      </AnimatePresence>
     </>
   );
 };

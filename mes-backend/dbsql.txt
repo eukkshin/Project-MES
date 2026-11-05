@@ -9,6 +9,8 @@ ADD CONSTRAINT FK_USERS_EMPLOYEE
 FOREIGN KEY (EMP_ID)
 REFERENCES EMPLOYEE (EMP_ID);
 
+ALTER TABLE EMPLOYEES
+ADD POSITION VARCHAR2(30);
 //==================================
 // Dummy Data 
 //=================================
@@ -23,7 +25,7 @@ INSERT INTO EMPLOYEES (
     'EMP001',
     '한화',
     '생산관리팀',
-    '관리자',
+    'ADMIN',
     'active',
     '2026-11-05'
 );
@@ -43,7 +45,7 @@ INSERT INTO EMPLOYEES (
     'EMP002',
     '스키즈',
     '생산관리팀',
-    '사원',
+    'EMPLOYEE',
     'active',
     '2026-11-05'
 );

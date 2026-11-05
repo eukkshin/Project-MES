@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,15 +8,12 @@ import * as S from "@/assets/css/auth/Login.styles";
 import AuthLayout from "@/components/auth/AuthLayout";
 
 import type { ChangeEvent, FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { loginMember } from "@/api/auth.http";
 import { useAlertStore } from "@/store/useAlertStore";
-import { useAuthStore } from "@/store/useAuthStore";
+import { useAuthLogin } from "@/hooks/useAuthLogin";
 
 export default function LoginClientPage() {
   const router = useRouter();
-  const { showAlert }=useAlertStore();
-  const { login } =useAuthStore();
+  const showAlert = useAlertStore((state)=>state.showAlert);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -28,49 +24,7 @@ export default function LoginClientPage() {
   const [rememberEmail, setRememberEmail] = useState(false);
 
  
-
-  const { mutate, isPending:isLoading }=useMutation({
-    mutationFn: loginMember,
-    onSuccess:(data)=>{
-      if(!data.success){
-        showAlert(data.message || "로그인에 실패했습니다.", "error");
-        return;
-      }
-      const token = data.token;
-      if (!token) {
-        showAlert("인증 토큰을 받지 못했습니다.", "error");
-        return;
-      } 
-
-      if (rememberEmail) {
-        localStorage.setItem("savedEmail", formData.email.trim());
-      } else {
-        localStorage.removeItem("savedEmail");
-      }
-
-      login(token, data.user.name); //zustand로그인
-      
-      const redirectPath = sessionStorage.getItem("postLoginRedirect");
-      sessionStorage.removeItem('postLoginRedirect');
-      
-      const destination= 
-      redirectPath?.startsWith('/') && !redirectPath.startsWith('//')
-      ? redirectPath
-      : '/admin'
-
-      showAlert("로그인이 완료되었습니다!", "success", undefined, 
-        ()=> router.replace(destination)
-      );
-    },
-    onError:(error)=>{
-      let message = "서버 오류가 발생했습니다.";
-
-      if (axios.isAxiosError(error)) {
-        message = error.response?.data?.message || "이메일 또는 비밀번호를 확인해주세요.";
-      } 
-      showAlert(message, "error");
-    },
-  })
+  const { mutate, isPending: isLoading } = useAuthLogin();
 
   useEffect(()=>{
     const savedEmail = localStorage.getItem('savedEmail');
@@ -106,7 +60,34 @@ export default function LoginClientPage() {
       return;
     }
    
-    mutate({ email, password })
+    mutate(
+      { email, password },
+      {
+        onSuccess: (data)=>{
+          if(!data.success || !data.token) return;
+
+          if(rememberEmail){
+            localStorage.setItem('savedEmail', email);
+          }else{
+            localStorage.removeItem('savedEmail');
+          }
+
+          //로그인후 경로이동
+          const redirectPath = sessionStorage.getItem('postLoginRedirect');
+          sessionStorage.removeItem('postLoginRedirect');
+
+          const destination =
+            redirectPath?.startsWith('/') &&
+            !redirectPath?.startsWith('//')
+              ? redirectPath
+              : '/admin';
+          showAlert(
+            "로그인이 완료되었습니다.", "success", undefined,
+            ()=> router.replace(destination)
+          );
+        },
+      }
+    )
   };
 
   return (

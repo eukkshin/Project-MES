@@ -6,6 +6,7 @@ interface AuthState {
     token: string | null;
     isAuth: boolean;
     username: string | null;
+    isInitialized: boolean; // 인증 초기화 여부
 
     login:(token:string, username:string)=> void;
     logout: ()=>void;
@@ -16,6 +17,7 @@ export const useAuthStore = create<AuthState>((set)=>({
     token: null,
     isAuth: false,
     username: null,
+    isInitialized: false,
 
     //로그인
     login:(token, username)=>{
@@ -42,7 +44,7 @@ export const useAuthStore = create<AuthState>((set)=>({
         const username = localStorage.getItem('username');
 
         set({
-            token, isAuth: !!token, username
+            token, isAuth: !!token, username, isInitialized:true,
         })
     },
 }))

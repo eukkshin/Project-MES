@@ -15,7 +15,7 @@ import * as S from "@/assets/css/Style.style";
 import { Temporal } from "@js-temporal/polyfill";
 
 import ScheduleModal from "@/components/calendar/ScheduleModal";
-import { useGetSchedules } from "@/hooks/queries/useSchedule";
+import { useGetSchedules } from "@/hooks/useSchedule";
 
 
 interface CalendarProps {

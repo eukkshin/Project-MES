@@ -1,77 +1,47 @@
 "use client";
 
-import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import * as S from "@/assets/css/admin/mypage/MyPage.styles";
-import AlertModal from "@/components/modal/AlertModal";
 
 import ChangePassword from "./change-password/ChangePassword";
 import DefaultInfo from "./default-info/DefaultInfo";
 import { useAlertStore } from "@/store/useAlertStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface MyPageProps {
-  isOpen: boolean;
   onClose: () => void;
 }
 
-export default function MyPage({ isOpen, onClose }: MyPageProps) {
+export default function MyPage({ onClose }: MyPageProps) {
   const router = useRouter();
-  const { showAlert }=useAlertStore();
-
+  const showAlert =useAlertStore(state=> state.showAlert);
+  const logout = useAuthStore(state=> state.logout);
   const [activeMenu, setActiveMenu] = useState("기본정보");
 
-  // 실제 DOM을 유지하기 위한 상태
-  const [shouldRender, setShouldRender] = useState(false);
-
-  // 닫히는 애니메이션 상태
-  const [isClosing, setIsClosing] = useState(false);
-
-  /**
-   * MyPage 열기 / 닫기
-   */
   useEffect(() => {
-    if (isOpen) {
-      setShouldRender(true);
-      setIsClosing(false);
-
-      const token = localStorage.getItem("token");
-
-      document.body.style.overflow = "hidden";
-
-      if (!token) {
-        showAlert("로그인이 필요합니다.");
-
-        setShouldRender(false);
-        onClose();
-        router.push("/login");
-      }
-    } else {
-      document.body.style.overflow = "unset";
-    }
+    document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen, router, onClose]);
+  }, []);
 
-  /**
-   * MyPage 닫기
-   */
-  const handleClose = () => {
-    // 이미 닫히는 중이면 중복 실행 방지
-    if (isClosing) return;
+//   useEffect(() => {
+//   const scrollbarWidth =
+//     window.innerWidth - document.documentElement.clientWidth;
 
-    setIsClosing(true);
+//   document.body.style.overflow = "hidden";
+//   document.body.style.paddingRight = `${scrollbarWidth}px`;
 
-    // FadeOut 애니메이션이 끝난 후 실제로 제거
-    setTimeout(() => {
-      setShouldRender(false);
-      onClose();
-    }, 200);
-  };
+//   return () => {
+//     document.body.style.overflow = "";
+//     document.body.style.paddingRight = "";
+//   };
+// }, []);
 
+ 
   const openLogoutModal = () => {
     showAlert(
       "정말 로그아웃하시겠습니까?",
@@ -82,24 +52,24 @@ export default function MyPage({ isOpen, onClose }: MyPageProps) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-
-    delete axios.defaults.headers.common["Authorization"];
-
-    window.dispatchEvent(new Event("logout-success"));
-
-    handleClose();
-
+    logout();
+    onClose();
     router.replace("/");
   };
 
-  if (!shouldRender) return null;
-
   return (
     <>
-      <S.Backdrop $isClosing={isClosing} onClick={handleClose}>
+      <S.Backdrop 
+        initial={{opacity:0}}
+        animate={{opacity:1}}
+        exit={{opacity:0}}
+        transition={{duration:0.2}}
+        onClick={onClose}>
         <S.MyPageContainer
-          $isClosing={isClosing}
+          initial={{scale:0.96, opacity:0}}
+          animate={{scale:1, opacity:1}}
+          exit={{scale:0.96, opacity:0}}
+          transition={{ duration: 0.2,  ease: [0.22, 1, 0.36, 1]}}
           onClick={(e) => e.stopPropagation()}
         >
           {/* 사이드바 */}
@@ -165,7 +135,7 @@ export default function MyPage({ isOpen, onClose }: MyPageProps) {
 
             {activeMenu === "비밀번호 변경" && <ChangePassword />}
 
-            <S.CloseButton onClick={handleClose}>+</S.CloseButton>
+            <S.CloseButton onClick={onClose}>+</S.CloseButton>
           </S.MainContent>
         </S.MyPageContainer>
       </S.Backdrop>

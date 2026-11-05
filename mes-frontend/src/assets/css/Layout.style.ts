@@ -17,7 +17,7 @@ export const LnbWrapper = styled.aside`
   flex-shrink: 0;
 
   background: #111e32;
-  z-index: 100;
+  z-index: 10;
 
   @media (max-width: 1024px) {
     display: none;

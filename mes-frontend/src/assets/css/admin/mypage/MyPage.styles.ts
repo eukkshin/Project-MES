@@ -1,10 +1,11 @@
+import { motion } from "motion/react";
 import styled from "styled-components";
 
 interface MyPageAnimationProps {
   $isClosing: boolean;
 }
 
-export const Backdrop = styled.div<MyPageAnimationProps>`
+export const Backdrop = styled(motion.div)`
   position: fixed;
   inset: 0;
 
@@ -18,82 +19,24 @@ export const Backdrop = styled.div<MyPageAnimationProps>`
   background-color: rgba(0, 0, 0, 0.5);
 
   z-index: 999;
-
-  animation: ${({ $isClosing }) =>
-    $isClosing
-      ? "fadeOut 0.2s ease-in forwards"
-      : "fadeIn 0.25s ease-out forwards"};
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes fadeOut {
-    from {
-      opacity: 1;
-    }
-
-    to {
-      opacity: 0;
-    }
-  }
 `;
 
-export const MyPageContainer = styled.div<MyPageAnimationProps>`
-  width: 900px;
-  height: 600px;
+export const MyPageContainer = styled(motion.div)`
+  width: min(900px, calc(100vw - 32px));
+  height: min(600px, calc(100vh - 32px));
 
   display: flex;
-
   min-width: 0;
   min-height: 0;
 
   background-color: #fff;
-
   border-radius: 0.5rem;
-
   box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
 
   z-index: 1000;
-
   overflow: hidden;
-
   gap: 24px;
 
-  animation: ${({ $isClosing }) =>
-    $isClosing
-      ? "slideDown 0.2s ease-in forwards"
-      : "slideUp 0.3s ease-out forwards"};
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(8px);
-      opacity: 0;
-    }
-
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    to {
-      transform: translateY(8px);
-      opacity: 0;
-    }
-  }
 `;
 
 export const MyPageSidebar = styled.div`

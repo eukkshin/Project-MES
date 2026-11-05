@@ -40,7 +40,7 @@ export default function AlertModal({
           initial={{y:8, opacity:0}}
           animate={{y:0, opacity:1}}
           exit={{y:8, opacity:0}}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.2 }}
           onClick={(e) => e.stopPropagation()}
         >
           <S.AlertIcon $type={type}>
