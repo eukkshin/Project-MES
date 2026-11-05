@@ -4,7 +4,7 @@ import type { ApiSchedule, ScheduleRequest } from "@/types/schedule";
 // 일정 목록 조회
 export const getSchedules = async (): Promise<ApiSchedule[]> => {
   const response = await api.get("/api/schedules");
-  return response.data;
+  return response.data.schedules;
 };
 
 // 일정 등록

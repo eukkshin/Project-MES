@@ -1,0 +1,53 @@
+//==================================
+// DB에 직접추가
+//=================================
+ALTER TABLE USERS
+ADD EMP_ID VARCHAR2(20);
+
+ALTER TABLE USERS
+ADD CONSTRAINT FK_USERS_EMPLOYEE
+FOREIGN KEY (EMP_ID)
+REFERENCES EMPLOYEE (EMP_ID);
+
+//==================================
+// Dummy Data 
+//=================================
+INSERT INTO EMPLOYEES (
+    EMP_ID,
+    NAME,
+    DEPARTMENT,
+    ROLE,
+    STATUS,
+    JOIN_DATE
+) VALUES (
+    'EMP001',
+    '한화',
+    '생산관리팀',
+    '관리자',
+    'active',
+    '2026-11-05'
+);
+
+UPDATE USERS
+SET EMP_ID = 'EMP001'
+WHERE EMAIL = 'hanhwa@eagles.com';
+
+INSERT INTO EMPLOYEES (
+    EMP_ID,
+    NAME,
+    DEPARTMENT,
+    ROLE,
+    STATUS,
+    JOIN_DATE
+) VALUES (
+    'EMP002',
+    '스키즈',
+    '생산관리팀',
+    '사원',
+    'active',
+    '2026-11-05'
+);
+
+UPDATE USERS
+SET EMP_ID = 'EMP002'
+WHERE EMAIL = 'skz@skz.com';

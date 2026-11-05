@@ -227,6 +227,7 @@ app.post(
         {
           id: user.id,
           email: user.email,
+          empId: user.empId,
         },
         JWT_SECRET,
         {
@@ -576,6 +577,270 @@ app.post("/api/analytics/records", verifyToken, async (req, res) => {
   }
 });
 
+//====================================
+// 일정
+//===================================
+// 일정 목록 조회
+app.get("/api/schedules", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const decoded = req.user;
+
+    if (!decoded || typeof decoded === "string") {
+      res.status(401).json({
+        success: false,
+        message: "인증 정보가 올바르지 않습니다.",
+      });
+      return;
+    }
+
+    // 로그인한 사용자의 사번
+    const empId = decoded.empId;
+
+    if (!empId) {
+      res.status(400).json({
+        success: false,
+        message: "직원 정보가 연결되지 않은 계정입니다.",
+      });
+      return;
+    }
+
+    const schedules = await Schedule.findAll({
+      where: {
+        [require("sequelize").Op.or]: [
+          { scheduleType: "PUBLIC" },
+          {
+            scheduleType: "PERSONAL",
+            createdBy: empId,
+          },
+          {
+            scheduleType: "NOTICE",
+          },
+        ],
+      },
+      order: [
+        ["scheduleDate", "ASC"],
+        ["time", "ASC"],
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      schedules: schedules.map((item:any) => {
+        const schedule = item.toJSON();
+
+        return {
+          ...schedule,
+          createdAt: schedule.CREATED_AT,
+          updatedAt: schedule.UPDATED_AT,
+        };
+      }),
+    });
+
+
+  } catch (error) {
+    console.error("일정 조회 오류:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "일정을 불러오지 못했습니다.",
+    });
+  }
+});
+
+// 일정 등록
+app.post("/api/schedules", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const decoded = req.user;
+
+    if (!decoded || typeof decoded === "string" || !decoded.empId) {
+      res.status(400).json({
+        success: false,
+        message: "직원 정보가 연결되지 않은 계정입니다.",
+      });
+      return;
+    }
+
+    const {
+      scheduleType,
+      title,
+      content,
+      scheduleDate,
+      time,
+      alarmEnabled,
+      status,
+    } = req.body;
+
+    if (!scheduleDate || !content) {
+      res.status(400).json({
+        success: false,
+        message: "일정 날짜와 내용은 필수입니다.",
+      });
+      return;
+    }
+
+    // 일반 직원은 개인 일정만 등록 가능
+    if (scheduleType && scheduleType !== "PERSONAL") {
+      res.status(403).json({
+        success: false,
+        message: "개인 일정만 등록할 수 있습니다.",
+      });
+      return;
+    }
+
+    const schedule = await Schedule.create({
+      scheduleType: "PERSONAL",
+      title,
+      content,
+      scheduleDate,
+      time,
+      alarmEnabled: alarmEnabled ? 1 : 0,
+      status: status ?? "PENDING",
+      createdBy: decoded.empId,
+    });
+
+    res.status(201).json(schedule);
+  } catch (error) {
+    console.error("일정 등록 오류:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "일정을 등록하지 못했습니다.",
+    });
+  }
+});
+
+// 일정 수정
+app.patch(
+  "/api/schedules/:id",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const decoded = req.user;
+
+      if (!decoded || typeof decoded === "string" || !decoded.empId) {
+        res.status(400).json({
+          success: false,
+          message: "직원 정보가 연결되지 않은 계정입니다.",
+        });
+        return;
+      }
+
+      const id = Number(req.params.id);
+
+      if (!Number.isInteger(id) || id <= 0) {
+        res.status(400).json({
+          success: false,
+          message: "유효하지 않은 일정 ID입니다.",
+        });
+        return;
+      }
+
+      const schedule = await Schedule.findOne({
+        where: {
+          id,
+          scheduleType: "PERSONAL",
+          createdBy: decoded.empId,
+        },
+      });
+
+      if (!schedule) {
+        res.status(404).json({
+          success: false,
+          message: "수정할 일정을 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      const {
+        scheduleType,
+        createdBy,
+        ...updateData
+      } = req.body;
+
+      // 작성자와 일정 유형은 클라이언트가 변경할 수 없음
+      await schedule.update({
+        ...updateData,
+        alarmEnabled:
+          updateData.alarmEnabled === undefined
+            ? schedule.alarmEnabled
+            : updateData.alarmEnabled
+              ? 1
+              : 0,
+      });
+
+      res.status(200).json(schedule);
+    } catch (error) {
+      console.error("일정 수정 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "일정을 수정하지 못했습니다.",
+      });
+    }
+  },
+);
+
+// 일정 삭제
+app.delete(
+  "/api/schedules/:id",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const decoded = req.user;
+
+      if (!decoded || typeof decoded === "string" || !decoded.empId) {
+        res.status(400).json({
+          success: false,
+          message: "직원 정보가 연결되지 않은 계정입니다.",
+        });
+        return;
+      }
+
+      const id = Number(req.params.id);
+
+      if (!Number.isInteger(id) || id <= 0) {
+        res.status(400).json({
+          success: false,
+          message: "유효하지 않은 일정 ID입니다.",
+        });
+        return;
+      }
+
+      const schedule = await Schedule.findOne({
+        where: {
+          id,
+          scheduleType: "PERSONAL",
+          createdBy: decoded.empId,
+        },
+      });
+
+      if (!schedule) {
+        res.status(404).json({
+          success: false,
+          message: "삭제할 일정을 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      await schedule.destroy();
+
+      res.status(200).json({
+        success: true,
+        message: "일정이 삭제되었습니다.",
+      });
+    } catch (error) {
+      console.error("일정 삭제 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "일정을 삭제하지 못했습니다.",
+      });
+    }
+  },
+);
+
+
+console.log("등록된 모델:", Object.keys(sequelize.models));
 // 서버 실행
 const PORT = Number(process.env.PORT) || 4000;
 
