@@ -293,13 +293,26 @@ export default function Calendar({ year, month }: CalendarProps) {
                     </S.HolidayLabel>
                   )}
 
-                  {isCurrentMonth && hasSchedule && (
-                    <S.SchedulePreview>
-                      <S.SchedulePreviewDot />
-                      <span>{daySchedules[0].content}</span>
-                    </S.SchedulePreview>
-                  )}
+{isCurrentMonth && daySchedules.length > 0 && (
+  <S.SchedulePreviewList>
+    {daySchedules.slice(0, 3).map((schedule) => (
+      <S.SchedulePreview
+        key={schedule.id}
+        $type={schedule.scheduleType}
+        title={schedule.title || schedule.content}
+      >
+        <S.SchedulePreviewDot $type={schedule.scheduleType} />
+        <span>{schedule.title || schedule.content}</span>
+      </S.SchedulePreview>
+    ))}
 
+    {daySchedules.length > 3 && (
+      <S.MoreScheduleCount>
+        +{daySchedules.length - 3}건 더보기
+      </S.MoreScheduleCount>
+    )}
+  </S.SchedulePreviewList>
+)}
                   {isCurrentMonth && (
                     <S.DayAddIcon>
                       <FaPlus />
