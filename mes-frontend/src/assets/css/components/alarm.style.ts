@@ -1,15 +1,7 @@
-import styled, {keyframes} from "styled-components";
+import styled  from "styled-components";
+import {motion} from 'motion/react'
 
-const ringAnimation = keyframes`
-  0% { transform: rotate(0deg); }
-  20% { transform: rotate(15deg); }
-  40% { transform: rotate(-15deg); }
-  60% { transform: rotate(10deg); }
-  80% { transform: rotate(-10deg); }
-  100% { transform: rotate(0deg); }
-`;
-
-export const ToastContainer = styled.div`
+export const ToastContainer = styled(motion.div)`
   position: fixed;
   top: 24px;
   right: 24px;
@@ -50,9 +42,9 @@ export const ToastContainer = styled.div`
 `;
 
 export const ToastIcon = styled.div`
-  font-size: 20px;
+  display: flex;
+  align-items: center;
   line-height: 1;
-  animation: ${ringAnimation} 0.6s ease-in-out infinite;
 `;
 
 export const ToastContent = styled.div`

@@ -16,6 +16,8 @@ export const useLoginMember = () => {
     mutationFn: loginMember,
 
     onSuccess: (data) => {
+      console.log("로그인 응답 데이터:", data);
+  console.log("로그인 role:", data.role);
       if (!data.success) {
         showAlert(data.message || "로그인에 실패했습니다.", "error");
         return;
@@ -28,7 +30,7 @@ export const useLoginMember = () => {
         return;
       }
 
-      login(token, data.user.name);
+      login(token, data.user.name, data.role);
     },
 
     onError: (error) => {

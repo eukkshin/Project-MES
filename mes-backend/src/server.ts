@@ -266,7 +266,7 @@ app.post(
           id: user.id,
           email: user.email,
           empId: user.empId,
-          role,
+          role ,
         },
         JWT_SECRET,
         {
@@ -285,6 +285,7 @@ app.post(
           name: `${user.lastName ?? ""}${user.firstName ?? ""}`.trim(),
           email: user.email,
         },
+        role,
       });
     } catch (error) {
       console.error("로그인 오류:", error);
@@ -718,7 +719,7 @@ app.post("/api/schedules", verifyToken, async (req: Request, res: Response) => {
     }
 
     // 일반 직원은 개인 일정만 등록 가능
-    if (scheduleType && scheduleType !== "PERSONAL") {
+    if (scheduleType !== "PERSONAL") {
       res.status(403).json({
         success: false,
         message: "개인 일정만 등록할 수 있습니다.",
@@ -896,10 +897,10 @@ app.post("/api/schedules/public",
       } = req.body;
 
       // 필수값 확인
-      if (!title || !scheduleDate || !content) {
+      if (!scheduleDate || !content) {
         res.status(400).json({
           success: false,
-          message: "일정 제목, 날짜, 내용은 필수입니다.",
+          message: "일정 날짜, 내용은 필수입니다.",
         });
         return;
       }

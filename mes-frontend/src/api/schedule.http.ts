@@ -13,6 +13,12 @@ export const createSchedule = async (data: ScheduleRequest) => {
   return response.data;
 };
 
+//공용 일정 등록
+export const createPublicSchedule = async (data: ScheduleRequest) => {
+  const response = await api.post("/api/schedules/public", data);
+  return response.data;
+};
+
 // 일정 수정
 export const updateSchedule = async (id: number,data: Partial<ScheduleRequest>) => {
   const response = await api.patch(`/api/schedules/${id}`, data);

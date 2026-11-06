@@ -11,17 +11,21 @@ import {
   FaPlus,
   FaTrash,
   FaTriangleExclamation,
+  FaUser,
+  FaUsers,
   FaXmark,
 } from "react-icons/fa6";
 
-import type { ApiScheduleStatus, Schedule } from "@/types/schedule";
+import type { ApiScheduleStatus, Schedule, ScheduleType } from "@/types/schedule";
 import * as S from "@/assets/css/components/modal/ScheduleModal.styles";
 
 import ModalLayout from "../modal/ModalLayout";
 import { Select } from "@/ui/Select/Select";
 import { useAlertStore } from "@/store/useAlertStore";
-import { useCreateSchedule, useDeleteSchedule, useGetSchedules, useUpdateSchedule } from "@/hooks/useSchedule";
+import { useCreatePublicSchedule, useCreateSchedule, useDeleteSchedule, useGetSchedules, useUpdateSchedule } from "@/hooks/useSchedule";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
+import { useAuthStore } from "@/store/useAuthStore";
+import { createSchedule } from "@/api/schedule.http";
 
 interface ScheduleModalProps {
   isOpen: boolean;
@@ -84,17 +88,24 @@ export default function ScheduleModal({
 }: ScheduleModalProps) {
 
   //React Query
-  const { data: scheduleData = [], isLoading, isError, error } = useGetSchedules();
+  const { data: scheduleData = [], isFetching , isError, error } = useGetSchedules();
 
   if(isError){
     console.error("일정 조회 실패", error);
   }
+
+ 
   const createMutation = useCreateSchedule();
+  const createPublicMutation = useCreatePublicSchedule();
   const updateMutation = useUpdateSchedule();
   const deleteMutation = useDeleteSchedule();
 
   //zustand
-  const { showAlert } =useAlertStore()
+  const { showAlert } =useAlertStore();
+  const role = useAuthStore(state=> state.role);
+  const isAdmin = role === 'ADMIN'
+
+  const [scheduleType, setScheduleType] = useState<ScheduleType>("PERSONAL");
 
   const [formContent, setFormContent] = useState("");
   const [formStatus, setFormStatus] = useState<ScheduleStatus>("대기");
@@ -183,6 +194,7 @@ export default function ScheduleModal({
   
   if (selectedDate === null) return null;
 
+
   const formattedTime = `${hour}:${minute}`;
 
   const scheduleDate =
@@ -208,6 +220,7 @@ export default function ScheduleModal({
   );
 
   const resetForm = () => {
+    setScheduleType('PERSONAL');
     setFormContent("");
     setFormStatus("대기");
     setHour("09");
@@ -223,7 +236,7 @@ export default function ScheduleModal({
     if (!content) return;
 
     const requestData  ={
-      scheduleType: 'PERSONAL' as const,
+      scheduleType ,
       content,
       scheduleDate,  //2026-11-04
       time: alarmEnabled ? `${formattedTime}` : null,
@@ -240,10 +253,16 @@ export default function ScheduleModal({
 
         showAlert("일정이 수정되었습니다.", "success");
       }else{
-        await createMutation.mutateAsync(requestData);
+
+        if(scheduleType === 'PUBLIC'){
+          await createPublicMutation.mutateAsync(requestData);
+        }else{
+          await createMutation.mutateAsync(requestData);
+        }
         showAlert("일정이 등록되었습니다.", "success");
       }
-      resetForm()
+      resetForm();
+
     } catch (error){
       console.error("일정 저장 실패:", error);
       showAlert("일정 저장에 실패했습니다.", "error");
@@ -301,7 +320,57 @@ export default function ScheduleModal({
 
             <S.ScheduleCount>{filteredSchedules.length}건</S.ScheduleCount>
           </S.DateInfo>
+          {isAdmin && (
+            <S.ScheduleTypeSelector>
+              <S.ScheduleTypeCard type="button" 
+              $selected={scheduleType==='PERSONAL'}
+              onClick={e=> setScheduleType('PERSONAL')}
+              aria-pressed={scheduleType==='PERSONAL'}
+              >
+                <S.ScheduleTypeCardHeader>
+                  <S.ScheduleTypeIcon $selected={scheduleType === "PERSONAL"}>
+                    <FaUser />
+                  </S.ScheduleTypeIcon>
 
+                  <S.ScheduleTypeCheck $selected={scheduleType === "PERSONAL"}>
+                    {scheduleType === "PERSONAL" && <FaCheck />}
+                  </S.ScheduleTypeCheck>
+                </S.ScheduleTypeCardHeader>
+                
+                <S.ScheduleTypeTitle $selected={scheduleType === "PERSONAL"}>
+                  개인 일정
+                </S.ScheduleTypeTitle>
+                <S.ScheduleTypeDescription>
+                  나만 관리하는 일정
+                </S.ScheduleTypeDescription>
+              </S.ScheduleTypeCard>
+
+              <S.ScheduleTypeCard
+                type="button"
+                $selected={scheduleType === "PUBLIC"}
+                onClick={() => setScheduleType("PUBLIC")}
+                aria-pressed={scheduleType === "PUBLIC"}
+              >
+                <S.ScheduleTypeCardHeader>
+                  <S.ScheduleTypeIcon $selected={scheduleType === "PUBLIC"}>
+                    <FaUsers />
+                  </S.ScheduleTypeIcon>
+
+                  <S.ScheduleTypeCheck $selected={scheduleType === "PUBLIC"}>
+                    {scheduleType === "PUBLIC" && <FaCheck />}
+                  </S.ScheduleTypeCheck>
+                </S.ScheduleTypeCardHeader>
+
+                <S.ScheduleTypeTitle $selected={scheduleType === "PUBLIC"}>
+                  공용 일정
+                </S.ScheduleTypeTitle>
+
+                <S.ScheduleTypeDescription>
+                  모든 직원에게 공유되는 일정
+                </S.ScheduleTypeDescription>
+              </S.ScheduleTypeCard>
+            </S.ScheduleTypeSelector>
+          )}
           <S.Section>
             <S.SectionHeader>
               <S.SectionTitle>
@@ -450,7 +519,7 @@ export default function ScheduleModal({
               <S.ListCount>총 {filteredSchedules.length}건</S.ListCount>
             </S.ListHeader>
 
-            {isLoading ? (
+            {isFetching ? (
               <EqualizerLoader/>
             ) : isError ? (
               <S.EmptyState>
@@ -475,6 +544,7 @@ export default function ScheduleModal({
                     <S.ScheduleCard
                       key={schedule.id}
                       $editing={editingId === schedule.id}
+                      $type={schedule.scheduleType}
                     >
                       <S.CardHeader>
                         <S.StatusBadge $status={schedule.status}>

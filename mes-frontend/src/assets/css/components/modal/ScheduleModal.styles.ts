@@ -380,7 +380,7 @@ export const ScheduleList = styled.div`
 `;
 
 export const ScheduleCard = styled.div<{
-  $editing: boolean;
+  $editing: boolean; $type: string;
 }>`
   padding: 15px;
 
@@ -397,6 +397,28 @@ export const ScheduleCard = styled.div<{
   &:hover {
     border-color: #bfdbfe;
   }
+
+    position: relative;
+    overflow: hidden;
+
+    ${({ $type }) =>
+    $type === "PUBLIC" &&
+    `
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+
+        width: 0;
+        height: 0;
+
+        border-top: 24px solid #DCEFFA;
+        border-right: 24px solid transparent;
+
+        pointer-events: none;
+      }
+  `}
 `;
 
 export const CardHeader = styled.div`
@@ -423,6 +445,27 @@ export const StatusBadge = styled.span<{
 
   font-size: 10px;
   font-weight: 700;
+`;
+
+export const ScheduleTypeBadge = styled.span<{ $type: string }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  color: ${({ $type }) =>
+    $type === "PUBLIC" ? "#3289C7" : "#8998A8"};
+
+  /* background: ${({ $type }) =>
+    $type === "PUBLIC" ? "#E5F4FF" : "#F1F4F7"}; */
+
+  svg {
+    font-size: 11px;
+  }
 `;
 
 export const CreatedAt = styled.span`
@@ -602,5 +645,120 @@ export const AlarmToggle = styled.label`
   }
 `;
 
-///
 
+// 일정 유형 선택 영역
+export const ScheduleTypeSelector = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 1px;
+`;
+
+export const ScheduleTypeCard = styled.button<{ $selected: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1;
+  padding: 15px 20px;
+  border-radius: 14px;
+
+  border: 1px solid
+    ${({ $selected }) => ($selected ? "rgba(82, 157, 218, 0.2)" : "#E3EAF1")};
+
+  background: ${({ $selected }) =>
+    $selected ? "#F0F8FF" : "#FFFFFF"};
+
+  cursor: pointer;
+  text-align: left;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+
+  box-shadow: ${({ $selected }) =>
+    $selected ? "0 3px 12px rgba(80, 160, 220, 0.09)" : "none"};
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 14px rgba(80, 160, 220, 0.09);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(82, 157, 218, 0.2);
+    outline-offset: 3px;
+  }
+`;
+
+export const ScheduleTypeCardHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+`;
+
+// 아이콘 배경
+export const ScheduleTypeIcon = styled.div<{ $selected: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 32px;
+  height: 32px;
+  border-radius: 11px;
+
+  background: ${({ $selected }) =>
+    $selected ? "#DDF0FF" : "#F1F5F9"};
+
+  color: ${({ $selected }) =>
+    $selected ? "#398CCB" : "#8293A5"};
+
+  transition: all 0.25s ease;
+
+  svg {
+    font-size: 15px;
+  }
+`;
+
+// 선택 체크
+export const ScheduleTypeCheck = styled.div<{ $selected: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+
+  border: 1.5px solid
+    ${({ $selected }) => ($selected ? "#55A7E1" : "#D6E0E9")};
+
+  background: ${({ $selected }) =>
+    $selected ? "#55A7E1" : "transparent"};
+
+  color: #FFFFFF;
+
+  svg {
+    font-size: 11px;
+  }
+`;
+
+export const ScheduleTypeTitle = styled.strong<{ $selected: boolean }>`
+  font-size: 14px;
+  font-weight: 700;
+
+  color: ${({ $selected }) =>
+    $selected ? "#2879B8" : "#45566A"};
+`;
+
+export const ScheduleTypeDescription = styled.span`
+  font-size: 11px;
+  color: #8998A8;
+  line-height: 1.2;
+`;

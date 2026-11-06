@@ -1,4 +1,4 @@
-import { createSchedule, deleteSchedule, getSchedules, updateSchedule } from "@/api/schedule.http";
+import { createPublicSchedule, createSchedule, deleteSchedule, getSchedules, updateSchedule } from "@/api/schedule.http";
 import type { ApiSchedule, ScheduleRequest } from "@/types/schedule";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -22,6 +22,19 @@ export const useCreateSchedule = ()=>{
 
   return useMutation({
     mutationFn: createSchedule,
+    onSuccess: ()=>{
+      queryClient.invalidateQueries({
+        queryKey: scheduleKeys.all,
+      })
+    },
+  })
+};
+
+export const useCreatePublicSchedule = ()=>{
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createPublicSchedule,
     onSuccess: ()=>{
       queryClient.invalidateQueries({
         queryKey: scheduleKeys.all,

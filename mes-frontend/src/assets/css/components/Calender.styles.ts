@@ -547,61 +547,61 @@ export const HolidayLabel = styled.span`
   }
 `;
 
-export const SchedulePreview = styled.div`
-  display: flex;
+// export const SchedulePreview = styled.div`
+//   display: flex;
 
-  align-items: center;
+//   align-items: center;
 
-  gap: 6px;
+//   gap: 6px;
 
-  width: 100%;
+//   width: 100%;
 
-  min-width: 0;
+//   min-width: 0;
 
-  padding: 6px 7px;
+//   padding: 6px 7px;
 
-  border-radius: 5px;
+//   border-radius: 5px;
 
-  background: #eff6ff;
+//   background: #eff6ff;
 
-  color: #2563eb;
+//   color: #2563eb;
 
-  font-size: 10px;
+//   font-size: 10px;
 
-  font-weight: 600;
+//   font-weight: 600;
 
-  span {
-    overflow: hidden;
+//   span {
+//     overflow: hidden;
 
-    text-overflow: ellipsis;
+//     text-overflow: ellipsis;
 
-    white-space: nowrap;
-  }
+//     white-space: nowrap;
+//   }
 
-  @media (max-width: 768px) {
-    padding: 4px;
+//   @media (max-width: 768px) {
+//     padding: 4px;
 
-    font-size: 9px;
-  }
+//     font-size: 9px;
+//   }
 
-  @media (max-width: 480px) {
-    span {
-      display: none;
-    }
-  }
-`;
+//   @media (max-width: 480px) {
+//     span {
+//       display: none;
+//     }
+//   }
+// `;
 
-export const SchedulePreviewDot = styled.span`
-  width: 6px;
+// export const SchedulePreviewDot = styled.span`
+//   width: 6px;
 
-  height: 6px;
+//   height: 6px;
 
-  flex-shrink: 0;
+//   flex-shrink: 0;
 
-  border-radius: 50%;
+//   border-radius: 50%;
 
-  background: #2563eb;
-`;
+//   background: #2563eb;
+// `;
 
 export const DayAddIcon = styled.span`
   position: absolute;
@@ -667,4 +667,68 @@ export const CalendarBottomBar = styled.div`
 
     font-size: 10px;
   }
+`;
+
+
+
+export const SchedulePreviewList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+`;
+
+export const SchedulePreview = styled.div<{ $type: string }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  width: 100%;
+  min-width: 0;
+  padding: 6px 7px;
+
+  border-radius: 5px;
+
+  background: ${({ $type }) =>
+       $type === "PUBLIC" ? "#DDF3F2" : "#EFF6FF"};
+
+  color: ${({ $type }) =>
+      $type === "PUBLIC" ? "#237F7A" : "#2563EB"};
+  font-size: 10px;
+  font-weight: 600;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 768px) {
+    padding: 4px;
+    font-size: 9px;
+  }
+
+  @media (max-width: 480px) {
+    span {
+      display: none;
+    }
+  }
+`;
+
+export const SchedulePreviewDot = styled.span<{ $type: string }>`
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+
+  background: ${({ $type }) =>
+     $type === "PUBLIC" ? "#43AAA3" : "#2563EB"};
+`;
+
+export const MoreScheduleCount = styled.div`
+  padding-left: 5px;
+  color: #94A3B8;
+  font-size: 10px;
 `;
