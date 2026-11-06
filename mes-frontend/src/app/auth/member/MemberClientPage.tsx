@@ -297,24 +297,30 @@ export default function MemberClientPage() {
                   {completed ? (
                     <motion.span
                       key="check"
-                      initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+                      initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
                       animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                      transition={{ duration: 0.25 }}
+                      exit={{ opacity: 0, scale: 0.5, rotate: 45 }}
+                      transition={{ duration: 0.35,ease: [0.22, 1, 0.36, 1], }}
                     >
                       <FaCheck />
                     </motion.span>
                   ) : (
                     <S.StepNumber 
-                      key="number"
-                      initial={{ opacity: 0, scale: 0.7 }}
+                      key={active ? "active-number" : "inactive-number"}
+                      $active={active}
+                      initial={{ opacity: 0, scale: 0.85 }}
                       animate={{
                         opacity: 1,
                         scale: active ? 1.15 : 1,
+                        rotate: 0,
                       }}
-                      exit={{ opacity: 0, scale: 0.7 }}
-                      transition={{ duration: 0.25 }}
-                      $active={active}
+                      exit={{ opacity: 0, scale: 0.85 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 250,
+                        damping: 18,
+                        mass: 0.4,
+                      }}
                       >
                         {String(item.number).padStart(2, "0")}
                     </S.StepNumber>
