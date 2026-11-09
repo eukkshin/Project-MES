@@ -12,7 +12,7 @@ import {
   FaXmark,
 } from "react-icons/fa6";
 
-import MyPage from "@/app/admin/mypage/Mypage";
+import MyPage from "@/app/(protected)/admin/mypage/Mypage";
 import * as S from "@/assets/css/components/HeaderFooter.style";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useAuthStore } from "@/store/useAuthStore";

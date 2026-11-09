@@ -1,6 +1,6 @@
 'use client';
 
-import type { EmployeeRole, ModalType } from "@/app/admin/hr/page";
+import type { EmployeeRole, ModalType } from "@/app/(protected)/admin/hr/page";
 // import * as S from "@/assets/css/admin/Hr.styles";
 import { FaXmark, FaCheck } from "react-icons/fa6";
 import * as S from './style'
