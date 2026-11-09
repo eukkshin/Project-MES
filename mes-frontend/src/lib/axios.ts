@@ -174,11 +174,12 @@ api.interceptors.response.use(
     const requestBody = error.config?.data ?? null;
     const responseBody = error.response?.data ?? null;
 
-    // 로그인 요청인지 확인
+    //로그인페이지인지
     const isLoginPage =
-      typeof window !== "undefined" &&
-      window.location.pathname === "/";
-
+    typeof window !== "undefined" &&
+    window.location.pathname === "/";
+    
+    //로그인 요청인지 확인
     const isLoginRequest = /\/login(?:\/|$|\?)/i.test(
       error.config?.url ?? ""
     );
@@ -197,17 +198,12 @@ api.interceptors.response.use(
         console.groupEnd();
       }
     }
-    // 토큰 만료 또는 유효하지 않은 토큰인지 확인
-    const responseMessage = pickDisplayMessage(error.response?.data, status)
-    const isInvalidToken = status === 403 &&
-      responseMessage === "유효하지 않거나 만료된 토큰입니다.";
-    
-    // 401 또는 토큰이 유효하지 않은 403
-    const isAuthExpired = status === 401 || isInvalidToken;
-    
-    // 401: 인증 만료
+
+    // 401 : 인증 실패
+    const isAuthError = status === 401 ;
+      
     if (
-      isAuthExpired && 
+      isAuthError && 
       typeof window !== "undefined" && 
       !isLoginRequest &&  
       !isLoginPage
@@ -223,10 +219,8 @@ api.interceptors.response.use(
 
         useAuthStore.getState().logout();
 
-        // Axios 기본 인증 헤더 제거
         delete api.defaults.headers.common["Authorization"];
 
-        // 로그인 페이지로 이동
         window.location.assign(LOGIN_PATH);
         
       } catch {
@@ -234,15 +228,9 @@ api.interceptors.response.use(
       }
     }
 
-    // 403:인증 만료가 아닌 실제 권한 부족
-    if (
-      status === 403 && 
-      typeof window !== "undefined" &&
-      !isInvalidToken
-    ) {
-      const message = "접근 권한이 없습니다.";
-
-      useAlertStore.getState().showAlert(message, "error");
+    // 403: 권한 부족
+    if (status === 403 && typeof window !== "undefined" ) {
+      useAlertStore.getState().showAlert('접근 권한이 없습니다.', "error");
     }
 
     // 공통 에러 메시지 추출

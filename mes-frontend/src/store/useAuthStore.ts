@@ -2,7 +2,7 @@
 
 import {create} from 'zustand'
 
-type UserRole = "ADMIN" | "EMPLOYEE";
+export type UserRole = "ADMIN" | "EMPLOYEE";
 
 interface AuthState {
     token: string | null;
@@ -13,7 +13,7 @@ interface AuthState {
 
     login:(token:string, username:string, role: UserRole)=> void;
     logout: ()=>void;
-    initializeAuth: () => void; // 추가
+    initializeAuth: () => void; 
 }
 
 // JWT 만료 여부 확인
@@ -23,8 +23,13 @@ const isTokenExpired = (token:string): boolean=> {
 
         if(!payload) return true;
 
+         // Base64 URL 형식을 일반 Base64 형식으로 변환
+        const base64 = payload
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
         const decoded = JSON.parse(
-            atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+        atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="))
         );
         if(typeof decoded.exp !== 'number') return true;
 
@@ -49,7 +54,11 @@ export const useAuthStore = create<AuthState>((set)=>({
         localStorage.setItem("role", role);
 
         set({
-            token, isAuth:true, username, role
+            token, 
+            username, 
+            role,  
+            isAuth:true, 
+            isInitialized: true,
         })
     },
     //로그아웃
@@ -60,46 +69,47 @@ export const useAuthStore = create<AuthState>((set)=>({
 
         set({
             token:null,
-            isAuth:false,
             username:null,
             role: null,
+            isAuth:false,
+            isInitialized: true,
         })
     },
 
-    // 인증 초기화
+      // 새로고침 후 인증 상태 복원
     initializeAuth: ()=> {
         const token = localStorage.getItem('token');
         const username = localStorage.getItem('username');
         const savedRole = localStorage.getItem("role");
 
-        const role = 
+        const role :UserRole | null = 
             savedRole === 'ADMIN' || savedRole === 'EMPLOYEE'
             ? savedRole
             : null;
 
-        // 토큰이 없거나 만료된 경우
-        if (!token || isTokenExpired(token)) {
+         // 토큰이 없거나 만료되었거나 사용자 권한 정보가 없는 경우
+        if (!token || isTokenExpired(token) || !role) {
             localStorage.removeItem('token');
             localStorage.removeItem('username');
             localStorage.removeItem('role');
             
             set({
                 token:null, 
-                isAuth: false, 
                 username:null, 
                 role:null,
+                isAuth: false, 
                 isInitialized:true,
             });
             return;
         }
 
-        //유효기간 남은 토큰
+        // 유효한 토큰이 존재하는 경우
         set({
             token,
-            isAuth: true,
-            role,
             username,
+            role,
+            isAuth: true,
             isInitialized: true,
-            });
+        });
     },
 }))

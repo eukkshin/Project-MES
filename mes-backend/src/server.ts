@@ -77,9 +77,12 @@ if (!JWT_SECRET) {
 const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
 
+
+   // 토큰이 없는 경우
   if (!authHeader?.startsWith("Bearer ")) {
     res.status(401).json({
       success: false,
+      code: "TOKEN_REQUIRED",
       message: "인증 토큰이 제공되지 않았습니다.",
     });
     return;
@@ -87,9 +90,11 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
 
   const token = authHeader.slice(7).trim();
 
+  // 토큰 형식이 잘못된 경우
   if (!token) {
     res.status(401).json({
       success: false,
+      code: "INVALID_TOKEN",
       message: "인증 토큰이 올바르지 않습니다.",
     });
     return;
@@ -98,6 +103,7 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AuthPayload;
 
+    // 토큰 안의 사용자 정보가 잘못된 경우
     if (
       typeof decoded === "string" ||
       typeof decoded.id !== "number" ||
@@ -105,8 +111,9 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
       typeof decoded.empId !== 'string' ||
       !["ADMIN", "EMPLOYEE"].includes(decoded.role as string)
     ) {
-      res.status(403).json({
+      res.status(401).json({
         success: false,
+        code: "INVALID_TOKEN",
         message: "인증 토큰의 사용자 정보가 올바르지 않습니다.",
       });
       return;
@@ -116,8 +123,10 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
     next();
     
   } catch (error) {
-    res.status(403).json({
+     // 만료되었거나 유효하지 않은 토큰
+    res.status(401).json({
       success: false,
+      code: "INVALID_TOKEN",
       message: "유효하지 않거나 만료된 토큰입니다.",
     });
   }
@@ -127,6 +136,7 @@ const verifyAdmin = (req: Request, res: Response, next:NextFunction,): void => {
   if( req.user?.role !== 'ADMIN'){
       res.status(403).json({
       success: false,
+      code: "FORBIDDEN",
       message: "관리자 권한이 필요합니다.",
     });
     return;
@@ -235,6 +245,7 @@ app.post(
       if (!user) {
         res.status(401).json({
           success: false,
+          code: "INVALID_CREDENTIALS",
           message: "이메일 또는 비밀번호가 올바르지 않습니다.",
         });
         return;
@@ -246,6 +257,7 @@ app.post(
       if (!isPasswordValid) {
         res.status(401).json({
           success: false,
+          code: "INVALID_CREDENTIALS", 
           message: "이메일 또는 비밀번호가 올바르지 않습니다.",
         });
         return;
@@ -255,6 +267,7 @@ app.post(
       if (!role) {
         res.status(403).json({
           success: false,
+          code: "FORBIDDEN",
           message: "직원 권한 정보를 찾을 수 없습니다.",
         });
         return;
