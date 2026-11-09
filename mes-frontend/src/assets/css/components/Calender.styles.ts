@@ -120,21 +120,28 @@ export const CalendarDescription = styled.p`
   line-height: 1.5;
 `;
 
-export const CalendarControls = styled.div`
+export const CalendarControls = styled.div<{$isOpen:boolean}>`
   display: flex;
-
   align-items: center;
-
   gap: 12px;
 
+  transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s ease;
+
+  @media (max-width: 1300px) {
+    opacity: ${({ $isOpen }) => ($isOpen ? 0 : 1)};
+    visibility: ${({ $isOpen }) => ($isOpen ? "hidden" : "visible")};
+    pointer-events: ${({ $isOpen }) => ($isOpen ? "none" : "auto")};
+    transform: ${({ $isOpen }) => ($isOpen ? "translateY(-4px)" : "translateY(0)")};
+  }
   @media (max-width: 768px) {
     width: 100%;
-
-    justify-content: space-between;
+    justify-content: ${({$isOpen})=> $isOpen ? 'flex-end': 'space-between'};
+    display: ${({ $isOpen }) => ($isOpen ? "none" : "flex")};
   }
 `;
 
 export const TodayButton = styled.button`
+  white-space: nowrap;
   display: flex;
 
   align-items: center;
@@ -731,4 +738,390 @@ export const MoreScheduleCount = styled.div`
   padding-left: 5px;
   color: #94A3B8;
   font-size: 10px;
+`;
+
+//========================================
+// 달력 + 오른쪽 패널 전체 영역
+
+export const CalendarContent = styled.div`
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+`;
+
+export const CalendarMain = styled.div`
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+`;
+
+/* ==========================================================================
+   오른쪽 일정 사이드 패널 (Apple Style)
+   ========================================================================== */
+
+export const ScheduleSidePanel = styled.aside<{ $isOpen: boolean }>`
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: ${({ $isOpen }) => ($isOpen ? "350px" : "0")};
+  min-width: 0;
+  overflow: hidden;
+
+  background: rgba(248, 250, 252, 0.95);
+  backdrop-filter: blur(20px);
+  border: ${({ $isOpen }) => ($isOpen ? "1px solid #e2e8f0" : "none")};
+  border-radius: 20px;
+  box-shadow: ${({ $isOpen }) =>
+    $isOpen ? "0 10px 30px rgba(15, 23, 42, 0.06)" : "none"};
+  opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
+  transition:
+    width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.25s ease,
+    box-shadow 0.35s ease;
+
+  @media (max-width: 1100px) {
+    position: absolute;
+    z-index: 20;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: ${({ $isOpen }) => ($isOpen ? "330px" : "0")};
+  }
+`;
+
+export const SchedulePanelHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #edf2f7;
+`;
+
+export const SchedulePanelTitle = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  small {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #0f172a;
+  }
+`;
+
+export const SchedulePanelClose = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ScheduleDateSummary = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 24px; 
+  padding: 0 4px; 
+  background: transparent;
+  border: none;
+  box-shadow: none;
+
+  span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+  }
+
+  .date-display {
+    display: flex;
+    align-items: baseline;
+    gap: 3px;
+
+    strong {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #2563eb;
+    }
+
+    small {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+    }
+  }
+`;
+
+/* ==========================================================================
+   일정 리스트 & 카드 영역
+   ========================================================================== */
+
+   export const SchedulePanelList = styled.div`
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
+   flex: 1;
+   min-height: 0;
+   overflow-y: auto;
+   padding: 6px 20px 24px;
+ 
+   &::-webkit-scrollbar {
+     width: 4px;
+   }
+ 
+   &::-webkit-scrollbar-thumb {
+     background: #cbd5e1;
+     border-radius: 10px;
+   }
+ 
+   &::-webkit-scrollbar-track {
+     background: transparent;
+   }
+ `;
+
+export const SchedulePanelCard = styled.div<{
+  $type: "PUBLIC" | "PERSONAL";
+}>`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 16px 16px 28px; 
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+  cursor: pointer;
+
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 14px;
+    left: 8px;
+    bottom: 14px;
+    width: 4px;
+    border-radius: 9999px;
+    background: ${({ $type }) =>
+      $type === "PUBLIC" ? "#f59e0b" : "#2563eb"};
+    transition: all 0.25s ease;
+  }
+
+  &:hover {
+    border-color: ${({ $type }) =>
+      $type === "PUBLIC" ? "#fde68a" : "#bfdbfe"};
+    background: ${({ $type }) =>
+      $type === "PUBLIC" ? "#fffdfa" : "#fafcff"};
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+    transform: translateY(-0.5px) scale(1.01);
+
+    &::before {
+      top: 10px;
+      bottom: 10px;
+      width: 5px;
+    }
+  }
+
+  &:active {
+    transform: scale(0.985);
+  }
+`;
+
+export const SchedulePanelCardTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+// 애플 캡슐 배지 (아이콘 + 텍스트 조합)
+export const ScheduleTypeBadge = styled.span<{
+  $type: "PUBLIC" | "PERSONAL";
+}>`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: ${({ $type }) => ($type === "PUBLIC" ? "#d97706" : "#2563eb")};
+  background: ${({ $type }) => ($type === "PUBLIC" ? "#fff8eb" : "#eff6ff")};
+  border: 1px solid
+    ${({ $type }) => ($type === "PUBLIC" ? "#fef3c7" : "#dbeafe")};
+
+  svg {
+    font-size: 10px;
+  }
+`;
+
+// 시간 및 알람 표시 (아이콘 통합)
+export const SchedulePanelTime = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+
+  svg {
+    font-size: 11px;
+    color: #cbd5e1;
+  }
+`;
+
+export const SchedulePanelCardTitle = styled.strong`
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+  color: #0f172a;
+  word-break: break-word;
+`;
+
+export const SchedulePanelCardContent = styled.p`
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #64748b;
+  word-break: break-word;
+`;
+
+// 카드 하단 메타정보 / 버튼 구역 (선택사항)
+export const SchedulePanelCardFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed #f1f5f9;
+`;
+
+
+/* ==========================================================================
+   Empty State (일정 없음)
+   ========================================================================== */
+
+export const ScheduleEmpty = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding-top: 100px; /* 위로 끌어올리고 상단 여백만 살짝 부여 */
+  padding-bottom: 30px;
+  gap: 10px;
+  color: #94a3b8;
+  text-align: center;
+
+  svg {
+    font-size: 32px;
+    color: #cbd5e1;
+    margin-bottom: 2px;
+  }
+
+  strong {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: -0.3px;
+  }
+
+  span {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+`;
+
+
+// 상단 고정 영역 컨테이너
+export const TopActionContainer = styled.div`
+  padding: 0 20px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+`;
+
+
+export const HeaderExpandingButton = styled.button`
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  height: 32px;
+  padding: 0 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+
+  width: 32px; 
+  padding: 0;
+  justify-content: center;
+
+  span {
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0;
+    max-width: 0;
+    transition: all 0.25s ease;
+    margin-left: 0;
+  }
+
+  /* 호버 시 폭이 늘어나며 글자가 나타남 */
+  &:hover {
+    width: 88px; 
+    padding: 0 12px;
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+
+    span {
+      opacity: 1;
+      max-width: 60px;
+      margin-left: 5px;
+    }
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
 `;

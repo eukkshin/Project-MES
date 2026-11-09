@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { Description } from "../../Style.style";
 
 type ScheduleStatus = "대기" | "진행" | "완료";
 
@@ -212,7 +213,7 @@ export const StatusDot = styled.span`
 
 export const TextArea = styled.textarea`
   width: 100%;
-  min-height: 105px;
+  min-height: 75px;
   padding: 14px;
 
   border: 1px solid #e2e8f0;
@@ -551,6 +552,11 @@ export const TimeSelectorWrapper = styled.div`
   min-height: 50px;
   flex-shrink: 0;
   padding: 0 20px;
+`;
+export const AlarmDescription = styled.div`
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.6;
 `;
 
 export const TimeLabel = styled.div`
