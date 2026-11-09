@@ -274,7 +274,7 @@ export default function ScheduleModal({
     setFormStatus(schedule.status);
     setEditingId(schedule.id);
     setAlarmEnabled(schedule.alarmEnabled ?? false);
-
+    setScheduleType(schedule.scheduleType);
     const [savedHour, savedMinute] = (schedule.time || "09:00").split(":");
     setHour(savedHour);
     setMinute(savedMinute);
@@ -320,7 +320,29 @@ export default function ScheduleModal({
 
             <S.ScheduleCount>{filteredSchedules.length}건</S.ScheduleCount>
           </S.DateInfo>
-          {isAdmin && (
+          <S.Section>
+            <S.SectionHeader>
+              <S.SectionTitle>
+                {editingId !== null ? (
+                  <>
+                    <FaPen />
+                    일정 수정
+                  </>
+                ) : (
+                  <>
+                    <FaPlus />새 일정 등록
+                  </>
+                )}
+              </S.SectionTitle>
+
+              {editingId !== null && (
+                <S.CancelEditButton type="button" onClick={resetForm}>
+                  <FaXmark />
+                  수정 취소
+                </S.CancelEditButton>
+              )}
+            </S.SectionHeader>
+            {isAdmin && (
             <S.ScheduleTypeSelector>
               <S.ScheduleTypeCard type="button" 
               $selected={scheduleType==='PERSONAL'}
@@ -370,29 +392,7 @@ export default function ScheduleModal({
                 </S.ScheduleTypeDescription>
               </S.ScheduleTypeCard>
             </S.ScheduleTypeSelector>
-          )}
-          <S.Section>
-            <S.SectionHeader>
-              <S.SectionTitle>
-                {editingId !== null ? (
-                  <>
-                    <FaPen />
-                    일정 수정
-                  </>
-                ) : (
-                  <>
-                    <FaPlus />새 일정 등록
-                  </>
-                )}
-              </S.SectionTitle>
-
-              {editingId !== null && (
-                <S.CancelEditButton type="button" onClick={resetForm}>
-                  <FaXmark />
-                  수정 취소
-                </S.CancelEditButton>
-              )}
-            </S.SectionHeader>
+            )}
             
             <S.TimeSelectorWrapper>
               <S.TimeLabel>

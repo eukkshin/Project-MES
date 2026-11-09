@@ -788,13 +788,8 @@ app.patch(
         return;
       }
 
-      const schedule = await Schedule.findOne({
-        where: {
-          id,
-          scheduleType: "PERSONAL",
-          createdBy: decoded.empId,
-        },
-      });
+      // 일정 조회
+      const schedule = await Schedule.findByPk(id);
 
       if (!schedule) {
         res.status(404).json({
@@ -804,9 +799,35 @@ app.patch(
         return;
       }
 
+      // PUBLIC은 관리자만 수정 가능
+      if (
+        schedule.scheduleType === "PUBLIC" &&
+        decoded.role !== "ADMIN"
+      ) {
+        res.status(403).json({
+          success: false,
+          message: "전체 일정은 관리자만 수정할 수 있습니다.",
+        });
+        return;
+      }
+
+      // PERSONAL은 작성자 또는 관리자만 수정 가능
+      if (
+        schedule.scheduleType === "PERSONAL" &&
+        schedule.createdBy !== decoded.empId &&
+        decoded.role !== "ADMIN"
+      ) {
+        res.status(403).json({
+          success: false,
+          message: "본인이 작성한 일정만 수정할 수 있습니다.",
+        });
+        return;
+      }
+
       const {
         scheduleType,
         createdBy,
+        id: requestId,
         ...updateData
       } = req.body;
 
@@ -821,7 +842,11 @@ app.patch(
               : 0,
       });
 
-      res.status(200).json(schedule);
+      res.status(200).json({
+        success: true,
+        message: "일정이 수정되었습니다.",
+        schedule,
+      });
     } catch (error) {
       console.error("일정 수정 오류:", error);
 
@@ -859,18 +884,38 @@ app.delete(
         return;
       }
 
-      const schedule = await Schedule.findOne({
-        where: {
-          id,
-          scheduleType: "PERSONAL",
-          createdBy: decoded.empId,
-        },
-      });
+      // 일정 조회
+      const schedule = await Schedule.findByPk(id);
 
       if (!schedule) {
         res.status(404).json({
           success: false,
           message: "삭제할 일정을 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      // PUBLIC은 관리자만 삭제 가능
+      if (
+        schedule.scheduleType === "PUBLIC" &&
+        decoded.role !== "ADMIN"
+      ) {
+        res.status(403).json({
+          success: false,
+          message: "전체 일정은 관리자만 삭제할 수 있습니다.",
+        });
+        return;
+      }
+
+      // PERSONAL은 작성자 또는 관리자만 삭제 가능
+      if (
+        schedule.scheduleType === "PERSONAL" &&
+        schedule.createdBy !== decoded.empId &&
+        decoded.role !== "ADMIN"
+      ) {
+        res.status(403).json({
+          success: false,
+          message: "본인이 작성한 일정만 삭제할 수 있습니다.",
         });
         return;
       }
@@ -934,15 +979,15 @@ app.post("/api/schedules/public",
 
       res.status(201).json({
         success: true,
-        message: "공용 일정이 등록되었습니다.",
+        message: "전체 일정이 등록되었습니다.",
         schedule,
       });
     } catch (error) {
-      console.error("공용 일정 등록 오류:", error);
+      console.error("전체 일정 등록 오류:", error);
 
       res.status(500).json({
         success: false,
-        message: "공용 일정을 등록하지 못했습니다.",
+        message: "전체 일정을 등록하지 못했습니다.",
       });
     }
   },

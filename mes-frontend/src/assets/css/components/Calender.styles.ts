@@ -692,10 +692,10 @@ export const SchedulePreview = styled.div<{ $type: string }>`
   border-radius: 5px;
 
   background: ${({ $type }) =>
-       $type === "PUBLIC" ? "#DDF3F2" : "#EFF6FF"};
+  $type === "PUBLIC" ? "#FFF0D9" : "#EFF6FF"};
 
-  color: ${({ $type }) =>
-      $type === "PUBLIC" ? "#237F7A" : "#2563EB"};
+color: ${({ $type }) =>
+  $type === "PUBLIC" ? "#A84B00" : "#2563EB"};
   font-size: 10px;
   font-weight: 600;
 
@@ -724,7 +724,7 @@ export const SchedulePreviewDot = styled.span<{ $type: string }>`
   border-radius: 50%;
 
   background: ${({ $type }) =>
-     $type === "PUBLIC" ? "#43AAA3" : "#2563EB"};
+     $type === "PUBLIC" ? "#F59E0B" : "#2563EB"};
 `;
 
 export const MoreScheduleCount = styled.div`

@@ -77,19 +77,19 @@ export default function Calendar({ year, month }: CalendarProps) {
 
   const today = Temporal.Now.plainDateISO();
 
-  // 외부에서 year, month props가 변경되면 달력도 변경
-  useEffect(() => {
-    if (year === undefined && month === undefined) return;
+  // // 외부에서 year, month props가 변경되면 달력도 변경
+  // useEffect(() => {
+  //   if (year === undefined && month === undefined) return;
 
-    const now = Temporal.Now.plainDateISO();
+  //   const now = Temporal.Now.plainDateISO();
 
-    setCurrentMonth(
-      Temporal.PlainYearMonth.from({
-        year: year ?? now.year,
-        month: month ?? now.month,
-      }),
-    );
-  }, [year, month]);
+  //   setCurrentMonth(
+  //     Temporal.PlainYearMonth.from({
+  //       year: year ?? now.year,
+  //       month: month ?? now.month,
+  //     }),
+  //   );
+  // }, [year, month]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +218,11 @@ export default function Calendar({ year, month }: CalendarProps) {
               <span>등록된 일정</span>
             </S.CalendarSummaryItem>
 
+            <S.CalendarSummaryItem>
+              <S.SummaryDot $color="#F59E0B" />
+              <span>전체 일정</span>
+            </S.CalendarSummaryItem>
+
             <S.ScheduleCount>
               이번 달 등록 일정 <strong>{scheduledDays}건</strong>
             </S.ScheduleCount>
@@ -263,6 +268,16 @@ export default function Calendar({ year, month }: CalendarProps) {
                 openScheduleModal(date.day);
               };
 
+              const sortedDaySchedules = [...daySchedules].sort((a,b)=>{
+                if(a.scheduleType === 'PUBLIC' && b.scheduleType !== 'PUBLIC'){
+                  return -1;
+                }
+                if(a.scheduleType !== 'PUBLIC' && b.scheduleType === 'PUBLIC' ){
+                  return 1;
+                }
+                return 0;
+              })
+
               return (
                 <S.DayCell
                   key={date.toString()}
@@ -293,26 +308,26 @@ export default function Calendar({ year, month }: CalendarProps) {
                     </S.HolidayLabel>
                   )}
 
-{isCurrentMonth && daySchedules.length > 0 && (
-  <S.SchedulePreviewList>
-    {daySchedules.slice(0, 3).map((schedule) => (
-      <S.SchedulePreview
-        key={schedule.id}
-        $type={schedule.scheduleType}
-        title={schedule.title || schedule.content}
-      >
-        <S.SchedulePreviewDot $type={schedule.scheduleType} />
-        <span>{schedule.title || schedule.content}</span>
-      </S.SchedulePreview>
-    ))}
+                  {isCurrentMonth && daySchedules.length > 0 && (
+                    <S.SchedulePreviewList>
+                      {sortedDaySchedules.slice(0, 3).map((schedule) => (
+                        <S.SchedulePreview
+                          key={schedule.id}
+                          $type={schedule.scheduleType}
+                          title={schedule.title || schedule.content}
+                        >
+                          <S.SchedulePreviewDot $type={schedule.scheduleType} />
+                          <span>{schedule.title || schedule.content}</span>
+                        </S.SchedulePreview>
+                      ))}
 
-    {daySchedules.length > 3 && (
-      <S.MoreScheduleCount>
-        +{daySchedules.length - 3}건 더보기
-      </S.MoreScheduleCount>
-    )}
-  </S.SchedulePreviewList>
-)}
+                      {daySchedules.length > 3 && (
+                        <S.MoreScheduleCount>
+                          +{daySchedules.length - 3}건 더보기
+                        </S.MoreScheduleCount>
+                      )}
+                    </S.SchedulePreviewList>
+                  )}
                   {isCurrentMonth && (
                     <S.DayAddIcon>
                       <FaPlus />
