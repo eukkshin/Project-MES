@@ -53,6 +53,18 @@ const User = sequelize.define(
       type: DataTypes.STRING(20),
       field: "GENDER",
     },
+    approvalStatus: { //회원가입 승인 여부
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "PENDING",
+      field: "APPROVAL_STATUS", //PENDING, APPROVED, REJECTED
+    },
+    accountStatus: {  //계정 로그인 가능 여부
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "ACTIVE",
+      field: "ACCOUNT_STATUS",
+    },
     // 직원 테이블과 연결할 사번
     empId: {
       type: DataTypes.STRING(20),

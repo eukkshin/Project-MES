@@ -16,11 +16,9 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Scm.styles";
-import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createComponent, fetchComponents } from "@/api/mes.http";
-
+import { useAlertStore } from "@/store/useAlertStore";
 
 interface ComponentItem {
   id: number;
@@ -50,28 +48,11 @@ const INITIAL_STATE: ComponentForm = {
 
 export default function ScmPage() {
   const queryClient = useQueryClient();
+  const showAlert = useAlertStore(state=>state.showAlert);
   
   const [form, setForm] = useState<ComponentForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");
-
-  const [alertModal, setAlertModal] = useState<{
-    isOpen: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    isOpen: false,
-    message: "",
-    type: "info",
-  });
-
-  const showAlert = (message: string, type: "success" | "error" | "info") => {
-    setAlertModal({
-      isOpen: true,
-      message,
-      type,
-    });
-  };
 
   const {data: components=[], isLoading, isError, error, refetch} = useQuery<ComponentItem[]>({
     queryKey: ['scm-components'],
@@ -168,7 +149,6 @@ export default function ScmPage() {
   }, [components, searchTerm]);
 
   return (
-    <Layout>
       <S.PageContainer>
         <S.PageHeader>
           <S.PageHeading>
@@ -505,18 +485,5 @@ export default function ScmPage() {
           </S.Panel>
         </S.ContentGrid>
       </S.PageContainer>
-
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        message={alertModal.message}
-        type={alertModal.type}
-        onClose={() =>
-          setAlertModal((prev) => ({
-            ...prev,
-            isOpen: false,
-          }))
-        }
-      />
-    </Layout>
   );
 }

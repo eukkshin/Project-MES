@@ -16,11 +16,10 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Cleanroom.styles";
-import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createEquipment, fetchEquipment, updateEquipmentStatus } from "@/api/mes.http";
 import { Select } from "@/ui/Select/Select";
+import { useAlertStore } from "@/store/useAlertStore";
 interface EquipmentItem {
   id: number;
   equipmentName: string;
@@ -77,30 +76,17 @@ const getStatusInfo = (status: string) => {
 export default function CleanroomPage() {
 
   const queryClient = useQueryClient();
+  const showAlert = useAlertStore(state=>state.showAlert);
 
   const [form, setForm] = useState<EquipmentForm>({ ...INITIAL_STATE });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
-
-  const [alertModal, setAlertModal] = useState<{
-    isOpen: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    isOpen: false,
-    message: "",
-    type: "info",
-  });
 
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const [selectedStatuses, setSelectedStatuses] = useState<
     Record<number, string>
   >({});
-
-  const showAlert = (message: string, type: "success" | "error" | "info") => {
-    setAlertModal({ isOpen: true, message, type });
-  };
 
   const {data: equipment=[], isLoading, isError, error, refetch } = useQuery<EquipmentItem[]>({
     queryKey: ['equipment'],
@@ -271,7 +257,6 @@ export default function CleanroomPage() {
   };
 
   return (
-    <Layout>
       <S.PageContainer>
         <S.PageHeader>
           <S.PageHeading>
@@ -632,13 +617,5 @@ export default function CleanroomPage() {
           </S.Panel>
         </S.ContentGrid>
       </S.PageContainer>
-
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        message={alertModal.message}
-        type={alertModal.type}
-        onClose={() => setAlertModal((prev) => ({ ...prev, isOpen: false }))}
-      />
-    </Layout>
   );
 }

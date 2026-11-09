@@ -24,9 +24,6 @@ export default function EqualizerLoader({
     );
 }
 
-
-
-
 export const LoadingWrapper = styled.div`
   display: flex;
   flex-direction: column;
@@ -46,7 +43,7 @@ export const Equalizer = styled.div`
 
 export const EqualizerBar = styled.span<{ $delay: string }>`
   width: 5px;
-  height: 12px;
+  height: 10px;
   border-radius: 10px;
   background: #4F83CC;
 

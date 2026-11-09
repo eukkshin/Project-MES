@@ -15,9 +15,7 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Analytics.styles";
-import { Layout } from "@/components/layout/Layout";
 import { createRecords, fetchRecords } from "@/api/mes.http";
-
 import type { ChangeEvent, FormEvent } from "react";
 import { Select } from "@/ui/Select/Select";
 
@@ -131,8 +129,6 @@ export default function AnalyticsPage() {
     }
     return [...data].sort((a, b) => Number(b.id) - Number(a.id));
 };
-
-  
   
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -256,7 +252,6 @@ export default function AnalyticsPage() {
   }, [form.actualCount, form.defectCount]);
 
   return (
-    <Layout>
       <S.PageContainer>
         <S.PageHeader>
           <S.PageHeading>
@@ -625,6 +620,5 @@ export default function AnalyticsPage() {
           </S.Panel>
         </S.ContentGrid>
       </S.PageContainer>
-    </Layout>
   );
 }

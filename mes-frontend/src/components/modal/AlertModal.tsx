@@ -62,14 +62,6 @@ export default function AlertModal({
                 ? '오류'
                 : '알림'
               )}
-              {/* {title ??
-                (isConfirm
-                  ? "로그아웃 확인"
-                  : type === "success"
-                    ? "처리 완료"
-                    : type === "error"
-                      ? "처리 실패"
-                      : "알림")} */}
             </S.AlertTitle>
   
             <S.AlertMessage>{message}</S.AlertMessage>
@@ -95,49 +87,3 @@ export default function AlertModal({
   );
 }
 
-
-// const [isClosing, setIsClosing] = useState(false);
-// const [shouldRender, setShouldRender] = useState(false);
-
-// if(!isOpen) return null;
-
-/**
- * 모달 열기 / 닫기 상태
- */
-// useEffect(() => {
-//   if (isOpen) {
-//     setShouldRender(true);
-//     setIsClosing(false);
-//   }
-// }, [isOpen]);
-
-// /**
-//  * 모달 닫기
-//  */
-// const handleClose = () => {
-//   if (isClosing) return;
-
-//   setIsClosing(true);
-
-//   setTimeout(() => {
-//     setShouldRender(false);
-//     onClose();
-//   }, 200);
-// };
-
-// /**
-//  * 확인 버튼
-//  */
-// const handleConfirm = () => {
-//   if (isClosing) return;
-
-//   setIsClosing(true);
-
-//   setTimeout(() => {
-//     setShouldRender(false);
-//     onConfirm?.();
-//   }, 200);
-// };
-
-// // 실제 DOM 제거
-// if (!shouldRender) return null;

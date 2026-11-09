@@ -36,6 +36,8 @@ export default function RootLayout({
             </QueryAlertProvider>
           </ThemeProviderWrapper>
         </StyledComponentsRegistry>
+        
+        <div id="portal-root" />
       </body>
     </html>
   );

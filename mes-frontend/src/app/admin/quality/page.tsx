@@ -18,12 +18,10 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Quality.styles";
-import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
 import { createInspection, fetchInspection } from "@/api/mes.http";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Select } from "@/ui/Select/Select";
-
+import { useAlertStore } from "@/store/useAlertStore";
 
 interface InspectionItem {
   id: number;
@@ -80,29 +78,12 @@ const inspectionTypeLabel = (type: string) => {
 
 export default function QualityPage() {
   const queryClient = useQueryClient();
+  const showAlert = useAlertStore(state=>state.showAlert);
 
   const [form, setForm] = useState<InspectionForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [resultFilter, setResultFilter] = useState("ALL");
-
-  const [alertModal, setAlertModal] = useState<{
-    isOpen: boolean;
-    message: string;
-    type: "success" | "error" | "info";
-  }>({
-    isOpen: false,
-    message: "",
-    type: "info",
-  });
-
-  const showAlert = (message: string, type: "success" | "error" | "info") => {
-    setAlertModal({
-      isOpen: true,
-      message,
-      type,
-    });
-  };
 
   const { data:inspections=[], isError, isLoading, error, refetch }=useQuery({
     queryKey: ['inspections'],
@@ -205,7 +186,6 @@ export default function QualityPage() {
   }, [inspections, searchTerm, resultFilter]);
 
   return (
-    <Layout>
       <S.PageContainer>
         <S.PageHeader>
           <S.PageHeading>
@@ -563,18 +543,5 @@ export default function QualityPage() {
           </S.Panel>
         </S.ContentGrid>
       </S.PageContainer>
-
-      <AlertModal
-        isOpen={alertModal.isOpen}
-        message={alertModal.message}
-        type={alertModal.type}
-        onClose={() =>
-          setAlertModal((prev) => ({
-            ...prev,
-            isOpen: false,
-          }))
-        }
-      />
-    </Layout>
   );
 }

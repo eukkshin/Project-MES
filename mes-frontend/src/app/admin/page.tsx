@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import * as S from "@/assets/css/admin/Admin.styles";
 import Calendar from "@/components/calendar/Calendar";
-import { Layout } from "@/components/layout/Layout";
 
 export const metadata: Metadata = {
   title: "일정관리 | Smart MES",
@@ -9,7 +8,6 @@ export const metadata: Metadata = {
 
 export default function AdminPage() {
   return (
-    <Layout>
       <S.DashboardContainer>
         <S.DashboardHeader>
           <S.Eyebrow>MES DASHBOARD</S.Eyebrow>
@@ -23,6 +21,5 @@ export default function AdminPage() {
           <Calendar />
         </S.CalendarLayout>
       </S.DashboardContainer>
-    </Layout>
   );
 }

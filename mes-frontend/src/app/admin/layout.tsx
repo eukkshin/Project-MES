@@ -1,18 +1,19 @@
+
 "use client";
 
 import React from "react";
 
 import * as S from "@/assets/css/Layout.style";
 
-import { Footer } from "./Footer";
-import { Header } from "./Header";
-import { SideBar } from "./SideBar";
+import { Footer } from "@/components/layout/Footer";
+import { Header } from "@/components/layout/Header";
+import { SideBar } from "@/components/layout/SideBar";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export const Layout = ({ children }: LayoutProps) => {
+export default function Layout ({ children }: LayoutProps){
   return (
     <S.PageWrapper>
       <S.LnbWrapper>

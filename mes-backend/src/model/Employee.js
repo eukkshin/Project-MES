@@ -33,12 +33,12 @@ const Employee = sequelize.define(
     status: {
       type: DataTypes.STRING(20),
       defaultValue: "active",
-      field: "STATUS",
+      field: "STATUS",  //active / leave / resigned
     },
     joinDate: {
       type: DataTypes.STRING(20),
       allowNull: false,
-      field: "JOIN_DATE",
+      field: "JOIN_DATE",  
     },
   },
   {

@@ -12,8 +12,6 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Process.styles";
-import { Layout } from "@/components/layout/Layout";
-import AlertModal from "@/components/modal/AlertModal";
 import { fetchProcessLines, updateLineStatus, createProcessLine } from "@/api/mes.http";
 import { useAlertStore } from "@/store/useAlertStore";
 
@@ -45,7 +43,7 @@ export default function ProcessPage() {
 
   const [form, setForm] = useState<ProcessForm>({...INITIAL_STATE});
 
-  const { showAlert } = useAlertStore();
+  const showAlert = useAlertStore(state=>state.showAlert);
 
   const {data: lines=[], isLoading, isError , error, refetch} = useQuery<ProcessLine[]>({
     queryKey: ['process-lines'],
@@ -115,7 +113,6 @@ export default function ProcessPage() {
   }, [lines]);
 
   return (
-    <Layout>
       <S.PageContainer>
         <S.PageHeader>
           <S.PageHeading>
@@ -375,7 +372,5 @@ export default function ProcessPage() {
           </S.Panel>
         </S.ContentGrid>
       </S.PageContainer>
-
-    </Layout>
   );
 }
