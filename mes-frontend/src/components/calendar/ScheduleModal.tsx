@@ -239,8 +239,10 @@ export default function ScheduleModal({
       scheduleType ,
       content,
       scheduleDate,  //2026-11-04
-      time: alarmEnabled ? `${formattedTime}` : null,
-      alarmEnabled,
+      time: scheduleType === "PERSONAL" && alarmEnabled 
+        ? `${formattedTime}` 
+        : null,
+      alarmEnabled: scheduleType === "PERSONAL" && alarmEnabled,
       status: toApiStatus(formStatus),
     }
     
@@ -384,7 +386,7 @@ export default function ScheduleModal({
                 </S.ScheduleTypeCardHeader>
 
                 <S.ScheduleTypeTitle $selected={scheduleType === "PUBLIC"}>
-                  공용 일정
+                  전체 일정
                 </S.ScheduleTypeTitle>
 
                 <S.ScheduleTypeDescription>
@@ -399,57 +401,62 @@ export default function ScheduleModal({
                 <FaBell/>
                 알람 시간 
               </S.TimeLabel>
-              
-              {!alarmEnabled ? (
-               <S.AlarmToggle>
-                <input
-                  type="checkbox"
-                  checked={alarmEnabled}
-                  onChange={ (e)=>{
-                    const enabled = e.target.checked;
-                    setAlarmEnabled(enabled)
-
-                    if(!enabled){
-                      setOpenSelectId(null);
-                    }
-                  }}
-                />
-              </S.AlarmToggle>
-              ): (
-               <S.TimeSelectGroup>
-                 <Select id="hour" options={hourOptions} 
-                 openSelectId={openSelectId}  setOpenSelectId={setOpenSelectId}
-                 value={hour} onChange={setHour} width="80px"
-                 >
-                   <Select.Toggle/>
-                   <Select.Menu/>
-                 </Select>
-                 <S.TimeColon>:</S.TimeColon>
-
-                 <Select id="minute" options={minuteOptions}
-                 openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
-                 value={minute} onChange={setMinute}  width="80px"
-                 >
-                   <Select.Toggle/>
-                   <Select.Menu/>
-                 </Select>
-
-                  <S.AlarmToggle>
-                    <input
-                      type="checkbox"
-                      checked={alarmEnabled}
-                      onChange={ (e)=>{
-                        const enabled = e.target.checked;
-                        setAlarmEnabled(enabled)
-
-                        if(!enabled){
-                          setOpenSelectId(null);
-                        }
-                      }}
-                    />
-                  </S.AlarmToggle>
-               </S.TimeSelectGroup>
-             )}
+              {scheduleType === 'PUBLIC' ? (
+              <S.AlarmDescription>
+                  전체 일정은 개인 알람을 설정할 수 없습니다.
+              </S.AlarmDescription>
+              ) : (
+                !alarmEnabled ? (
+                 <S.AlarmToggle>
+                  <input
+                    type="checkbox"
+                    checked={alarmEnabled}
+                    onChange={ (e)=>{
+                      const enabled = e.target.checked;
+                      setAlarmEnabled(enabled)
+  
+                      if(!enabled){
+                        setOpenSelectId(null);
+                      }
+                    }}
+                  />
+                </S.AlarmToggle>
+                ): (
+                 <S.TimeSelectGroup>
+                   <Select id="hour" options={hourOptions} 
+                   openSelectId={openSelectId}  setOpenSelectId={setOpenSelectId}
+                   value={hour} onChange={setHour} width="80px"
+                   >
+                     <Select.Toggle/>
+                     <Select.Menu/>
+                   </Select>
+                   <S.TimeColon>:</S.TimeColon>
+  
+                   <Select id="minute" options={minuteOptions}
+                   openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
+                   value={minute} onChange={setMinute}  width="80px"
+                   >
+                     <Select.Toggle/>
+                     <Select.Menu/>
+                   </Select>
+  
+                    <S.AlarmToggle>
+                      <input
+                        type="checkbox"
+                        checked={alarmEnabled}
+                        onChange={ (e)=>{
+                          const enabled = e.target.checked;
+                          setAlarmEnabled(enabled)
+  
+                          if(!enabled){
+                            setOpenSelectId(null);
+                          }
+                        }}
+                      />
+                    </S.AlarmToggle>
+                 </S.TimeSelectGroup>
+               )
+              )}
             </S.TimeSelectorWrapper>
 
             <S.FormGroup>
