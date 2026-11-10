@@ -168,8 +168,8 @@ export const HRFormGroup = styled.div`
 
   label {
     color: #86868b;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     letter-spacing: -0.01em;
   }
 
@@ -201,12 +201,12 @@ export const HRFormGroup = styled.div`
 export const HRModalHint = styled.p`
   margin: 0;
   color: #86868b;
-  font-size: 12px;
-  font-weight: 400;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.5;
 `;
 
-// 💡 푸터 (애플 시스템 다이얼로그처럼 깔끔한 분리선)
 export const HRModalFooter = styled.div`
   display: flex;
   justify-content: flex-end;

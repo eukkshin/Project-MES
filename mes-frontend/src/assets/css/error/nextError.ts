@@ -7,12 +7,12 @@ export const ErrorContainer = styled.main`
   justify-content: center;
 
   width: 100%;
-  min-height: 100vh;
   padding: 30px;
 
   box-sizing: border-box;
 
   background: #f6f8fc;
+
 `;
 
 export const ErrorCard = styled.section`

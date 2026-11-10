@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import axios from "axios";
 import {
   FaUsers,
   FaUserCheck,
@@ -10,94 +11,38 @@ import {
   FaEllipsisVertical,
   FaShieldHalved,
   FaBriefcase,
-  FaUserPen,
   FaBan,
-  FaXmark,
-  FaCheck,
   FaRotate,
   FaBuilding,
   FaArrowRotateRight,
-  FaUserGear,
   FaUserShield,
+  FaPenToSquare,
 } from "react-icons/fa6";
 
 import { createPortal } from "react-dom";
 import * as S from "@/assets/css/admin/Hr.styles";
 import HrEditModal from "@/components/modal/hr/hrEditModal";
+import type {EmployeeStatus, EmployeeRole, Employee} from '@/types/hr'
+import { useGetEmployees, useUpdateEmployee } from "@/hooks/useHr";
+import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
+import CommonError from "@/components/common/CommonError";
+import { useAlertStore } from "@/store/useAlertStore";
 
-type EmployeeStatus = "active" | "leave" | "resigned";
-export type EmployeeRole = "ADMIN" | "EMPLOYEE";
 
-interface Employee {
-  id: string;
-  name: string;
-  department: string;
-  role: EmployeeRole;
-  position: string;
-  status: EmployeeStatus;
-  joinDate: string;
-  accountStatus: "ACTIVE" | "INACTIVE";
-}
-
-export type ModalType = "role" | "position" | "info" | "deactivate";
+export type ModalType = "role" | "position" | "info" | "deactivate" | "status";
 
 interface ModalState {
   type: ModalType;
   employeeId: string;
 }
 
-const initialEmployees: Employee[] = [
-  {
-    id: "E0001",
-    name: "김민수",
-    department: "개발팀",
-    role: "ADMIN",
-    position: "팀장",
-    status: "active",
-    joinDate: "2024-03-11",
-    accountStatus: "ACTIVE",
-  },
-  {
-    id: "E0002",
-    name: "이서연",
-    department: "디자인팀",
-    role: "EMPLOYEE",
-    position: "대리",
-    status: "active",
-    joinDate: "2024-06-17",
-    accountStatus: "ACTIVE",
-  },
-  {
-    id: "E0003",
-    name: "박지훈",
-    department: "개발팀",
-    role: "EMPLOYEE",
-    position: "과장",
-    status: "leave",
-    joinDate: "2023-01-09",
-    accountStatus: "ACTIVE",
-  },
-  {
-    id: "E0004",
-    name: "최유진",
-    department: "인사팀",
-    role: "EMPLOYEE",
-    position: "사원",
-    status: "active",
-    joinDate: "2025-02-03",
-    accountStatus: "ACTIVE",
-  },
-  {
-    id: "E0005",
-    name: "정현우",
-    department: "마케팅팀",
-    role: "EMPLOYEE",
-    position: "대리",
-    status: "resigned",
-    joinDate: "2022-08-22",
-    accountStatus: "INACTIVE",
-  },
-];
+const actionLabels: Record<ModalType, string> = {
+    role: "권한 변경",
+    position: "직급 변경",
+    info: "직원 정보 수정",
+    status: "재직 상태 변경",
+    deactivate: "계정 상태 변경",
+  };
 
 const statusLabels: Record<EmployeeStatus, string> = {
   active: "재직",
@@ -105,13 +50,11 @@ const statusLabels: Record<EmployeeStatus, string> = {
   resigned: "퇴사",
 };
 
-
-
 export default function HRPage() {
-  const [employees, setEmployees] = useState<Employee[]>(
-    initialEmployees,
-  );
-
+  
+  const { data:employees=[], isLoading, isFetching, isError, error, refetch } = useGetEmployees();
+  const showAlert = useAlertStore(state=>state.showAlert);
+  const updateMutate = useUpdateEmployee();
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -124,6 +67,7 @@ export default function HRPage() {
   const [editPosition, setEditPosition] = useState("");
   const [editName, setEditName] = useState("");
   const [editDepartment, setEditDepartment] = useState("");
+  const [editStatus, setEditStatus] = useState<EmployeeStatus>("active");
 
   const selectedEmployee = employees.find(
     (employee) => employee.id === modal?.employeeId,
@@ -200,6 +144,7 @@ export default function HRPage() {
     setEditPosition(employee.position);
     setEditName(employee.name);
     setEditDepartment(employee.department);
+    setEditStatus(employee.status);
   };
 
   // 모달 닫기
@@ -211,54 +156,60 @@ export default function HRPage() {
   const handleSave = () => {
     if (!modal || !selectedEmployee) return;
 
-    if (
-      (modal.type === "info" &&
-        (!editName.trim() || !editDepartment.trim())) ||
-      (modal.type === "position" && !editPosition.trim())
-    ) {
-      return;
+     if (modal.type === "info" &&
+        (!editName.trim() || !editDepartment.trim())){
+          showAlert("이름과 부서를 입력해 주세요.");
+          return;
+      } 
+
+    let updateData: Partial<Employee>={};
+
+    switch(modal.type){
+      case 'role':
+        updateData = {
+          role: editRole,
+        };
+        break;
+      case 'position':
+        updateData = {
+          position: editPosition,
+        }
+        break;
+      case "info":
+        updateData = {
+          name: editName.trim(),
+          department: editDepartment.trim(),
+        };
+        break;
+      case 'status':
+        updateData = {
+          status: editStatus,
+        }
+        break;
+      case 'deactivate':
+        if (!selectedEmployee.accountStatus) {
+        showAlert("연결된 계정이 없습니다.");
+        return;
+        }
+        updateData = {
+          accountStatus: 
+          selectedEmployee?.accountStatus === 'ACTIVE' 
+          ? 'INACTIVE'
+          : 'ACTIVE' 
+        }
+        break;
     }
 
-    setEmployees((prev) =>
-      prev.map((employee) => {
-        if (employee.id !== modal.employeeId) return employee;
-
-        switch (modal.type) {
-          case "role":
-            return {
-              ...employee,
-              role: editRole,
-            };
-
-          case "position":
-            return {
-              ...employee,
-              position: editPosition.trim(),
-            };
-
-          case "info":
-            return {
-              ...employee,
-              name: editName.trim(),
-              department: editDepartment.trim(),
-            };
-
-          case "deactivate":
-            return {
-              ...employee,
-              accountStatus:
-                employee.accountStatus === "ACTIVE"
-                  ? "INACTIVE"
-                  : "ACTIVE",
-            };
-
-          default:
-            return employee;
-        }
-      }),
-    );
-
-    closeModal();
+    updateMutate.mutate({
+      id: selectedEmployee.id,
+      data: updateData,
+    },
+    { 
+       onSuccess: ()=>{
+        closeModal();
+        showAlert(`${selectedEmployee?.name}님의 ${actionLabels[modal.type]}이 완료하였습니다`, "success")
+    }
+    },)
   };
 
   const handleMenuAction = (type: ModalType, employee: Employee) => {
@@ -282,7 +233,7 @@ export default function HRPage() {
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const MENU_HEIGHT = 180;
+    const MENU_HEIGHT = 200;
 
     // 버튼 아래 남은 공간 계산
     const spaceBelow = window.innerHeight - rect.bottom;
@@ -298,6 +249,22 @@ export default function HRPage() {
     setOpenMenuId(employee.id);
   };
 
+  if( isLoading ){
+    return <EqualizerLoader message="직원 목록을 불러오는 중입니다"/>
+  }
+
+  if(isError){
+    const errorMessage = axios.isAxiosError(error) 
+    ? error.response?.data?.message 
+    : undefined;
+
+    return (
+      <CommonError 
+      message={errorMessage}
+      reset={refetch}/>
+    )
+  }
+
   return (
     <S.PageContainer>
       <S.PageHeader>
@@ -311,11 +278,11 @@ export default function HRPage() {
 
         <S.RefreshButton
           type="button"
-          // onClick={() => void refetch()}
-          // disabled={isLoading}
+          onClick={() => void refetch()}
+          disabled={isFetching}
         >
           <FaArrowRotateRight />
-          {/* {isLoading ? "조회 중..." : "새로고침"} */}
+          {isFetching ? "조회 중..." : "새로고침"}
         </S.RefreshButton>
       </S.PageHeader>
 
@@ -479,7 +446,7 @@ export default function HRPage() {
                           <FaEllipsisVertical />
                         </S.HRMoreButton>
 
-                        {openMenuId === employee.id && 
+                        {openMenuId === employee.id && menuPosition && 
                          typeof document !== "undefined" && 
                         createPortal(
                           <S.HRMoreMenu style={{top:menuPosition?.top, right:menuPosition?.right}}>
@@ -503,13 +470,23 @@ export default function HRPage() {
                               직급 / 직책 변경
                             </S.HRMenuItem>
 
+                             <S.HRMenuItem
+                              type="button"
+                              onClick={() =>
+                                handleMenuAction("status", employee)
+                              }
+                            >
+                              <FaUserCheck />
+                              재직 상태 변경
+                            </S.HRMenuItem>
+
                             <S.HRMenuItem
                               type="button"
                               onClick={() =>
                                 handleMenuAction("info", employee)
                               }
                             >
-                              <FaUserGear />
+                              <FaPenToSquare />
                               직원 정보 변경
                             </S.HRMenuItem>
 
@@ -555,6 +532,8 @@ export default function HRPage() {
       setEditName={setEditName}
       editDepartment={editDepartment}
       setEditDepartment={setEditDepartment}
+      editStatus={editStatus}
+      setEditStatus={setEditStatus}
       handleSave={handleSave}
       />
     </S.PageContainer>

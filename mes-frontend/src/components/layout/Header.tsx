@@ -37,7 +37,7 @@ const menuGroups = [
     title: "시스템 관리",
     items: [
       { label: "기준정보관리", href: "/master-data" },
-      { label: "사용자관리", href: "/users" },
+      { label: "인사관리", href: "/admin/hr" },
       { label: "시스템환경설정", href: "/settings" },
     ],
   },
@@ -51,7 +51,7 @@ const pageTitles: Record<string, string> = {
   "/admin/cleanroom": "클린룸 & 설비",
   "/admin/analytics": "실시간 통합관제",
   "/master-data": "기준정보관리",
-  "/users": "사용자관리",
+  "/admin/hr": "인사관리",
   "/settings": "시스템환경설정",
 };
 

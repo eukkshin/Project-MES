@@ -31,6 +31,7 @@ export const LoadingWrapper = styled.div`
   justify-content: center;
   gap: 14px;
   min-height: 180px;
+  margin-top: 100px;
 `;
 
 export const Equalizer = styled.div`

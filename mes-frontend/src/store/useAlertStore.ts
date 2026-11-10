@@ -21,14 +21,16 @@ export const useAlertStore= create<ModalState>((set)=>({
     title: undefined,
     onConfirm: undefined,
 
-    showAlert: ( message, type='info',title, onConfirm)=>
+    showAlert: ( message, type='info',title, onConfirm)=>{
+        
         set({
             isOpen:true,
             message,
             type,
             title: title ?? undefined,
             onConfirm: onConfirm ?? undefined,
-        }),
+        });
+    },
     hideAlert: ()=> 
         set({
             isOpen:false,

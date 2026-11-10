@@ -22,7 +22,7 @@ export default function Error({ error, reset }: ErrorProps) {
           <FaTriangleExclamation />
         </S.ErrorIcon>
 
-        {/* <S.ErrorCode>OOPS!</S.ErrorCode> */}
+        {/* <S.ErrorCode></S.ErrorCode> */}
 
         <S.ErrorTitle>
           페이지를 불러오지 못했습니다.
@@ -49,7 +49,7 @@ export default function Error({ error, reset }: ErrorProps) {
           <S.HomeButton
             type="button"
             as={Link}
-            href='/'
+            href='/admin'
           >
             <FaHouse />
             홈으로 이동

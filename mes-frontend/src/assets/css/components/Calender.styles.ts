@@ -914,7 +914,7 @@ export const ScheduleDateSummary = styled.div`
  `;
 
 export const SchedulePanelCard = styled.div<{
-  $type: "PUBLIC" | "PERSONAL";
+  $type: "PUBLIC" | "PERSONAL" | 'NOTICE';
 }>`
   position: relative;
   display: flex;
@@ -971,7 +971,7 @@ export const SchedulePanelCardTop = styled.div`
 
 // 애플 캡슐 배지 (아이콘 + 텍스트 조합)
 export const ScheduleTypeBadge = styled.span<{
-  $type: "PUBLIC" | "PERSONAL";
+  $type: "PUBLIC" | "PERSONAL" | 'NOTICE';
 }>`
   display: inline-flex;
   align-items: center;
@@ -1033,11 +1033,6 @@ export const SchedulePanelCardFooter = styled.div`
   border-top: 1px dashed #f1f5f9;
 `;
 
-
-/* ==========================================================================
-   Empty State (일정 없음)
-   ========================================================================== */
-
 export const ScheduleEmpty = styled.div`
   display: flex;
   flex-direction: column;
@@ -1068,15 +1063,6 @@ export const ScheduleEmpty = styled.div`
     color: #94a3b8;
   }
 `;
-
-
-// 상단 고정 영역 컨테이너
-export const TopActionContainer = styled.div`
-  padding: 0 20px 14px;
-  border-bottom: 1px solid #f1f5f9;
-  background: #ffffff;
-`;
-
 
 export const HeaderExpandingButton = styled.button`
   display: flex;

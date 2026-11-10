@@ -1,9 +1,9 @@
 'use client';
 
-import type { EmployeeRole, ModalType } from "@/app/(protected)/admin/hr/page";
-// import * as S from "@/assets/css/admin/Hr.styles";
+import type { ModalType } from "@/app/(protected)/admin/hr/page";
+import type { EmployeeRole,EmployeeStatus } from "@/types/hr";
 import { FaXmark, FaCheck } from "react-icons/fa6";
-import * as S from './style'
+import * as S from './Hr.style'
 
 interface EmployeeEditModalProps {
   modal: { type: ModalType } | null;
@@ -21,6 +21,8 @@ interface EmployeeEditModalProps {
   setEditName: (val: string) => void;
   editDepartment: string;
   setEditDepartment: (val: string) => void;
+  editStatus: EmployeeStatus;
+  setEditStatus: (val:EmployeeStatus)=> void;
   handleSave: () => void;
 }
 
@@ -29,6 +31,7 @@ const modalTitles: Record<ModalType, string> = {
   position: "직급 / 직책 변경",
   info: "직원 정보 변경",
   deactivate: "계정 비활성화",
+  status: "재직 상태 변경"
 };
 
 export default function HrEditModal({
@@ -43,6 +46,8 @@ export default function HrEditModal({
   setEditName,
   editDepartment,
   setEditDepartment,
+  editStatus,
+  setEditStatus,
   handleSave,
 }: EmployeeEditModalProps) {
 
@@ -115,7 +120,23 @@ export default function HrEditModal({
               : "이 계정을 다시 활성화하시겠습니까?"}
           </S.HRModalHint>
         );
-
+      
+      case "status":
+        return(
+            <S.HRFormGroup>
+              <label>재직 상태</label>
+              <select
+                value={editStatus}
+                onChange={(e) =>
+                  setEditStatus(e.target.value as EmployeeStatus)
+                }
+              >
+                <option value="active">재직</option>
+                <option value="leave">휴직</option>
+                <option value="resigned">퇴사</option>
+              </select>
+            </S.HRFormGroup>
+        );
       default:
         return null;
     }

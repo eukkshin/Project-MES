@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express, { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { Transaction } from 'sequelize';
 
 dotenv.config();
 
@@ -992,6 +993,217 @@ app.post("/api/schedules/public",
     }
   },
 );
+
+//===============================
+// 인사관리 employees 
+//===============================
+app.get('/api/admin/employees', 
+  verifyToken, 
+  verifyAdmin, 
+  async(req:Request, res:Response): Promise<void>=>{
+
+    try{
+      const employees = await Employee.findAll({
+        include:[
+          {
+            model: User,
+            as: "user",
+            attributes: ["accountStatus"],
+            required: false,
+          }
+        ],
+        order: [["joinDate", "DESC"]]
+      })
+
+        const employeeList = employees.map((item: any) => {
+        const employee = item.toJSON();
+
+        return {
+          id: employee.id,
+          name: employee.name,
+          department: employee.department,
+          role: employee.role,
+          position: employee.position,
+          status: employee.status,
+          joinDate: employee.joinDate,
+          accountStatus: employee.user?.accountStatus ?? null,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        employees: employeeList,
+      });
+    }catch(error){
+      console.error("직원 목록 조회 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "직원 목록을 불러오지 못했습니다.",
+      });
+    }
+})
+
+app.patch(
+  "/api/admin/employees/:id",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response): Promise<void> => {
+    const { id } = req.params;
+    const {
+      name,
+      department,
+      role,
+      position,
+      status,
+      accountStatus,
+    } = req.body;
+
+    try {
+      // 1. 수정할 직원 조회
+      const employee = await Employee.findByPk(id);
+
+      if (!employee) {
+        res.status(404).json({
+          success: false,
+          message: "직원을 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      // 2. 수정할 직원 정보 구성
+      const employeeUpdates: Record<string, string> = {};
+
+      if (name !== undefined) {
+        if (typeof name !== "string" || !name.trim()) {
+          res.status(400).json({
+            success: false,
+            message: "이름을 입력해 주세요.",
+          });
+          return;
+        }
+        employeeUpdates.name = name.trim();
+      }
+
+      if (department !== undefined) {
+        if (typeof department !== "string" || !department.trim()) {
+          res.status(400).json({
+            success: false,
+            message: "부서를 입력해 주세요.",
+          });
+          return;
+        }
+        employeeUpdates.department = department.trim();
+      }
+
+      if (role !== undefined) {
+        if (!["ADMIN", "EMPLOYEE"].includes(role)) {
+          res.status(400).json({
+            success: false,
+            message: "올바르지 않은 권한입니다.",
+          });
+          return;
+        }
+        employeeUpdates.role = role;
+      }
+
+      if (position !== undefined) {
+        if (typeof position !== "string") {
+          res.status(400).json({
+            success: false,
+            message: "올바르지 않은 직급입니다.",
+          });
+          return;
+        }
+        employeeUpdates.position = position.trim();
+      }
+
+      if (status !== undefined) {
+        if (!["active", "leave", "resigned"].includes(status)) {
+          res.status(400).json({
+            success: false,
+            message: "올바르지 않은 재직 상태입니다.",
+          });
+          return;
+        }
+        employeeUpdates.status = status;
+      }
+
+      if (
+        accountStatus !== undefined &&
+        !["ACTIVE", "INACTIVE"].includes(accountStatus)
+      ) {
+        res.status(400).json({
+          success: false,
+          message: "올바르지 않은 계정 상태입니다.",
+        });
+        return;
+      }
+
+      // 3. 수정할 데이터가 있는지 확인
+      if (
+        Object.keys(employeeUpdates).length === 0 &&
+        accountStatus === undefined
+      ) {
+        res.status(400).json({
+          success: false,
+          message: "수정할 정보가 없습니다.",
+        });
+        return;
+      }
+
+      // 4. 트랜잭션으로 데이터 수정
+      const result = await sequelize.transaction(async (transaction:Transaction) => {
+        let user = null;
+
+        // 계정 상태 수정 요청이 있다면 연결된 User 조회
+        if (accountStatus !== undefined) {
+          user = await User.findOne({
+            where: { empId: id },
+            transaction,
+          });
+
+          if (!user) {
+            throw new Error("연결된 계정을 찾을 수 없습니다.");
+          }
+        }
+
+        // EMPLOYEES 수정
+        if (Object.keys(employeeUpdates).length > 0) {
+          await employee.update(employeeUpdates, { transaction });
+        }
+
+        // USERS 수정
+        if (user && accountStatus !== undefined) {
+          await user.update({ accountStatus }, { transaction });
+        }
+
+        return {
+          ...employee.toJSON(),
+          accountStatus: user?.accountStatus ?? null,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "직원 정보가 수정되었습니다.",
+        employee: result,
+      });
+    } catch (error) {
+      console.error("직원 정보 수정 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error &&
+          error.message === "연결된 계정을 찾을 수 없습니다."
+            ? error.message
+            : "직원 정보 수정에 실패했습니다.",
+      });
+    }
+  },
+);
+
 
 
 console.log("등록된 모델:", Object.keys(sequelize.models));

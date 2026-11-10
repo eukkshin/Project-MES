@@ -2,22 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  FaArrowLeft,
-  FaArrowRight,
-  FaArrowRightToBracket,
-  FaArrowsTurnRight,
-  FaArrowsUpDownLeftRight,
   FaCalendarDays,
   FaChevronLeft,
   FaChevronRight,
   FaClock,
   FaPlus,
-  FaRightLong,
-  FaUpRightFromSquare,
   FaUser,
   FaUsers,
-  FaX,
-  FaXbox,
   FaXmark,
 } from "react-icons/fa6";
 
@@ -90,20 +81,6 @@ export default function Calendar({ year, month }: CalendarProps) {
   const currentMonthNumber = currentMonth.month;
 
   const today = Temporal.Now.plainDateISO();
-
-  // // 외부에서 year, month props가 변경되면 달력도 변경
-  // useEffect(() => {
-  //   if (year === undefined && month === undefined) return;
-
-  //   const now = Temporal.Now.plainDateISO();
-
-  //   setCurrentMonth(
-  //     Temporal.PlainYearMonth.from({
-  //       year: year ?? now.year,
-  //       month: month ?? now.month,
-  //     }),
-  //   );
-  // }, [year, month]);
 
   useEffect(() => {
     let cancelled = false;
