@@ -995,7 +995,7 @@ app.post("/api/schedules/public",
 );
 
 //===============================
-// 인사관리 employees 
+// 관리자 인사관리  
 //===============================
 app.get('/api/admin/employees', 
   verifyToken, 
@@ -1222,3 +1222,56 @@ sequelize
   .catch((error: unknown) => {
     console.error("데이터베이스 연결 오류:", error);
   });
+
+  
+//===============================
+// 사내 주소록
+//===============================
+
+app.get(
+  "/api/employees/directory",
+  verifyToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const employees = await Employee.findAll({
+        where: {
+          status: ["active", "leave"],
+        },
+        include: [
+          {
+            model: User,
+            as: "user",
+            attributes: ["email"],
+            required: false,
+          },
+        ],
+        order: [["joinDate", "DESC"]],
+      });
+
+      const employeeList = employees.map((item: any) => {
+        const employee = item.toJSON();
+
+        return {
+          id: employee.id,
+          name: employee.name,
+          department: employee.department,
+          position: employee.position,
+          status: employee.status,
+          email: employee.user?.email ?? null,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        directory: employeeList,
+      });
+    } catch (error) {
+      console.error("직원 디렉터리 조회 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "직원 목록을 불러오지 못했습니다.",
+      });
+    }
+  }
+);

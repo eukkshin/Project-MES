@@ -12,3 +12,12 @@ export interface Employee {
   joinDate: string;
   accountStatus: AccountStatus;
 }
+
+export interface EmployeeDirectory {
+  id: string;
+  name: string;
+  department: string;
+  position: string | null;
+  email: string | null;
+  status: "active" | "leave";
+}
