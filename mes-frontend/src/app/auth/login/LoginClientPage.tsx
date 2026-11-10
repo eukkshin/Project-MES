@@ -10,11 +10,16 @@ import AuthLayout from "@/components/auth/AuthLayout";
 import type { ChangeEvent, FormEvent } from "react";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useLoginMember } from "@/hooks/useLoginMember";
+import { useAuthStore } from "@/store/useAuthStore";
+import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 
 export default function LoginClientPage() {
   const router = useRouter();
   const showAlert = useAlertStore((state)=>state.showAlert);
-
+  const isInitialized = useAuthStore(state=>state.isInitialized);
+  const isAuth = useAuthStore(state=>state.isAuth);
+  const role = useAuthStore(state=>state.role);
+  
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -27,6 +32,16 @@ export default function LoginClientPage() {
   const { mutate, isPending: isLoading } = useLoginMember();
 
   useEffect(()=>{
+    if(!isInitialized || !isAuth) return;
+    if(role === 'ADMIN'){
+      router.replace('/admin')
+      return;
+    }
+    router.replace('/admin'); //추후에 수정!
+  },[isInitialized, isAuth, role, router])
+
+ 
+  useEffect(()=>{
     const savedEmail = localStorage.getItem('savedEmail');
 
     if(savedEmail){
@@ -37,6 +52,14 @@ export default function LoginClientPage() {
       setRememberEmail(true);
     }
   } ,[])
+
+   if (!isInitialized || isAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <EqualizerLoader message="페이지 이동 중입니다..." />
+      </div>
+    );
+  }
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

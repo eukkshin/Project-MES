@@ -11,6 +11,7 @@ import {
   FaLayerGroup,
   FaMicrochip,
   FaSliders,
+  FaUserGear,
   FaUsers,
   FaWarehouse,
 } from "react-icons/fa6";
@@ -67,8 +68,8 @@ const menuGroups = [
         icon: FaSliders,
       },
       {
-        label: "사용자관리",
-        href: "/users",
+        label: "인사관리",
+        href: "/admin/hr",
         icon: FaUsers,
       },
       {
