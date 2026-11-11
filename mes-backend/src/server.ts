@@ -23,6 +23,7 @@ const Equipment = require("./model/Equipment");
 const ProductionRecord = require("./model/ProductionRecord");
 const Employee = require('./model/Employee');
 const Schedule = require('./model/Schedule');
+const Message = require('./model/Message');
 
 //============================================
 // 👇 모델 관계 설정
@@ -1204,26 +1205,6 @@ app.patch(
   },
 );
 
-
-
-console.log("등록된 모델:", Object.keys(sequelize.models));
-// 서버 실행
-const PORT = Number(process.env.PORT) || 4000;
-
-sequelize
-  .sync({ force: false })
-  .then(() => {
-    console.log("데이터베이스 연결 완료");
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((error: unknown) => {
-    console.error("데이터베이스 연결 오류:", error);
-  });
-
-  
 //===============================
 // 사내 주소록
 //===============================
@@ -1254,6 +1235,7 @@ app.get(
         return {
           id: employee.id,
           name: employee.name,
+          role: employee.role,
           department: employee.department,
           position: employee.position,
           status: employee.status,
@@ -1275,3 +1257,79 @@ app.get(
     }
   }
 );
+
+//===============================
+//  쪽지보내기
+//===============================
+app.post(
+  "/api/messages",
+  verifyToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const senderEmpId = (req as any).user?.empId;
+
+      const { receiverEmpId, title, content } = req.body;
+
+      // 필수값 확인
+      if (!receiverEmpId || !title?.trim() || !content?.trim()) {
+        res.status(400).json({
+          success: false,
+          message: "받는 사람, 제목, 내용을 입력해주세요.",
+        });
+        return;
+      }
+
+      // 받는 사람 확인
+      const receiver = await Employee.findByPk(receiverEmpId);
+
+      if (!receiver) {
+        res.status(404).json({
+          success: false,
+          message: "받는 사람을 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      // 쪽지 저장
+      const message = await Message.create({
+        senderEmpId,
+        receiverEmpId,
+        title: title.trim(),
+        content: content.trim(),
+        isRead: "N",
+      });
+
+      res.status(201).json({
+        success: true,
+        message: "쪽지를 성공적으로 보냈습니다.",
+        data: message,
+      });
+    } catch (error) {
+      console.error("쪽지 전송 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "쪽지를 보내지 못했습니다.",
+      });
+    }
+  }
+);
+
+
+
+console.log("등록된 모델:", Object.keys(sequelize.models));
+// 서버 실행
+const PORT = Number(process.env.PORT) || 4000;
+
+sequelize
+  .sync({ force: false })
+  .then(() => {
+    console.log("데이터베이스 연결 완료");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((error: unknown) => {
+    console.error("데이터베이스 연결 오류:", error);
+  });

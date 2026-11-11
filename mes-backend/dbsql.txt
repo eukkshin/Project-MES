@@ -1,6 +1,6 @@
-//==================================
-// DB에 직접추가
-//=================================
+--//==================================
+--// DB에 직접추가
+--//=================================
 ALTER TABLE USERS
 ADD EMP_ID VARCHAR2(20);
 
@@ -17,45 +17,78 @@ ADD APPROVAL_STATUS VARCHAR2(20) DEFAULT 'PENDING' NOT NULL;
 
 ALTER TABLE USERS 
 ADD ACCOUNT_STATUS VARCHAR2(20) DEFAULT 'ACTIVE' NOT NULL;
-//==================================
-// Dummy Data 
-//=================================
-INSERT INTO EMPLOYEES (
+
+-- 인덱스추가//검색용 목차
+CREATE INDEX IDX_MESSAGE_RECEIVER
+ON MESSAGE_TB (RECEIVER_EMP_ID, SENT_AT);
+
+CREATE INDEX IDX_MESSAGE_SENDER
+ON MESSAGE_TB (SENDER_EMP_ID, SENT_AT);
+--//==================================
+--// Dummy Data 
+--//=================================
+INSERT ALL
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP011', '김민수', '인사총무팀', 'EMPLOYEE', '팀장', 'active', '2020-03-02')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP012', '이지은', 'IT개발팀', 'EMPLOYEE', '과장', 'active', '2021-05-10')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP003', '박서준', '생산관리팀', 'EMPLOYEE', '대리', 'active', '2022-01-17')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP004', '최유진', '재무회계팀', 'EMPLOYEE', '차장', 'active', '2019-07-01')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP005', '정하늘', '품질관리팀', 'EMPLOYEE', '주임', 'active', '2023-02-20')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP006', '강도윤', '영업팀', 'EMPLOYEE', '부장', 'active', '2018-11-12')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP007', '윤서연', '경영지원팀', 'EMPLOYEE', '사원', 'active', '2024-03-04')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP008', '한지호', '설비관리팀', 'EMPLOYEE', '대리', 'active', '2022-09-15')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP009', '오수빈', '자재구매팀', 'EMPLOYEE', '과장', 'leave', '2020-06-22')
+
+    INTO EMPLOYEES (EMP_ID, NAME, DEPARTMENT, ROLE, POSITION, STATUS, JOIN_DATE)
+    VALUES ('EMP010', '임준혁', '물류팀', 'EMPLOYEE', '실장', 'leave', '2017-04-03')
+SELECT 1 FROM DUAL;
+
+COMMIT;
+
+
+INSERT INTO USERS (
+    FIRST_NAME,
+    LAST_NAME,
+    EMAIL,
+    PASSWORD,
     EMP_ID,
-    NAME,
-    DEPARTMENT,
-    ROLE,
-    STATUS,
-    JOIN_DATE
-) VALUES (
-    'EMP001',
-    '한화',
-    '생산관리팀',
-    'ADMIN',
-    'active',
-    '2026-11-05'
-);
+    APPROVAL_STATUS,
+    ACCOUNT_STATUS
+)
+SELECT '민수', '김', 'minsu@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP011', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '지은', '이', 'jieun@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP012', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '서준', '박', 'seojun@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP003', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '유진', '최', 'yujin@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP004', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '하늘', '정', 'haneul@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP005', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '도윤', '강', 'doyun@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP006', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '서연', '윤', 'seoyeon@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP007', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '지호', '한', 'jiho@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP008', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '수빈', '오', 'subin@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP009', 'APPROVED', 'ACTIVE' FROM DUAL
+UNION ALL
+SELECT '준혁', '임', 'junhyuk@test.com', 'DUMMY_NOT_FOR_LOGIN', 'EMP010', 'APPROVED', 'ACTIVE' FROM DUAL;
 
-UPDATE USERS
-SET EMP_ID = 'EMP001'
-WHERE EMAIL = 'hanhwa@eagles.com';
-
-INSERT INTO EMPLOYEES (
-    EMP_ID,
-    NAME,
-    DEPARTMENT,
-    ROLE,
-    STATUS,
-    JOIN_DATE
-) VALUES (
-    'EMP002',
-    '스키즈',
-    '생산관리팀',
-    'EMPLOYEE',
-    'active',
-    '2026-11-05'
-);
-
-UPDATE USERS
-SET EMP_ID = 'EMP002'
-WHERE EMAIL = 'skz@skz.com';
+COMMIT;

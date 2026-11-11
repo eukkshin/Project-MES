@@ -1,11 +1,12 @@
 'use client';
 
-import { POSITION_OPTIONS } from "@/types/hr";
+import { POSITION_OPTIONS, DEPARTMENT_OPTIONS } from "@/types/hr";
 import type { 
   ModalType,
   EmployeeRole,
   EmployeeStatus,
   EmployeePosition,
+  EmployeeDepartment,
    }
 from "@/types/hr";
 import { FaXmark, FaCheck } from "react-icons/fa6";
@@ -25,8 +26,8 @@ interface EmployeeEditModalProps {
   setEditPosition: (val: EmployeePosition) => void;
   editName: string;
   setEditName: (val: string) => void;
-  editDepartment: string;
-  setEditDepartment: (val: string) => void;
+  editDepartment: EmployeeDepartment;
+  setEditDepartment: (val: EmployeeDepartment) => void;
   editStatus: EmployeeStatus;
   setEditStatus: (val:EmployeeStatus)=> void;
   handleSave: () => void;
@@ -107,11 +108,16 @@ export default function HrEditModal({
             </S.HRFormGroup>
             <S.HRFormGroup>
               <label>부서</label>
-              <input
+              <select
                 value={editDepartment}
-                onChange={(e) => setEditDepartment(e.target.value)}
-                maxLength={50}
-              />
+                onChange={(e) => setEditDepartment(e.target.value as EmployeeDepartment)}
+                > 
+                {DEPARTMENT_OPTIONS.map(depart => (
+                    <option value={depart} key={depart}>
+                      {depart}
+                    </option>
+                  ))}
+               </select>
             </S.HRFormGroup>
           </>
         );

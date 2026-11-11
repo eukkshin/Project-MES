@@ -4,10 +4,12 @@ import styled from "styled-components";
 export const ErrorContainer = styled.main`
   display: flex;
   align-items: center;
-  justify-content: center;
+
+  flex-direction: column;
+  padding-top: 190px;
 
   width: 100%;
-  padding: 30px;
+  height: 100vh;
 
   box-sizing: border-box;
 

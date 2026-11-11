@@ -27,8 +27,10 @@ import type {
   EmployeeStatus, 
   EmployeeRole, 
   Employee, 
-  EmployeePosition
-} from '@/types/hr'
+  EmployeePosition,
+  EmployeeDepartment
+} from '@/types/hr';
+import {DEPARTMENT_OPTIONS} from '@/types/hr';
 import { useGetEmployees, useUpdateEmployee } from "@/hooks/useHr";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 import CommonError from "@/components/common/CommonError";
@@ -52,14 +54,6 @@ const statusLabels: Record<EmployeeStatus, string> = {
   leave: "휴직",
   resigned: "퇴사",
 };
-
-const DEPARTMENT_OPTIONS = [
-  { value: "ALL", label: "전체 부서" },
-  { value: "인사팀", label: "인사팀" },
-  { value: "개발팀", label: "개발팀" },
-  { value: "디자인팀", label: "디자인팀" },
-  { value: "관리팀", label: "관리팀" },
-];
 
 const STATUS_OPTIONS = [
   { value: "ALL", label: "전체 상태" },
@@ -85,7 +79,7 @@ export default function HRPage() {
   const [editRole, setEditRole] = useState<EmployeeRole>("EMPLOYEE");
   const [editPosition, setEditPosition] = useState<EmployeePosition>("사원");
   const [editName, setEditName] = useState("");
-  const [editDepartment, setEditDepartment] = useState("");
+  const [editDepartment, setEditDepartment] = useState<EmployeeDepartment>("생산관리팀");
   const [editStatus, setEditStatus] = useState<EmployeeStatus>("active");
 
   const selectedEmployee = employees.find(
@@ -119,12 +113,6 @@ export default function HRPage() {
       leave: employees.filter((item) => item.status === "leave").length,
       resigned: employees.filter((item) => item.status === "resigned").length,
     }),
-    [employees],
-  );
-
-  // 부서 목록
-  const departments = useMemo(
-    () => [...new Set(employees.map((item) => item.department))],
     [employees],
   );
 
@@ -197,7 +185,7 @@ export default function HRPage() {
       case "info":
         updateData = {
           name: editName.trim(),
-          department: editDepartment.trim(),
+          department: editDepartment,
         };
         break;
       case 'status':
@@ -375,11 +363,12 @@ export default function HRPage() {
             <S.HRFilterSelect
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
-            >
+            > 
               <option value="ALL">전체 부서</option>
+              
               {DEPARTMENT_OPTIONS.map((department) => (
-                <option key={department.value} value={department.value}>
-                  {department.label}
+                <option key={department} value={department}>
+                  {department}
                 </option>
               ))}
             </S.HRFilterSelect>
@@ -388,7 +377,6 @@ export default function HRPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-            <option value="ALL">전체 상태</option>
             {STATUS_OPTIONS.map(opt=> (
               <option value={opt.value} key={opt.value}>{opt.label}</option>
             ))}
@@ -432,7 +420,6 @@ export default function HRPage() {
                               employee.name.charAt(0)
                             )}
                         </S.HRAvatar>
-
                         <div>
                           <strong>{employee.name}</strong> 
                         </div>
@@ -441,7 +428,7 @@ export default function HRPage() {
 
                     <td>{employee.id}</td>
                     <td>{employee.department}</td>
-                    <td>{employee.position || "-"}</td>
+                    <td>{employee.position ?? "-"}</td>
 
                     <td>
                       <S.HRStatusBadge $status={employee.status}>

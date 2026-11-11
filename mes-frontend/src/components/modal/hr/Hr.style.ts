@@ -179,7 +179,7 @@ export const HRFormGroup = styled.div`
     height: 40px;
     padding: 0 12px;
     
-    background: #f5f5f7; // 애플 입력창 연한 배경 톤
+    background: #f5f5f7; 
     border: 0.5px solid transparent;
     border-radius: 8px;
     

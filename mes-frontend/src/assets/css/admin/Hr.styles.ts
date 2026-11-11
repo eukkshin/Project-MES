@@ -1,5 +1,6 @@
 
 import styled from "styled-components";
+import { NoDrag } from "../common/Common.styles";
 
 export {
   PageContainer,
@@ -201,6 +202,9 @@ export const HRSearchWrapper = styled.div`
 
   &:focus-within {
     border-color: #2563eb;
+     > svg {
+    color: #2563eb;
+  }
   }
 
   @media (max-width: 700px) {
@@ -279,13 +283,14 @@ export const ResetButton= styled.button`
 export const HRTableWrapper = styled.div`
   width: 100%;
   overflow-x: auto;
+  ${NoDrag}
 
   &::-webkit-scrollbar {
-    height: 6px;
+    height: 5px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #e2e9df;
     border-radius: 10px;
   }
 `;
@@ -294,10 +299,15 @@ export const HRTable = styled.table`
   width: 100%;
   min-width: 850px;
   border-collapse: collapse;
-  text-align: left;
+  text-align: center;
 
   thead {
     background: #f8fafc;
+  }
+  th,
+  td {
+    vertical-align: middle;
+    white-space: nowrap;
   }
 
   th {
@@ -306,7 +316,6 @@ export const HRTable = styled.table`
     color: #94a3b8;
     font-size: 11px;
     font-weight: 700;
-    white-space: nowrap;
   }
 
   td {
@@ -315,7 +324,6 @@ export const HRTable = styled.table`
     border-top: 1px solid #f1f5f9;
     color: #475569;
     font-size: 12px;
-    white-space: nowrap;
   }
 
   tbody tr {
@@ -326,16 +334,12 @@ export const HRTable = styled.table`
     }
   }
 
-  th:first-child,
-  td:first-child {
-    padding-left: 24px;
-  }
-
   th:last-child,
   td:last-child {
     padding-right: 24px;
     text-align: center;
   }
+
 `;
 
 export const HRAdminCheck = styled.span`
@@ -351,6 +355,7 @@ export const HRAdminCheck = styled.span`
 export const HREmployeeIdentity = styled.div`
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 11px;
 
   > div:last-child {
@@ -389,6 +394,25 @@ export const HRAvatar = styled.div<{$role: string;}>`
   font-weight: 800;
 `;
 
+export const HREmailLink = styled.a`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  text-decoration: none;
+
+  &:hover {
+    color: #2563eb;
+  }
+
+  svg {
+    position: relative;
+    font-size: 12px;
+    top: 1px;
+      color: #2563eb;
+  }
+`;
+
 export const HRStatusBadge = styled.span<{
   $status: "active" | "leave" | "resigned";
 }>`
@@ -421,6 +445,21 @@ export const HRStatusBadge = styled.span<{
     border-radius: 50%;
     background: currentColor;
   }
+`;
+
+export const HRMessageButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 14px;
+  cursor: not-allowed;
+  opacity: 0.55;
 `;
 
 export const HRMoreWrapper = styled.div`
