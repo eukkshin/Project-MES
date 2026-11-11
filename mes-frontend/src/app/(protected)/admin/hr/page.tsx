@@ -22,14 +22,17 @@ import {
 import { createPortal } from "react-dom";
 import * as S from "@/assets/css/admin/Hr.styles";
 import HrEditModal from "@/components/modal/hr/hrEditModal";
-import type {EmployeeStatus, EmployeeRole, Employee} from '@/types/hr'
+import type { 
+  ModalType,
+  EmployeeStatus, 
+  EmployeeRole, 
+  Employee, 
+  EmployeePosition
+} from '@/types/hr'
 import { useGetEmployees, useUpdateEmployee } from "@/hooks/useHr";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 import CommonError from "@/components/common/CommonError";
 import { useAlertStore } from "@/store/useAlertStore";
-
-
-export type ModalType = "role" | "position" | "info" | "deactivate" | "status";
 
 interface ModalState {
   type: ModalType;
@@ -50,11 +53,27 @@ const statusLabels: Record<EmployeeStatus, string> = {
   resigned: "퇴사",
 };
 
+const DEPARTMENT_OPTIONS = [
+  { value: "ALL", label: "전체 부서" },
+  { value: "인사팀", label: "인사팀" },
+  { value: "개발팀", label: "개발팀" },
+  { value: "디자인팀", label: "디자인팀" },
+  { value: "관리팀", label: "관리팀" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "ALL", label: "전체 상태" },
+  { value: "active", label: "재직" },
+  { value: "leave", label: "휴직" },
+  { value: "resigned", label: "퇴사" },
+];
+
 export default function HRPage() {
   
   const { data:employees=[], isLoading, isFetching, isError, error, refetch } = useGetEmployees();
   const showAlert = useAlertStore(state=>state.showAlert);
   const updateMutate = useUpdateEmployee();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -64,7 +83,7 @@ export default function HRPage() {
 
   // 모달 입력 상태
   const [editRole, setEditRole] = useState<EmployeeRole>("EMPLOYEE");
-  const [editPosition, setEditPosition] = useState("");
+  const [editPosition, setEditPosition] = useState<EmployeePosition>("사원");
   const [editName, setEditName] = useState("");
   const [editDepartment, setEditDepartment] = useState("");
   const [editStatus, setEditStatus] = useState<EmployeeStatus>("active");
@@ -210,10 +229,6 @@ export default function HRPage() {
         showAlert(`${selectedEmployee?.name}님의 ${actionLabels[modal.type]}이 완료하였습니다`, "success")
     }
     },)
-  };
-
-  const handleMenuAction = (type: ModalType, employee: Employee) => {
-    openEditModal(type, employee);
   };
 
   const handleRefresh = () => {
@@ -362,9 +377,9 @@ export default function HRPage() {
               onChange={(e) => setDepartmentFilter(e.target.value)}
             >
               <option value="ALL">전체 부서</option>
-              {departments.map((department) => (
-                <option key={department} value={department}>
-                  {department}
+              {DEPARTMENT_OPTIONS.map((department) => (
+                <option key={department.value} value={department.value}>
+                  {department.label}
                 </option>
               ))}
             </S.HRFilterSelect>
@@ -373,10 +388,10 @@ export default function HRPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="ALL">전체 상태</option>
-              <option value="active">재직</option>
-              <option value="leave">휴직</option>
-              <option value="resigned">퇴사</option>
+            <option value="ALL">전체 상태</option>
+            {STATUS_OPTIONS.map(opt=> (
+              <option value={opt.value} key={opt.value}>{opt.label}</option>
+            ))}
             </S.HRFilterSelect>
 
             <S.ResetButton
@@ -453,7 +468,7 @@ export default function HRPage() {
                             <S.HRMenuItem
                               type="button"
                               onClick={() =>
-                                handleMenuAction("role", employee)
+                                openEditModal("role", employee)
                               }
                             >
                               <FaShieldHalved />
@@ -463,7 +478,7 @@ export default function HRPage() {
                             <S.HRMenuItem
                               type="button"
                               onClick={() =>
-                                handleMenuAction("position", employee)
+                                openEditModal("position", employee)
                               }
                             >
                               <FaBriefcase />
@@ -473,7 +488,7 @@ export default function HRPage() {
                              <S.HRMenuItem
                               type="button"
                               onClick={() =>
-                                handleMenuAction("status", employee)
+                                openEditModal("status", employee)
                               }
                             >
                               <FaUserCheck />
@@ -483,7 +498,7 @@ export default function HRPage() {
                             <S.HRMenuItem
                               type="button"
                               onClick={() =>
-                                handleMenuAction("info", employee)
+                                openEditModal("info", employee)
                               }
                             >
                               <FaPenToSquare />
@@ -494,7 +509,7 @@ export default function HRPage() {
                               type="button"
                               $danger
                               onClick={() =>
-                                handleMenuAction("deactivate", employee)
+                                openEditModal("deactivate", employee)
                               }
                             >
                               <FaBan />

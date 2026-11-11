@@ -1,7 +1,13 @@
 'use client';
 
-import type { ModalType } from "@/app/(protected)/admin/hr/page";
-import type { EmployeeRole,EmployeeStatus } from "@/types/hr";
+import { POSITION_OPTIONS } from "@/types/hr";
+import type { 
+  ModalType,
+  EmployeeRole,
+  EmployeeStatus,
+  EmployeePosition,
+   }
+from "@/types/hr";
 import { FaXmark, FaCheck } from "react-icons/fa6";
 import * as S from './Hr.style'
 
@@ -15,8 +21,8 @@ interface EmployeeEditModalProps {
   closeModal: () => void;
   editRole: EmployeeRole;
   setEditRole: (val: EmployeeRole) => void;
-  editPosition: string;
-  setEditPosition: (val: string) => void;
+  editPosition: EmployeePosition;
+  setEditPosition: (val: EmployeePosition) => void;
   editName: string;
   setEditName: (val: string) => void;
   editDepartment: string;
@@ -33,6 +39,7 @@ const modalTitles: Record<ModalType, string> = {
   deactivate: "계정 비활성화",
   status: "재직 상태 변경"
 };
+
 
 export default function HrEditModal({
   modal,
@@ -76,17 +83,14 @@ export default function HrEditModal({
             <label>직급 / 직책</label>
                 <select
                 value={editPosition}
-                onChange={(e) => setEditPosition(e.target.value)}
-            >
-                <option value="사원">사원</option>
-                <option value="주임">주임</option>
-                <option value="대리">대리</option>
-                <option value="과장">과장</option>
-                <option value="차장">차장</option>
-                <option value="부장">부장</option>
-                <option value="팀장">팀장</option>
-                <option value="실장">실장</option>
-                </select>
+                onChange={(e) => setEditPosition(e.target.value as EmployeePosition)}
+                > 
+                {POSITION_OPTIONS.map(position => (
+                    <option value={position} key={position}>
+                      {position}
+                    </option>
+                  ))}
+               </select>
           </S.HRFormGroup>
         );
 
