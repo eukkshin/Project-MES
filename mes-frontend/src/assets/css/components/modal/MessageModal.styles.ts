@@ -6,7 +6,7 @@ export const MessageWrapper = styled.div`
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 480px;
+  height: 490px;
   max-height: calc(100dvh - 180px);
 
     @media (max-width: 480px) {
@@ -402,7 +402,7 @@ export const MessageSendButton = styled.button`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 105px;
+  min-width: 85px;
   height: 40px;
   padding: 0 16px;
   border: 1px solid #2563eb;
@@ -426,7 +426,7 @@ export const MessageSendButton = styled.button`
   }
 
   svg {
-    font-size: 12px;
+    font-size: 13px;
   }
 `;
 
@@ -469,6 +469,7 @@ export const MessageDetailHeader = styled.div`
 
   display: flex;
   flex-direction: column;
+  margin-top: 10px;
 `;
 
 export const DetailTitleRow = styled.div`

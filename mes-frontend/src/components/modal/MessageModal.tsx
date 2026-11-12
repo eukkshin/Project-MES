@@ -4,7 +4,7 @@ import { useDeleteMessage, useGetMessagesReceived, useGetMessagesSent, useSendMe
 import { EmployeeDirectory } from "@/types/hr";
 import ModalLayout from "./ModalLayout";
 import * as S from '@/assets/css/components/modal/MessageModal.styles'
-import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaRegEnvelope, FaChevronLeft, FaTrash } from "react-icons/fa6";
+import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaRegEnvelope, FaChevronLeft, FaTrash, FaRegTrashCan } from "react-icons/fa6";
 import { useToastContext } from "@/context/ToastContext";
 import type { Message } from "@/types/message";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
@@ -283,7 +283,7 @@ export default function MessageModal({
                             disabled={isDeleting}
                             onClick={()=>handleDelete(selectedMessage.id)}
                             >
-                               {isDeleting? <FaSpinner/>: <FaTrash/>} 
+                               {isDeleting? <FaSpinner/>: <FaRegTrashCan/>} 
                             </S.DeleteButton>
                         </S.MessageDetailFooter>
                         </S.MessageDetail> 
@@ -397,7 +397,7 @@ export default function MessageModal({
                             disabled={isDeleting}
                             onClick={()=>handleDelete(selectedMessage.id)}
                             >
-                            {isDeleting? <FaSpinner/>: <FaTrash/>} 
+                            {isDeleting? <FaSpinner/>: <FaRegTrashCan/>} 
                           </S.DeleteButton>
                         </S.MessageDetailFooter>
                       </S.MessageDetail>
