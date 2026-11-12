@@ -1,4 +1,4 @@
-import { FaSpinner } from 'react-icons/fa6';
+import { motion } from 'motion/react';
 import styled from "styled-components";
 
 export const MessageWrapper = styled.div`
@@ -41,7 +41,7 @@ export const MessageTab = styled.button<{ $active: boolean }>`
   position: relative;
   transition: color 0.15s ease;
 
-  &::after {
+  /* &::after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -51,13 +51,22 @@ export const MessageTab = styled.button<{ $active: boolean }>`
     background: ${({ $active }) => ($active ? "#2563eb" : "transparent")};
     border-radius: 2px 2px 0 0;
     transition: background 0.15s ease;
-  }
+  } */
 
   &:hover {
     color: #2563eb;
   }
 `;
 
+export const MotionIndicator = styled(motion.div)`
+ position: absolute;
+  bottom: 0;
+  left: 12px;
+  width: calc(100% - 24px);
+  height: 2px;
+  background: #2563eb;
+  border-radius: 2px 2px 0 0;
+`;
 
 export const MessageModalBody = styled.div`
   flex: 1;

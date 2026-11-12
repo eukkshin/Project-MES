@@ -4,7 +4,7 @@ import { useDeleteMessage, useGetMessagesReceived, useGetMessagesSent, useSendMe
 import { EmployeeDirectory } from "@/types/hr";
 import ModalLayout from "./ModalLayout";
 import * as S from '@/assets/css/components/modal/MessageModal.styles'
-import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaArrowLeft, FaRegEnvelope, FaChevronLeft, FaTrash } from "react-icons/fa6";
+import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaRegEnvelope, FaChevronLeft, FaTrash } from "react-icons/fa6";
 import { useToastContext } from "@/context/ToastContext";
 import type { Message } from "@/types/message";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
@@ -115,6 +115,16 @@ export default function MessageModal({
                 >   
                  <FaPenToSquare />
                     쪽지 보내기
+                {activeTab === 'write' && (
+                  <S.MotionIndicator
+                  layoutId="messageTabIndicator"
+                  transition={{
+                    type: "tween",
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  />
+                )}
                 </S.MessageTab>
 
                 <S.MessageTab 
@@ -127,6 +137,16 @@ export default function MessageModal({
                 >   
                  <FaInbox />
                     받은 쪽지함
+                {activeTab === 'received' && (
+                  <S.MotionIndicator
+                  layoutId="messageTabIndicator"
+                  transition={{
+                    type: "tween",
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  />
+                )}
                 </S.MessageTab>
 
                 <S.MessageTab 
@@ -139,6 +159,16 @@ export default function MessageModal({
                 >   
                  <FaPaperPlane />
                     보낸 쪽지함
+                {activeTab === 'sent' && (
+                  <S.MotionIndicator
+                  layoutId="messageTabIndicator"
+                  transition={{
+                    type: "tween",
+                    duration: 0.35,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
+                  />
+                )}
                 </S.MessageTab>
                 </S.MessageTabs>
 
@@ -237,10 +267,17 @@ export default function MessageModal({
                         </S.MessageDetailContent>
     
                         <S.MessageDetailFooter>
-                            <span>
-                            <FaRegEnvelopeOpen />
-                            읽음
-                            </span>
+                            {selectedMessage.isRead === "Y" ? (
+                                <span>
+                                <FaRegEnvelopeOpen />
+                                읽음
+                                </span>
+                            ) : (
+                                <span>
+                                <FaRegEnvelope />
+                                읽지 않음
+                                </span>
+                            )}
                             <S.DeleteButton 
                             type="button"
                             disabled={isDeleting}
@@ -284,7 +321,8 @@ export default function MessageModal({
                                 <div className="card-bottom">
                                     <span className="sender"> 
                                         <FaRegUser/>
-                                        {message.senderName}
+                                        <strong>{message.senderName}</strong>
+                                        {message.senderEmpId}
                                     </span>
                                     <S.MessageDate>{formatMessageDate(message.sentAt)}</S.MessageDate>
                                     <FaChevronRight className="arrow-icon"/>
@@ -394,7 +432,8 @@ export default function MessageModal({
                                 <div className="card-bottom">
                                     <span className="sender"> 
                                         <FaRegUser/>
-                                        {message.receiverName}
+                                        <strong>{message.receiverName}</strong>
+                                        {message.receiverEmpId}
                                     </span>
                                     <S.MessageDate>{formatMessageDate(message.sentAt)}</S.MessageDate>
                                     <FaChevronRight className="arrow-icon"/>
