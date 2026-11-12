@@ -43,6 +43,18 @@ const Message = sequelize.define(
       allowNull: false,
       field: "SENT_AT",
     },
+    senderDeleted: {
+      type: DataTypes.STRING(1),
+      allowNull: false,
+      defaultValue: "N",
+      field: "SENDER_DELETED",
+    },
+    receiverDeleted: {
+      type: DataTypes.STRING(1),
+      allowNull: false,
+      defaultValue: "N",
+      field: "RECEIVER_DELETED",
+    }
   },
   {
     tableName: "MESSAGE",

@@ -1348,6 +1348,7 @@ app.get(
       const messages = await Message.findAll({
         where: {
           receiverEmpId,
+          receiverDeleted: "N",
         },
         include:[
           {
@@ -1400,6 +1401,7 @@ app.get(
       const messages = await Message.findAll({
         where: {
           senderEmpId,
+          senderDeleted: "N",
         },
         include: [
           {
@@ -1491,6 +1493,78 @@ app.patch(
       res.status(500).json({
         success: false,
         message: "쪽지 읽음 처리에 실패했습니다.",
+      });
+    }
+  }
+);
+
+// 쪽지 삭제
+app.delete(
+  "/api/messages/:id",
+  verifyToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const empId = (req as any).user?.empId;
+      const { id } = req.params;
+
+      // 쪽지 조회
+      const message = await Message.findByPk(id);
+
+      if (!message) {
+        res.status(404).json({
+          success: false,
+          message: "쪽지를 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      // 보낸 사람인지 확인
+      if (message.senderEmpId === empId) {
+        if (message.senderDeleted === "Y") {
+          res.status(200).json({
+            success: true,
+            message: "이미 삭제한 쪽지입니다.",
+          });
+          return;
+        }
+
+        await message.update({
+          senderDeleted: "Y",
+        });
+      }
+      // 받은 사람인지 확인
+      else if (message.receiverEmpId === empId) {
+        if (message.receiverDeleted === "Y") {
+          res.status(200).json({
+            success: true,
+            message: "이미 삭제한 쪽지입니다.",
+          });
+          return;
+        }
+
+        await message.update({
+          receiverDeleted: "Y",
+        });
+      }
+      // 쪽지와 관계없는 사용자인 경우
+      else {
+        res.status(403).json({
+          success: false,
+          message: "쪽지를 삭제할 권한이 없습니다.",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "쪽지를 삭제했습니다.",
+      });
+    } catch (error) {
+      console.error("쪽지 삭제 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "쪽지 삭제에 실패했습니다.",
       });
     }
   }

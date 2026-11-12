@@ -1,4 +1,4 @@
-import { getMessagesReceived, getMessagesSent, sendMessages, updateMessageIsRead } from "@/api/message.http"
+import { deleteMessage, getMessagesReceived, getMessagesSent, sendMessages, updateMessageIsRead } from "@/api/message.http"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 
@@ -39,3 +39,19 @@ export const useUpdateMessageIsRead = ()=>{
         }
     })
 }
+
+export const useDeleteMessage = ()=>{
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id:number)=> deleteMessage(id),
+        onSuccess:()=>{
+            queryClient.invalidateQueries({
+                queryKey: ['messages', 'received']
+            });
+            queryClient.invalidateQueries({
+                queryKey: ['messages', 'sent']
+            });
+
+        }
+    })
+};

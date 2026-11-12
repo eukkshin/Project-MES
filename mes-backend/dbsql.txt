@@ -24,6 +24,11 @@ ON MESSAGE_TB (RECEIVER_EMP_ID, SENT_AT);
 
 CREATE INDEX IDX_MESSAGE_SENDER
 ON MESSAGE_TB (SENDER_EMP_ID, SENT_AT);
+
+ALTER TABLE MESSAGE ADD (
+    SENDER_DELETED CHAR(1) DEFAULT 'N' NOT NULL,
+    RECEIVER_DELETED CHAR(1) DEFAULT 'N' NOT NULL
+);
 --//==================================
 --// Dummy Data 
 --//=================================

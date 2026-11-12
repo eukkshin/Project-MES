@@ -1,13 +1,14 @@
 'use client';
 import { useState } from "react";
-import { useGetMessagesReceived, useGetMessagesSent, useSendMessage, useUpdateMessageIsRead } from "@/hooks/useMessage";
+import { useDeleteMessage, useGetMessagesReceived, useGetMessagesSent, useSendMessage, useUpdateMessageIsRead } from "@/hooks/useMessage";
 import { EmployeeDirectory } from "@/types/hr";
 import ModalLayout from "./ModalLayout";
 import * as S from '@/assets/css/components/modal/MessageModal.styles'
-import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaArrowLeft, FaRegEnvelope, FaChevronLeft } from "react-icons/fa6";
+import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaArrowLeft, FaRegEnvelope, FaChevronLeft, FaTrash } from "react-icons/fa6";
 import { useToastContext } from "@/context/ToastContext";
 import type { Message } from "@/types/message";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
+import { useAlertStore } from "@/store/useAlertStore";
 
 type MessageTab = "write" | "received" | "sent";
 
@@ -34,6 +35,8 @@ export default function MessageModal({
 }:MessageModalProps){
 
     const { showToast }=useToastContext();
+    const showAlert = useAlertStore(state=> state.showAlert);
+    const { mutate: deleteMutate, isPending: isDeleting} = useDeleteMessage();
     const { mutate, isPending } = useSendMessage();
     const {data: receivedMessages=[], isLoading: isReceivedLoading } = useGetMessagesReceived();
     const {data: sentMessages=[], isLoading:isSentLoading} = useGetMessagesSent();
@@ -73,9 +76,28 @@ export default function MessageModal({
             updateIsReadMutate(message.id, {
                 onSuccess:()=>{
                     setSelectedMessage((prev)=> prev? {...prev,isRead:"Y"}: prev)
+                },
+                onError:(error)=>{
+                    console.error("읽음 처리 실패:", error);
+                    showToast("읽음 처리에 실패했습니다.", "error");
                 }
             });
         }
+    }
+
+    const handleDelete = (id:number)=>{
+        showAlert("쪽지를 삭제하시겠습니까?", 'error', '삭제 확인', 
+            ()=>deleteMutate(id,{
+                onSuccess:()=>{
+                    setSelectedMessage(null);
+                    showToast('쪽지가 삭제되었습니다.', 'success');
+                },
+                onError: (error)=>{
+                    console.error("쪽지 삭제 실패:", error);
+                    showToast("쪽지 삭제에 실패했습니다.", "error");
+                }
+            })
+        )
     }
 
     return(
@@ -219,6 +241,13 @@ export default function MessageModal({
                             <FaRegEnvelopeOpen />
                             읽음
                             </span>
+                            <S.DeleteButton 
+                            type="button"
+                            disabled={isDeleting}
+                            onClick={()=>handleDelete(selectedMessage.id)}
+                            >
+                               {isDeleting? <FaSpinner/>: <FaTrash/>} 
+                            </S.DeleteButton>
                         </S.MessageDetailFooter>
                         </S.MessageDetail> 
                     ) : (
@@ -325,6 +354,13 @@ export default function MessageModal({
                               읽지 않음
                             </span>
                           )}
+                          <S.DeleteButton
+                            type="button"
+                            disabled={isDeleting}
+                            onClick={()=>handleDelete(selectedMessage.id)}
+                            >
+                            {isDeleting? <FaSpinner/>: <FaTrash/>} 
+                          </S.DeleteButton>
                         </S.MessageDetailFooter>
                       </S.MessageDetail>
                     ):(

@@ -356,6 +356,9 @@ export const MessageTextarea = styled.textarea`
   color: #172033;
   font-family: inherit;
   box-sizing: border-box;
+
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   transition: border-color 0.18s ease;
 
   &::placeholder {
@@ -564,7 +567,7 @@ export const MessageDate = styled.span`
 
 export const MessageDetailFooter = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 4px;
 
   span {
@@ -575,4 +578,37 @@ export const MessageDetailFooter = styled.div`
     font-weight: 600;
     color: #16a34a;
   }
+`;
+
+export const DeleteButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #d9534f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+        background: #feecec;
+        border-color: #f0d5d5;
+    }
+
+    &:active {
+        transform: scale(0.97);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    svg {
+        font-size: 13px;
+    }
 `;

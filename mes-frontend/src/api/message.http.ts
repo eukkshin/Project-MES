@@ -20,3 +20,9 @@ export const updateMessageIsRead = async(id:number) => {
     const response = await api.patch(`/api/messages/${id}/read`);
     return response.data;
 }
+
+export const deleteMessage = async(id:number) => {
+    const response = await api.delete(`/api/messages/${id}`);
+    return response.data;
+}
+
