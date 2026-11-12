@@ -38,6 +38,7 @@ const menuGroups = [
     items: [
       { label: "기준정보관리", href: "/master-data" },
       { label: "인사관리", href: "/admin/hr" },
+      { label: "사내주소록", href: "/admin/employee" },
       { label: "시스템환경설정", href: "/settings" },
     ],
   },
@@ -52,6 +53,7 @@ const pageTitles: Record<string, string> = {
   "/admin/analytics": "실시간 통합관제",
   "/master-data": "기준정보관리",
   "/admin/hr": "인사관리",
+  "/admin/employee": "사내주소록",
   "/settings": "시스템환경설정",
 };
 

@@ -4,9 +4,10 @@ import { useGetMessagesReceived, useGetMessagesSent, useSendMessage, useUpdateMe
 import { EmployeeDirectory } from "@/types/hr";
 import ModalLayout from "./ModalLayout";
 import * as S from '@/assets/css/components/modal/MessageModal.styles'
-import { FaPaperPlane, FaInbox, FaRegPaperPlane, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaArrowLeft } from "react-icons/fa6";
+import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaArrowLeft, FaRegEnvelope, FaChevronLeft } from "react-icons/fa6";
 import { useToastContext } from "@/context/ToastContext";
 import type { Message } from "@/types/message";
+import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 
 type MessageTab = "write" | "received" | "sent";
 
@@ -47,7 +48,6 @@ export default function MessageModal({
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
         if(!receiver || !title.trim() || !content.trim()) return;
-
         mutate({
             receiverEmpId: receiver.id,
             title: title.trim(),
@@ -62,6 +62,7 @@ export default function MessageModal({
             },
             onError: (error)=>{
                  console.error("쪽지 전송 실패:", error);
+                showToast(`${receiver.name}님에게 쪽지가 전송되지못했습니다.`, 'error')
             }
         },)
     };
@@ -172,35 +173,24 @@ export default function MessageModal({
                     </S.MessageForm>
                 )}
 
+                {/* 쪽지 상세 화면 */}
                 {activeTab === "received" && (
                     selectedMessage ? (
-                         // 쪽지 상세 화면
                         <S.MessageDetail>
-                            <S.TopRow>
-                                <S.MessageBackButton
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedMessage(null);
-                                        setActiveTab('received');
-                                    }}
-                                >
-                                    <FaArrowLeft />
-                                    받은 쪽지 목록
-                                </S.MessageBackButton>
-
-                            <S.ReadStatusBadge $isRead={selectedMessage.isRead==="Y"}>
-                                <span>
-                                <FaRegEnvelopeOpen />
-                                {selectedMessage.isRead === "Y" ? "읽음" : "읽지 않음"}
-                                </span>
-                            </S.ReadStatusBadge>
-                            </S.TopRow>
+                            <S.MessageBackButton
+                                type="button"
+                                onClick={() => {
+                                    setSelectedMessage(null);
+                                    setActiveTab('received');
+                                }}
+                            >
+                                <FaChevronLeft />
+                                받은 쪽지 목록
+                            </S.MessageBackButton>
      
                         <S.MessageDetailHeader>
                             <S.DetailTitleRow>
                                 <h3>{selectedMessage.title}</h3>
-                             
-                            
                             </S.DetailTitleRow>
     
                             <S.SenderInfoBox>
@@ -212,6 +202,7 @@ export default function MessageModal({
                                     <strong>{selectedMessage.senderName}</strong>
                                     <span>보낸 사람</span>
                                 </S.SenderTextBox>
+
                                 <S.MessageDate>
                                     {formatMessageDate(selectedMessage.sentAt)}
                                 </S.MessageDate>
@@ -226,19 +217,22 @@ export default function MessageModal({
                         <S.MessageDetailFooter>
                             <span>
                             <FaRegEnvelopeOpen />
-                            {selectedMessage.isRead === "Y" ? "읽음" : "읽지 않음"}
+                            읽음
                             </span>
                         </S.MessageDetailFooter>
                         </S.MessageDetail> 
                     ) : (
                         <S.MessageListWrapper>
+                            {isReceivedLoading ? (
+                                <EqualizerLoader message="받은 쪽지를 불러오는 중"/>
+                            ):(
+                            receivedMessages.length > 0 ? (
+                            <>
                             <S.MessageGuide>
                                 <FaRegEnvelopeOpen />
                                 쪽지를 클릭하면 내용을 확인하고 읽음으로 표시됩니다.
                             </S.MessageGuide>
-    
-                            {receivedMessages.length > 0 ? (
-                            receivedMessages.map((message) => (
+                            {receivedMessages.map((message) => (
                                 <S.MessageCard
                                 key={message.id}
                                 $unread={message.isRead === "N"}
@@ -251,59 +245,135 @@ export default function MessageModal({
                                         )}
                                         <strong>{message.title}</strong>
                                     </div>
-                                    <span className="message-date">{formatMessageDate(message.sentAt)}</span>
+                                    <S.ReadStatusBadge>
+                                        <span>
+                                        {message.isRead === "Y" ?   <FaRegEnvelopeOpen /> : <FaRegEnvelope/>}
+                                        </span>
+                                    </S.ReadStatusBadge>
                                 </div>
 
-                                    {/* <S.MessageDetailFooter>
-                                <span>
-                                <FaRegEnvelopeOpen />
-                                {selectedMessage.isRead === "Y" ? "읽음" : "읽지 않음"}
-                                </span>
-                            </S.MessageDetailFooter> */}
-    
                                 <div className="card-bottom">
                                     <span className="sender"> 
                                         <FaRegUser/>
                                         {message.senderName}
                                     </span>
+                                    <S.MessageDate>{formatMessageDate(message.sentAt)}</S.MessageDate>
                                     <FaChevronRight className="arrow-icon"/>
                                 </div>
                                 </S.MessageCard>
-                            ))
-                            ) 
+                            ))}
+                            </>)
                             : (
                             <S.EmptyMessageState>
                                 <FaInbox />
                                 <strong>받은 쪽지가 없습니다.</strong>
                                 <span>새로운 쪽지가 도착하면 여기에 표시됩니다.</span>
                             </S.EmptyMessageState>
-                            )}
+                            ))}
                         </S.MessageListWrapper>
                     ) 
                 )}
 
                 {activeTab === "sent" && (
-                <S.MessageListWrapper>
-                    {sentMessages.length > 0 ? (
-                    sentMessages.map((message) => (
-                        <S.MessageCard key={message.id}>
-                        <div className="card-header">
-                            <strong>{message.title}</strong>
-                            <span>{message.sentAt}</span>
-                        </div>
+                    selectedMessage ? (
+                        <S.MessageDetail>
+                        <S.MessageBackButton
+                          type="button"
+                          onClick={() => {
+                            setSelectedMessage(null)
+                            setActiveTab('sent');
+                          }}
+                        >
+                          <FaChevronLeft />
+                          보낸 쪽지 목록
+                        </S.MessageBackButton>
+                  
+                        <S.MessageDetailHeader>
+                          <S.DetailTitleRow>
+                            <h3>{selectedMessage.title}</h3>
+                          </S.DetailTitleRow>
+                  
+                          <S.SenderInfoBox>
+                            <S.SenderAvatar>
+                              <FaRegUser />
+                            </S.SenderAvatar>
+                  
+                            <S.SenderTextBox>
+                              <strong>{selectedMessage.receiverName}</strong>
+                              <span>받는 사람</span>
+                            </S.SenderTextBox>
+                  
+                            <S.MessageDate>
+                              {formatMessageDate(selectedMessage.sentAt)}
+                            </S.MessageDate>
+                          </S.SenderInfoBox>
+                        </S.MessageDetailHeader>
+                  
+                        <S.MessageDetailContent>
+                          {selectedMessage.content}
+                        </S.MessageDetailContent>
+                  
+                        <S.MessageDetailFooter>
+                          {selectedMessage.isRead === "Y" ? (
+                            <span>
+                              <FaRegEnvelopeOpen />
+                              읽음
+                            </span>
+                          ) : (
+                            <span>
+                              <FaRegEnvelope />
+                              읽지 않음
+                            </span>
+                          )}
+                        </S.MessageDetailFooter>
+                      </S.MessageDetail>
+                    ):(
+                    <S.MessageListWrapper>
+                        {isSentLoading ? (
+                                <EqualizerLoader message="보낸 쪽지를 불러오는 중"/>
+                            ):(
+                        sentMessages.length > 0 ? (
+                        sentMessages.map((message) => (
+                            <S.MessageCard 
+                            key={message.id}
+                            $unread={message.isRead==='N'}
+                            onClick={()=> setSelectedMessage(message)}
+                            >
+                                <div className="card-top">
+                                    <div className="title-area">
+                                        {message.isRead === 'N' && (
+                                            <span className="unread-dot"/>
+                                        )}
+                                        <strong>{message.title}</strong>
+                                    </div>
+                                    <S.ReadStatusBadge>
+                                        <span>
+                                        {message.isRead === "Y" 
+                                        ? <FaRegEnvelopeOpen /> 
+                                        : <FaRegEnvelope/>}
+                                        </span>
+                                    </S.ReadStatusBadge>
+                                </div>
 
-                        <p>{message.content}</p>
-                        </S.MessageCard>
-                    ))
-                    ) : (
-                    <S.EmptyMessageState>
-                        <FaPaperPlane />
-                        <strong>보낸 쪽지가 없습니다.</strong>
-                        <span>보낸 쪽지 내역이 여기에 표시됩니다.</span>
-                    </S.EmptyMessageState>
-                    )}
-                </S.MessageListWrapper>
-                )} 
+                                <div className="card-bottom">
+                                    <span className="sender"> 
+                                        <FaRegUser/>
+                                        {message.receiverName}
+                                    </span>
+                                    <S.MessageDate>{formatMessageDate(message.sentAt)}</S.MessageDate>
+                                    <FaChevronRight className="arrow-icon"/>
+                                </div>
+                            </S.MessageCard>
+                        ))
+                        ) : (
+                        <S.EmptyMessageState>
+                            <FaPaperPlane />
+                            <strong>보낸 쪽지가 없습니다.</strong>
+                            <span>보낸 쪽지 내역이 여기에 표시됩니다.</span>
+                        </S.EmptyMessageState>
+                        ))}
+                    </S.MessageListWrapper>
+                    ) )}
                 </S.MessageModalBody>
             </S.MessageWrapper>
         </ModalLayout>

@@ -60,6 +60,12 @@ Message.belongsTo(Employee, {
   as: "sender",
 });
 
+Message.belongsTo(Employee, {
+  foreignKey: "receiverEmpId",
+  targetKey: "id",
+  as: "receiver",
+});
+
 //========================================
 const app = express();
 
@@ -301,6 +307,7 @@ app.post(
         token,
         user: {
           id: user.id,
+          empId: user.empId,
           firstName: user.firstName,
           lastName: user.lastName,
           name: `${user.lastName ?? ""}${user.firstName ?? ""}`.trim(),
@@ -1276,11 +1283,20 @@ app.post(
 
       const { receiverEmpId, title, content } = req.body;
 
+  
       // 필수값 확인
       if (!receiverEmpId || !title?.trim() || !content?.trim()) {
         res.status(400).json({
           success: false,
           message: "받는 사람, 제목, 내용을 입력해주세요.",
+        });
+        return;
+      }
+      // 본인에게 쪽지 보내는 것 방지
+      if (senderEmpId === receiverEmpId) {
+        res.status(400).json({
+          success: false,
+          message: "본인에게는 쪽지를 보낼 수 없습니다.",
         });
         return;
       }
@@ -1342,7 +1358,7 @@ app.get(
         ],
         order: [["sentAt", "DESC"]],
       });
-
+ 
       const messageList = messages.map((item: any) => {
         const message = item.toJSON();
 
@@ -1385,6 +1401,13 @@ app.get(
         where: {
           senderEmpId,
         },
+        include: [
+          {
+            model: Employee,
+            as: "receiver",
+            attributes: ["id", "name"],
+          },
+        ],
         order: [["sentAt", "DESC"]],
       });
 
@@ -1395,6 +1418,7 @@ app.get(
           id: message.id,
           senderEmpId: message.senderEmpId,
           receiverEmpId: message.receiverEmpId,
+          receiverName: message.receiver?.name ?? "알 수 없음",
           title: message.title,
           content: message.content,
           isRead: message.isRead,

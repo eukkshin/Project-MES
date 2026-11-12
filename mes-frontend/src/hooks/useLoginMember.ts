@@ -16,8 +16,7 @@ export const useLoginMember = () => {
     mutationFn: loginMember,
 
     onSuccess: (data) => {
-      console.log("로그인 응답 데이터:", data);
-  console.log("로그인 role:", data.role);
+      console.log("onSuccess 실행됨!", data);
       if (!data.success) {
         showAlert(data.message || "로그인에 실패했습니다.", "error");
         return;
@@ -29,8 +28,7 @@ export const useLoginMember = () => {
         showAlert("인증 토큰을 받지 못했습니다.", "error");
         return;
       }
-
-      login(token, data.user.name, data.role);
+      login(token, data.user.name, data.role, data.user.empId);
     },
 
     onError: (error) => {

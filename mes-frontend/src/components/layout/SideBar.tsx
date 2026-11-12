@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  FaAddressBook,
   FaChartLine,
   FaChevronRight,
   FaClipboardCheck,
@@ -71,6 +72,11 @@ const menuGroups = [
         label: "인사관리",
         href: "/admin/hr",
         icon: FaUsers,
+      },
+      {
+        label: "사내 주소록",
+        href: "/admin/employee",
+        icon: FaAddressBook,
       },
       {
         label: "시스템환경설정",

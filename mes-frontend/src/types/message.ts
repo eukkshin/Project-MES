@@ -3,6 +3,7 @@ export interface Message {
     senderEmpId: string,
     senderName: string,
     receiverEmpId: string,
+    receiverName: string;
     title:string,
     content: string,
     isRead: "Y" | "N",

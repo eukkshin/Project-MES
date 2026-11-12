@@ -1,3 +1,4 @@
+import { FaSpinner } from 'react-icons/fa6';
 import styled from "styled-components";
 
 export const MessageWrapper = styled.div`
@@ -417,46 +418,6 @@ export const MessageSendButton = styled.button`
   }
 `;
 
-export const MessageModalButton = styled.button<{
-  $variant?: "primary" | "secondary";
-}>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  height: 38px;
-  padding: 0 16px;
-  border: 1px solid
-    ${({ $variant }) =>
-      $variant === "primary" ? "#2563eb" : "#e2e8f0"};
-  border-radius: 8px;
-  background: ${({ $variant }) =>
-    $variant === "primary" ? "#2563eb" : "#ffffff"};
-  color: ${({ $variant }) =>
-    $variant === "primary" ? "#ffffff" : "#64748b"};
-  font-size: 12px;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover:not(:disabled) {
-    background: ${({ $variant }) =>
-      $variant === "primary" ? "#1d4ed8" : "#f1f5f9"};
-    color: ${({ $variant }) =>
-      $variant === "primary" ? "#ffffff" : "#172033"};
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-export const TopRow = styled.div`
-display: flex;
-justify-content: space-between;
-align-items: center;
-`;
 //상세화면
 export const MessageDetail = styled.div`
   display: flex;
@@ -466,7 +427,7 @@ export const MessageDetail = styled.div`
 `;
 
 export const MessageBackButton = styled.button`
-    display: flex;
+  display: flex;
   align-items: center;
   gap: 8px;
   width: fit-content;
@@ -477,10 +438,14 @@ export const MessageBackButton = styled.button`
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
 
   &:hover {
     color: #2563eb;
+    svg{
+      font-size: 13px;
+      transform: translateX(-4px);
+    }
   }
 `;
 
@@ -510,16 +475,14 @@ export const DetailTitleRow = styled.div`
   }
 `;
 
-export const ReadStatusBadge = styled.span<{ $isRead: boolean }>`
+export const ReadStatusBadge = styled.span`
   display: inline-flex;
   align-items: center;
-  gap: 5px;
   padding: 4px 10px;
   flex-shrink: 0;
   border-radius: 20px;
-  background: ${({ $isRead }) => ($isRead ? "#ecfdf5" : "#f8fafc")};
-  color: ${({ $isRead }) => ($isRead ? "#16a34a" : "#64748b")};
-  border: 1px solid ${({ $isRead }) => ($isRead ? "#bbf7d0" : "#e2e8f0")};
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   font-size: 10px;
   font-weight: 700;
 
@@ -529,11 +492,9 @@ export const ReadStatusBadge = styled.span<{ $isRead: boolean }>`
   span {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
     color: #16a34a;
   }
+ 
 `;
 
 export const MessageDetailContent = styled.div`
@@ -556,6 +517,7 @@ export const MessageDetailContent = styled.div`
 export const SenderInfoBox = styled.div`
   display: flex;
   align-items: center;
+
   gap: 10px;
 `;
 
@@ -592,8 +554,12 @@ export const SenderTextBox = styled.div`
 
 export const MessageDate = styled.span`
   margin-left: auto;
+  margin-right: 10px;
   font-size: 11px;
   color: #94a3b8;
+  align-self: flex-end;
+  letter-spacing: -0.3px;
+
 `;
 
 export const MessageDetailFooter = styled.div`

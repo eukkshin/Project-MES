@@ -9,20 +9,12 @@ import {
     type ColumnDef
 } from '@tanstack/react-table';
 import { 
-    FaAngleLeft,
-    FaAngleRight,
-    FaAnglesLeft,
-    FaAnglesRight,
     FaArrowRotateRight,
-    FaChevronLeft,
-    FaChevronRight,
-    FaEnvelope,
     FaFolderOpen,
     FaMagnifyingGlass, 
     FaRegEnvelope, 
-    FaRegMessage, 
-    FaRegPenToSquare, 
     FaRotate, 
+    FaEnvelope,
     FaUserShield 
 } from "react-icons/fa6";
 import * as S from "@/assets/css/admin/Hr.styles";
@@ -32,6 +24,7 @@ import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 import { DEPARTMENT_OPTIONS, type EmployeeDirectory } from "@/types/hr";
 import Pagination from "@/components/common/pagination/Pagination";
 import MessageModal from "@/components/modal/MessageModal";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const DIRECTORY_STATUS_OPTIONS = [
   { value: "ALL", label: "전체 상태" },
@@ -47,6 +40,7 @@ const features = tableFeatures({
 
 export default function EmployeeDirectoryPage(){
 
+    const empId = useAuthStore(state=>state.empId);
     const { data:employees=[], isLoading, isFetching, isError, error, refetch } = useGetEmployeeDirectory();
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -120,7 +114,8 @@ export default function EmployeeDirectoryPage(){
         {
             id: "message",
             header: "쪽지",
-            cell: ({ row }) => (
+            cell: ({ row }) => {
+                return(
             <S.HRMessageButton
                 type="button"
                 title={`${row.original.name}님에게 쪽지 보내기`}
@@ -129,10 +124,11 @@ export default function EmployeeDirectoryPage(){
                     setSelectedEmployee(row.original);
                     setIsMessageOpen(true);
                 }}
+                disabled={row.original.id === empId}
             >
                 <FaRegEnvelope />
-            </S.HRMessageButton>
-            ),
+            </S.HRMessageButton> )
+            },
         },
     ];
         
@@ -208,9 +204,9 @@ export default function EmployeeDirectoryPage(){
             <S.PageHeader>
                 <S.PageHeading>
                     <S.Eyebrow>EMPLOYEE DIRECTORY</S.Eyebrow>
-                    <S.PageTitle>직원 찾기</S.PageTitle>
+                    <S.PageTitle>사내 주소록</S.PageTitle>
                     <S.PageDescription>
-                    함께 일하는 동료들의 정보를 확인하고 연락해 보세요.
+                    함께 일하는 동료들의 정보를 확인하고 쪽지를 보내 소통해 보세요.
                     </S.PageDescription>
                 </S.PageHeading>
 

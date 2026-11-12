@@ -7,11 +7,12 @@ export type UserRole = "ADMIN" | "EMPLOYEE";
 interface AuthState {
     token: string | null;
     username: string | null;
+    empId: string | null;
     role: UserRole | null;
     isAuth: boolean;
     isInitialized: boolean; // 인증 초기화 여부
 
-    login:(token:string, username:string, role: UserRole)=> void;
+    login:(token:string, username:string, role: UserRole, empId:string)=> void;
     logout: ()=>void;
     initializeAuth: () => void; 
 }
@@ -43,20 +44,23 @@ const isTokenExpired = (token:string): boolean=> {
 export const useAuthStore = create<AuthState>((set)=>({
     token: null,
     username: null,
+    empId:null,
     role:null,
     isAuth: false,
     isInitialized: false,
 
     //로그인
-    login: (token, username, role)=>{
+    login: (token, username, role,empId)=>{
         localStorage.setItem('token', token);
         localStorage.setItem('username', username);
         localStorage.setItem("role", role);
+        localStorage.setItem("empId", empId);
 
         set({
             token, 
             username, 
             role,  
+            empId,
             isAuth:true, 
             isInitialized: true,
         })
@@ -66,11 +70,13 @@ export const useAuthStore = create<AuthState>((set)=>({
         localStorage.removeItem('token');
         localStorage.removeItem('username');
         localStorage.removeItem("role");
+        localStorage.removeItem("empId");
 
         set({
             token:null,
             username:null,
             role: null,
+            empId:null,
             isAuth:false,
             isInitialized: true,
         })
@@ -81,6 +87,7 @@ export const useAuthStore = create<AuthState>((set)=>({
         const token = localStorage.getItem('token');
         const username = localStorage.getItem('username');
         const savedRole = localStorage.getItem("role");
+        const empId= localStorage.getItem("empId");
 
         const role :UserRole | null = 
             savedRole === 'ADMIN' || savedRole === 'EMPLOYEE'
@@ -88,15 +95,17 @@ export const useAuthStore = create<AuthState>((set)=>({
             : null;
 
          // 토큰이 없거나 만료되었거나 사용자 권한 정보가 없는 경우
-        if (!token || isTokenExpired(token) || !role) {
+        if (!token || isTokenExpired(token) || !role || !empId) {
             localStorage.removeItem('token');
             localStorage.removeItem('username');
             localStorage.removeItem('role');
+            localStorage.removeItem('empId');
             
             set({
                 token:null, 
                 username:null, 
                 role:null,
+                empId:null,
                 isAuth: false, 
                 isInitialized:true,
             });
@@ -108,6 +117,7 @@ export const useAuthStore = create<AuthState>((set)=>({
             token,
             username,
             role,
+            empId,
             isAuth: true,
             isInitialized: true,
         });
