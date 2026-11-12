@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { FaRotateRight, FaHouse } from "react-icons/fa6";
+
 import * as S from "@/assets/css/error/nextError";
 export default function NotFound() {
   return (
@@ -37,14 +39,14 @@ export default function NotFound() {
 
         <S.ButtonGroup>
           <S.RetryButton onClick={() => window.location.reload()}>
+            <FaRotateRight />
             새로고침
           </S.RetryButton>
 
-          <Link href="/admin" passHref legacyBehavior>
-            <S.HomeButton as="a" style={{ textDecoration: "none" }} >
+            <S.HomeButton as={Link} href="/admin">
+              <FaHouse />
               홈으로 가기
             </S.HomeButton>
-          </Link>
         </S.ButtonGroup>
       </S.ErrorCard>
     </S.ErrorContainer>

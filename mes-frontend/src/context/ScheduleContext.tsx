@@ -25,7 +25,6 @@ const isAlarmEnabled = (value: ApiSchedule['alarmEnabled'])=>{
 
 export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 
-  // 최신 토스트 상태를 알람 감시 로직에서 참조
   const currentToastRef = useRef<ToastInfo|null>(null);
   const [currentToast, setCurrentToast] = useState<ToastInfo | null>(null);
 
@@ -165,7 +164,7 @@ export function ScheduleProvider({ children }: { children: React.ReactNode }) {
 export function useSchedule() {
   const context = useContext(ScheduleContext);
   if (!context) {
-    throw new Error("useSchedule must be used within a ScheduleProvider");
+    throw new Error("스케쥴ConText내부에서만 사용가능합니다");
   }
   return context;
 }

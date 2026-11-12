@@ -1,7 +1,7 @@
 'use client';
 
 import { useSchedule } from "@/context/ScheduleContext";
-import * as S from '@/assets/css/components/alarm.style'
+import * as S from '@/assets/css/components/Toastalarm.style'
 import { motion } from 'motion/react'
 
 export function AlarmToast(){
