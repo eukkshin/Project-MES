@@ -2,10 +2,12 @@ import { deleteMessage, getMessagesReceived, getMessagesSent, sendMessages, upda
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 
-export const useGetMessagesReceived = ()=>{
+export const useGetMessagesReceived = (enabled=true)=>{
     return useQuery({
         queryKey: ['messages', 'received'],
         queryFn:getMessagesReceived,
+        refetchInterval:30_000,  //30초
+        enabled
     })
 }
 
