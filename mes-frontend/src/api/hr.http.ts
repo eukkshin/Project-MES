@@ -12,11 +12,14 @@ export const updateEmployee = async({
     data
 }:{id:string, data:Partial<Employee>}):Promise<Employee>=>{
     const response = await api.patch(`/api/admin/employees/${id}`, data);
-    return response.data.employee
+    return response.data.employee;
 }
 
 export const getEmployeeDirectory = async():Promise<EmployeeDirectory[]>=>{
     const response = await api.get('/api/employees/directory');
-    return response.data.directory
+    return response.data.directory;
 }
+
+
+
 

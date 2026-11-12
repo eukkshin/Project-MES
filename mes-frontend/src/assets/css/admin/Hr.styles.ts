@@ -174,9 +174,7 @@ export const HRToolbar = styled.div`
   border-bottom: 1px solid #f1f5f9;
 
   @media (max-width: 700px) {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px;
+    display: none;
   }
 `;
 
@@ -292,6 +290,9 @@ export const HRTableWrapper = styled.div`
   &::-webkit-scrollbar-thumb {
     background: #e2e9df;
     border-radius: 10px;
+  }
+   &::-webkit-scrollbar-track {
+    background: transparent;
   }
 `;
 
@@ -458,8 +459,18 @@ export const HRMessageButton = styled.button`
   background: #ffffff;
   color: #64748b;
   font-size: 14px;
-  cursor: not-allowed;
-  opacity: 0.55;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 export const HRMoreWrapper = styled.div`

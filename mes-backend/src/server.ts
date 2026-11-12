@@ -54,6 +54,12 @@ Employee.hasMany(Schedule, {
   as: "schedules",
 });
 
+Message.belongsTo(Employee, {
+  foreignKey: "senderEmpId",
+  targetKey: "id",
+  as: "sender",
+});
+
 //========================================
 const app = express();
 
@@ -1315,7 +1321,156 @@ app.post(
   }
 );
 
+// 받은 쪽지 조회
+app.get(
+  "/api/messages/received",
+  verifyToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const receiverEmpId = (req as any).user?.empId;
 
+      const messages = await Message.findAll({
+        where: {
+          receiverEmpId,
+        },
+        include:[
+          {
+            model: Employee,
+            as: "sender",
+            attributes: ["id", "name"],
+          },
+        ],
+        order: [["sentAt", "DESC"]],
+      });
+
+      const messageList = messages.map((item: any) => {
+        const message = item.toJSON();
+
+        return {
+          id: message.id,
+          senderEmpId: message.senderEmpId,
+          receiverEmpId: message.receiverEmpId,
+          senderName: message.sender?.name ?? "알 수 없음",
+          title: message.title,
+          content: message.content,
+          isRead: message.isRead,
+          sentAt: message.sentAt,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        messages: messageList,
+      });
+    } catch (error) {
+      console.error("받은 쪽지 조회 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "받은 쪽지를 불러오지 못했습니다.",
+      });
+    }
+  }
+);
+
+// 보낸 쪽지 조회
+app.get(
+  "/api/messages/sent",
+  verifyToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const senderEmpId = (req as any).user?.empId;
+
+      const messages = await Message.findAll({
+        where: {
+          senderEmpId,
+        },
+        order: [["sentAt", "DESC"]],
+      });
+
+      const messageList = messages.map((item: any) => {
+        const message = item.toJSON();
+
+        return {
+          id: message.id,
+          senderEmpId: message.senderEmpId,
+          receiverEmpId: message.receiverEmpId,
+          title: message.title,
+          content: message.content,
+          isRead: message.isRead,
+          sentAt: message.sentAt,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        messages: messageList,
+      });
+    } catch (error) {
+      console.error("보낸 쪽지 조회 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "보낸 쪽지를 불러오지 못했습니다.",
+      });
+    }
+  }
+);
+
+// 쪽지 읽음 처리
+app.patch(
+  "/api/messages/:id/read",
+  verifyToken,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const receiverEmpId = (req as any).user?.empId;
+      const { id } = req.params;
+
+      // 쪽지 조회
+      const message = await Message.findOne({
+        where: {
+          id,
+          receiverEmpId,
+        },
+      });
+
+      // 쪽지가 없거나 본인이 받은 쪽지가 아닌 경우
+      if (!message) {
+        res.status(404).json({
+          success: false,
+          message: "쪽지를 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      // 이미 읽은 쪽지인지 확인
+      if (message.isRead === "Y") {
+        res.status(200).json({
+          success: true,
+          message: "이미 읽은 쪽지입니다.",
+        });
+        return;
+      }
+
+      // 읽음 상태 변경
+      await message.update({
+        isRead: "Y",
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "쪽지 읽음을 처리했습니다.",
+      });
+    } catch (error) {
+      console.error("쪽지 읽음 처리 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "쪽지 읽음 처리에 실패했습니다.",
+      });
+    }
+  }
+);
 
 console.log("등록된 모델:", Object.keys(sequelize.models));
 // 서버 실행

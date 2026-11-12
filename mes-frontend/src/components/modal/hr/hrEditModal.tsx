@@ -10,7 +10,7 @@ import type {
    }
 from "@/types/hr";
 import { FaXmark, FaCheck } from "react-icons/fa6";
-import * as S from './Hr.style'
+import * as S from '@/assets/css/components/modal/HrEditModal.style'
 
 interface EmployeeEditModalProps {
   modal: { type: ModalType } | null;

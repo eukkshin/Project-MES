@@ -6,7 +6,7 @@ export const ErrorContainer = styled.main`
   align-items: center;
 
   flex-direction: column;
-  padding-top: 190px;
+  padding-top: 150px;
 
   width: 100%;
   height: 100vh;
@@ -166,6 +166,7 @@ export const HomeButton = styled.button`
 
   cursor: pointer;
   transition: all 0.2s ease;
+  text-decoration: none;
 
   &:hover {
     background: #f8fafc;

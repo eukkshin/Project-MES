@@ -19,7 +19,9 @@ import {
     FaEnvelope,
     FaFolderOpen,
     FaMagnifyingGlass, 
+    FaRegEnvelope, 
     FaRegMessage, 
+    FaRegPenToSquare, 
     FaRotate, 
     FaUserShield 
 } from "react-icons/fa6";
@@ -29,6 +31,7 @@ import { useGetEmployeeDirectory } from "@/hooks/useHr";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 import { DEPARTMENT_OPTIONS, type EmployeeDirectory } from "@/types/hr";
 import Pagination from "@/components/common/pagination/Pagination";
+import MessageModal from "@/components/modal/MessageModal";
 
 const DIRECTORY_STATUS_OPTIONS = [
   { value: "ALL", label: "전체 상태" },
@@ -42,90 +45,97 @@ const features = tableFeatures({
     paginatedRowModel: createPaginatedRowModel(),
 });
 
-const columns: ColumnDef<typeof features, EmployeeDirectory>[]= [
-    {
-        accessorKey: "name",
-        header: "이름",
-        cell: ({row})=>{
-            const employee = row.original;
-            return(
-                <S.HREmployeeIdentity>
-                    <S.HRAvatar $role={employee.role}>
-                        {employee.role === "ADMIN" ? (
-                        <FaUserShield />
-                        ) : (
-                        employee.name.charAt(0)
-                        )}
-                    </S.HRAvatar>
-                    <strong>{employee.name}</strong> 
-                </S.HREmployeeIdentity>
-            );
-        }
-    },
-    {
-        accessorKey:'id',
-        header: "사번",
-    },
-    {
-        accessorKey: "department",
-        header: "부서",
-    },
-    {
-        accessorKey: "position",
-        header: "직급",
-        cell: ({ getValue }) => getValue() ?? "-",
-    },
-    {
-        accessorKey: "email",
-        header: "이메일",
-        cell: ({ getValue }) => {
-        const email = getValue<string | null>();
-
-        return email ? (
-            <S.HREmailLink href={`mailto:${email}`}>
-                <FaEnvelope />
-                {email}
-            </S.HREmailLink>
-        ) : (
-            "-"
-        );
-    }},
-    {
-        accessorKey: "status",
-        header: "상태",
-        cell: ({ getValue }) => {
-        const status = getValue<"active" | "leave">();
-
-        return (
-            <S.HRStatusBadge $status={status}>
-            {status === "active" ? "재직" : "휴직"}
-            </S.HRStatusBadge>
-        );
-        },
-    },
-    {
-        id: "message",
-        header: "쪽지",
-        cell: ({ row }) => (
-        <S.HRMessageButton
-            type="button"
-            title={`${row.original.name}님에게 쪽지 보내기`}
-            aria-label={`${row.original.name}님에게 쪽지 보내기`}
-            disabled
-        >
-            <FaRegMessage />
-        </S.HRMessageButton>
-        ),
-    },
-];
-
-export default function EmployeeDirectory(){
+export default function EmployeeDirectoryPage(){
 
     const { data:employees=[], isLoading, isFetching, isError, error, refetch } = useGetEmployeeDirectory();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [departmentFilter, setDepartmentFilter] = useState("ALL");
     const [statusFilter, setStatusFilter] = useState("ALL");
 
+    const [isMessageOpen, setIsMessageOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee]= useState<EmployeeDirectory|null>(null);
+
+    const columns: ColumnDef<typeof features, EmployeeDirectory>[]= [
+        {
+            accessorKey: "name",
+            header: "이름",
+            cell: ({row})=>{
+                const employee = row.original;
+                return(
+                    <S.HREmployeeIdentity>
+                        <S.HRAvatar $role={employee.role}>
+                            {employee.role === "ADMIN" ? (
+                            <FaUserShield />
+                            ) : (
+                            employee.name.charAt(0)
+                            )}
+                        </S.HRAvatar>
+                        <strong>{employee.name}</strong> 
+                    </S.HREmployeeIdentity>
+                );
+            }
+        },
+        {
+            accessorKey:'id',
+            header: "사번",
+        },
+        {
+            accessorKey: "department",
+            header: "부서",
+        },
+        {
+            accessorKey: "position",
+            header: "직급",
+            cell: ({ getValue }) => getValue() ?? "-",
+        },
+        {
+            accessorKey: "email",
+            header: "이메일",
+            cell: ({ getValue }) => {
+            const email = getValue<string | null>();
+
+            return email ? (
+                <S.HREmailLink href={`mailto:${email}`}>
+                    <FaEnvelope />
+                    {email}
+                </S.HREmailLink>
+            ) : (
+                "-"
+            );
+        }},
+        {
+            accessorKey: "status",
+            header: "상태",
+            cell: ({ getValue }) => {
+            const status = getValue<"active" | "leave">();
+
+            return (
+                <S.HRStatusBadge $status={status}>
+                {status === "active" ? "재직" : "휴직"}
+                </S.HRStatusBadge>
+            );
+            },
+        },
+        {
+            id: "message",
+            header: "쪽지",
+            cell: ({ row }) => (
+            <S.HRMessageButton
+                type="button"
+                title={`${row.original.name}님에게 쪽지 보내기`}
+                aria-label={`${row.original.name}님에게 쪽지 보내기`}
+                onClick={()=>{
+                    setSelectedEmployee(row.original);
+                    setIsMessageOpen(true);
+                }}
+            >
+                <FaRegEnvelope />
+            </S.HRMessageButton>
+            ),
+        },
+    ];
+        
     const filteredEmployees = useMemo(()=>{
         const keyword= searchTerm.trim().toLowerCase();
 
@@ -319,6 +329,16 @@ export default function EmployeeDirectory(){
                 />
             </S.Panel>
         </S.PageContainer>
+        
+        {isMessageOpen && selectedEmployee && (
+            <MessageModal
+            receiver={selectedEmployee}
+            onClose={()=>{
+                setIsMessageOpen(false);
+                setSelectedEmployee(null);
+            }}
+            />
+        )}
         </>
     )
 }

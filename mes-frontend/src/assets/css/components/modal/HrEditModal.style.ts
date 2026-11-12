@@ -115,7 +115,6 @@ export const HRModalContainer = styled.div`
   }
 `;
 
-// 💡 애플 스타일 헤더 (잡다한 배경색 빼고 순백색에 얇은 선으로 정갈하게)
 export const HRModalHeader = styled.div`
   display: flex;
   align-items: center;
@@ -152,7 +151,6 @@ export const HRModalClose = styled.button`
   }
 `;
 
-// 💡 바디 영역 (여백을 넓게 주어 답답함 제거)
 export const HRModalBody = styled.div`
   display: flex;
   flex-direction: column;
