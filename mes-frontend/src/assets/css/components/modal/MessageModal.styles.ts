@@ -512,7 +512,10 @@ export const ReadStatusBadge = styled.span`
 
 export const MessageDetailContent = styled.div`
  flex: 1;
-  min-height: 170px;
+  min-height: 0;
+  max-height: 300px;
+  overflow-y: auto ;
+
   margin-top: -14px;
   padding: 22px;
   background: #ffffff;

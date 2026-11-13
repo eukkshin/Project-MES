@@ -17,6 +17,7 @@ import * as S from "@/assets/css/components/HeaderFooter.style";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AnimatePresence } from "motion/react";
+import { useGetMessagesReceived } from "@/hooks/useMessage";
 
 const menuGroups = [
   {
@@ -67,6 +68,8 @@ export const Header = () => {
   const logout = useAuthStore(state=>state.logout);
   const isInitialized = useAuthStore(state=>state.isInitialized);
   const isAuth = useAuthStore(state=> state.isAuth);
+
+  const {data: receivedMessages =[]} = useGetMessagesReceived(isAuth && isInitialized);
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
@@ -107,6 +110,8 @@ export const Header = () => {
       () => handleLogout()
     )
   }
+
+  const unreadCount = receivedMessages.filter(message=> message.isRead === 'N').length;
   
   return (
     <>

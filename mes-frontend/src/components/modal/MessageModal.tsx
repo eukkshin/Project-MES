@@ -4,7 +4,17 @@ import { useDeleteMessage, useGetMessagesReceived, useGetMessagesSent, useSendMe
 import { EmployeeDirectory } from "@/types/hr";
 import ModalLayout from "./ModalLayout";
 import * as S from '@/assets/css/components/modal/MessageModal.styles'
-import { FaPaperPlane, FaInbox, FaSpinner, FaPenToSquare, FaChevronRight, FaRegUser, FaRegEnvelopeOpen, FaRegEnvelope, FaChevronLeft, FaTrash, FaRegTrashCan } from "react-icons/fa6";
+import { 
+    FaPaperPlane, 
+    FaInbox, 
+    FaSpinner, 
+    FaPenToSquare, 
+    FaChevronRight, 
+    FaRegUser, 
+    FaRegEnvelopeOpen, 
+    FaRegEnvelope, 
+    FaChevronLeft, 
+    FaRegTrashCan } from "react-icons/fa6";
 import { useToastContext } from "@/context/ToastContext";
 import type { Message } from "@/types/message";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
@@ -17,7 +27,7 @@ interface MessageModalProps{
     onClose: ()=>void;
 }
 
-const formatMessageDate = (date:string)=>{
+export const formatMessageDate = (date:string)=>{
     return new Intl.DateTimeFormat('ko-KR', {
         year:'numeric',
         month:'numeric',
@@ -27,7 +37,6 @@ const formatMessageDate = (date:string)=>{
         hour12: true,
     }).format(new Date(date));
 };
-
 
 export default function MessageModal({
     receiver,
@@ -228,17 +237,17 @@ export default function MessageModal({
                 {/* 쪽지 상세 화면 */}
                 {activeTab === "received" && (
                     selectedMessage ? (
-                        <S.MessageDetail>
-                            <S.MessageBackButton
-                                type="button"
-                                onClick={() => {
-                                    setSelectedMessage(null);
-                                    setActiveTab('received');
-                                }}
-                            >
-                                <FaChevronLeft />
-                                받은 쪽지 목록
-                            </S.MessageBackButton>
+                    <S.MessageDetail>
+                        <S.MessageBackButton
+                            type="button"
+                            onClick={() => {
+                                setSelectedMessage(null);
+                                setActiveTab('received');
+                            }}
+                        >
+                            <FaChevronLeft />
+                            받은 쪽지 목록
+                        </S.MessageBackButton>
      
                         <S.MessageDetailHeader>
                             <S.DetailTitleRow>
@@ -286,58 +295,58 @@ export default function MessageModal({
                                {isDeleting? <FaSpinner/>: <FaRegTrashCan/>} 
                             </S.DeleteButton>
                         </S.MessageDetailFooter>
-                        </S.MessageDetail> 
+                    </S.MessageDetail> 
                     ) : (
-                        <S.MessageListWrapper>
-                            {isReceivedLoading ? (
-                                <EqualizerLoader message="받은 쪽지를 불러오는 중"/>
-                            ):(
-                            receivedMessages.length > 0 ? (
-                            <>
-                            <S.MessageGuide>
-                                <FaRegEnvelopeOpen />
-                                쪽지를 클릭하면 내용을 확인하고 읽음으로 표시됩니다.
-                            </S.MessageGuide>
-                            {receivedMessages.map((message) => (
-                                <S.MessageCard
-                                key={message.id}
-                                $unread={message.isRead === "N"}
-                                onClick={() => handleMessageClick(message)}
-                                >
-                                <div className="card-top">
-                                    <div className="title-area">
-                                        {message.isRead === 'N' && (
-                                            <span className="unread-dot"/>
-                                        )}
-                                        <strong>{message.title}</strong>
-                                    </div>
-                                    <S.ReadStatusBadge>
-                                        <span>
-                                        {message.isRead === "Y" ?   <FaRegEnvelopeOpen /> : <FaRegEnvelope/>}
-                                        </span>
-                                    </S.ReadStatusBadge>
+                    <S.MessageListWrapper>
+                        {isReceivedLoading ? (
+                            <EqualizerLoader message="받은 쪽지를 불러오는 중"/>
+                        ):(
+                        receivedMessages.length > 0 ? (
+                        <>
+                        <S.MessageGuide>
+                            <FaRegEnvelopeOpen />
+                            쪽지를 클릭하면 내용을 확인하고 읽음으로 표시됩니다.
+                        </S.MessageGuide>
+                        {receivedMessages.map((message) => (
+                            <S.MessageCard
+                            key={message.id}
+                            $unread={message.isRead === "N"}
+                            onClick={() => handleMessageClick(message)}
+                            >
+                            <div className="card-top">
+                                <div className="title-area">
+                                    {message.isRead === 'N' && (
+                                        <span className="unread-dot"/>
+                                    )}
+                                    <strong>{message.title}</strong>
                                 </div>
-
-                                <div className="card-bottom">
-                                    <span className="sender"> 
-                                        <FaRegUser/>
-                                        <strong>{message.senderName}</strong>
-                                        {message.senderEmpId}
+                                <S.ReadStatusBadge>
+                                    <span>
+                                    {message.isRead === "Y" ?   <FaRegEnvelopeOpen /> : <FaRegEnvelope/>}
                                     </span>
-                                    <S.MessageDate>{formatMessageDate(message.sentAt)}</S.MessageDate>
-                                    <FaChevronRight className="arrow-icon"/>
-                                </div>
-                                </S.MessageCard>
-                            ))}
-                            </>)
-                            : (
-                            <S.EmptyMessageState>
-                                <FaInbox />
-                                <strong>받은 쪽지가 없습니다.</strong>
-                                <span>새로운 쪽지가 도착하면 여기에 표시됩니다.</span>
-                            </S.EmptyMessageState>
-                            ))}
-                        </S.MessageListWrapper>
+                                </S.ReadStatusBadge>
+                            </div>
+
+                            <div className="card-bottom">
+                                <span className="sender"> 
+                                    <FaRegUser/>
+                                    <strong>{message.senderName}</strong>
+                                    {message.senderEmpId}
+                                </span>
+                                <S.MessageDate>{formatMessageDate(message.sentAt)}</S.MessageDate>
+                                <FaChevronRight className="arrow-icon"/>
+                            </div>
+                            </S.MessageCard>
+                        ))}
+                        </>)
+                        : (
+                        <S.EmptyMessageState>
+                            <FaInbox />
+                            <strong>받은 쪽지가 없습니다.</strong>
+                            <span>새로운 쪽지가 도착하면 여기에 표시됩니다.</span>
+                        </S.EmptyMessageState>
+                        ))}
+                    </S.MessageListWrapper>
                     ) 
                 )}
 

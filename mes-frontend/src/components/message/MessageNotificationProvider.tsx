@@ -16,11 +16,28 @@ export default function MessageNotificationProvider({children,
         isSuccess
     }= useGetMessagesReceived(isAuth && isInitialized);
 
+    //이미 확인한 쪽지 ID 저장하기
     const knownMessageIds =  useRef<Set<number>|null>(null);
     
     useEffect(()=>{
-        
-    },[])
+        if(!isSuccess) return;
+
+        if(knownMessageIds.current === null){
+            knownMessageIds.current = new Set(receivedMessages.map(message=> message.id))
+            return;
+        }
+
+        const newMessages = receivedMessages.filter(message=> !knownMessageIds.current!.has(message.id))
+
+        //새 쪽지 알림
+        newMessages.forEach(message=> {
+            showToast(`${message.senderName}님에게 새 쪽지가 도착했습니다`)
+        })
+
+        newMessages.forEach(message=>{
+            knownMessageIds.current!.add(message.id);
+        });
+    },[receivedMessages, isSuccess, showToast])
     
     
     return <>{children}</>;
