@@ -57,6 +57,15 @@ export default function MessageModal({
     const [activeTab, setActiveTab] = useState<MessageTab>("write");
     const [selectedMessage, setSelectedMessage] = useState<Message|null>(null);
 
+    const filteredReceivedMessages = receivedMessages.filter(
+        message=> message.senderEmpId === receiver?.id
+    )
+
+    const filteredSentMessages = sentMessages.filter(
+    (message) => message.receiverEmpId === receiver?.id
+    );
+    
+    
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
         if(!receiver || !title.trim() || !content.trim()) return;
@@ -301,13 +310,13 @@ export default function MessageModal({
                         {isReceivedLoading ? (
                             <EqualizerLoader message="받은 쪽지를 불러오는 중"/>
                         ):(
-                        receivedMessages.length > 0 ? (
+                        filteredReceivedMessages.length > 0 ? (
                         <>
                         <S.MessageGuide>
                             <FaRegEnvelopeOpen />
                             쪽지를 클릭하면 내용을 확인하고 읽음으로 표시됩니다.
                         </S.MessageGuide>
-                        {receivedMessages.map((message) => (
+                        {filteredReceivedMessages.map((message) => (
                             <S.MessageCard
                             key={message.id}
                             $unread={message.isRead === "N"}
@@ -415,8 +424,8 @@ export default function MessageModal({
                         {isSentLoading ? (
                                 <EqualizerLoader message="보낸 쪽지를 불러오는 중"/>
                             ):(
-                        sentMessages.length > 0 ? (
-                        sentMessages.map((message) => (
+                        filteredSentMessages.length > 0 ? (
+                        filteredSentMessages.map((message) => (
                             <S.MessageCard 
                             key={message.id}
                             $unread={message.isRead==='N'}
