@@ -1,24 +1,33 @@
 import { api } from "@/lib/axios";
+import type { ProcessLine,ProcessHistoryItem, ProcessLineRequest } from "@/types/process";
 
 //공정라인 목록조회
-export const fetchProcessLines =async()=>{
-    
+export const fetchProcessLines =async():Promise<ProcessLine[]>=>{
     const response = await api.get('/api/process/lines')
-    return response.data;
+    return response.data.line ?? [];
 }
 
+// 공정라인 상태변경 이력 조회
+export const fetchProcessHistory = async (lineId?: number): Promise<ProcessHistoryItem[]> => {
+    const response = await api.get('/api/process/lines/history', {
+        params: lineId ? { lineId } : undefined,
+    });
+    return response.data.history;
+};
+
 //공정라인 등록
-export const createProcessLine = async (formData: any) => {
+export const createProcessLine = async (formData: ProcessLineRequest) => {
     
     const response = await api.post('/api/process/lines', formData);
     return response.data;
 };
 
 // 공정라인 상태변경
-export const updateLineStatus = async (id: number, status: string) => {
-    const response = await api.patch(`/api/process/lines/${id}/status`, { status });
+export const updateLineStatus = async (id: number, status: string, reason?: string) => {
+    const response = await api.patch(`/api/process/lines/${id}/status`, { status, reason });
     return response.data;
 };
+
 
 //SCM부품 조회
 export const fetchComponents =async()=>{

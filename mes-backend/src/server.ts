@@ -17,6 +17,7 @@ export interface AuthPayload {
 const sequelize = require("./db");
 const User = require("./model/User");
 const ProcessLine = require("./model/ProcessLine");
+const ProcessStatusLog = require("./model/ProcessStatusLog");
 const ComponentSCM = require("./model/ComponentSCM");
 const QualityInspection = require("./model/QualityInspection");
 const Equipment = require("./model/Equipment");
@@ -90,7 +91,6 @@ if (!JWT_SECRET) {
 // JWT 인증 미들웨어
 const verifyToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
-
 
    // 토큰이 없는 경우
   if (!authHeader?.startsWith("Bearer ")) {
@@ -276,17 +276,57 @@ app.post(
         });
         return;
       }
-      const role = user.employee?.role;
 
-      if (!role) {
+     
+      // 가입 승인 상태 검증 (APPROVAL_STATUS)
+      const approvalStatus = user.approvalStatus ?? user.APPROVAL_STATUS;
+      if (approvalStatus === 'PENDING') {
         res.status(403).json({
           success: false,
-          code: "FORBIDDEN",
-          message: "직원 권한 정보를 찾을 수 없습니다.",
+          code: 'ACCOUNT_PENDING',
+          message: '관리자 승인 대기 중인 계정입니다. 승인 완료 후 로그인할 수 있습니다.',
+        });
+        return;
+      }
+    if (approvalStatus === 'REJECTED') {
+      res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_REJECTED',
+        message: '가입 승인이 반려된 계정입니다. 관리자에게 문의해주세요.',
+      });
+      return;
+    }
+    if (approvalStatus && approvalStatus !== 'APPROVED') {
+      res.status(403).json({
+        success: false,
+        code: 'ACCOUNT_NOT_APPROVED',
+        message: '승인되지 않은 계정입니다. 관리자에게 문의해주세요.',
+      });
+      return;
+    }
+
+      // 계정 활성 상태 검증 (ACCOUNT_STATUS)
+      const accountStatus = user.accountStatus ?? user.ACCOUNT_STATUS;
+      if (accountStatus === 'INACTIVE') {
+        res.status(403).json({
+          success: false,
+          code: 'ACCOUNT_INACTIVE',
+          message: '비활성화된 계정입니다. 인사관리 담당자 또는 시스템 관리자에게 문의해주세요.',
         });
         return;
       }
 
+      const role = user.employee?.role;
+
+      if (!role) {
+          res.status(403).json({
+            success: false,
+            code: "FORBIDDEN",
+            message: "직원 권한 정보를 찾을 수 없습니다.",
+          });
+          return;
+        }
+        
       // JWT 생성
       const token = jwt.sign(
         {
@@ -401,7 +441,9 @@ app.get(
 
 app.get("/api/process/lines", verifyToken, async (req, res) => {
   try {
-    const line = await ProcessLine.findAll();
+    const line = await ProcessLine.findAll({
+      order: [["id", "ASC"]],
+    });
     return res.status(200).json({
       success: true,
       line,
@@ -435,6 +477,79 @@ app.post("/api/process/lines", verifyToken, async (req, res) => {
     });
   }
 });
+
+// 공정 라인 상태 변경 이력 조회 API (GET /api/process/lines/history)
+app.get(
+  "/api/process/lines/history",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const history = await ProcessStatusLog.findAll({
+        order: [["id", "DESC"]],
+        limit: 50,
+      });
+
+      return res.status(200).json({
+        success: true,
+        history,
+      });
+    } catch (error) {
+      console.error("공정 이력 조회 오류:", error);
+      return res.status(500).json({
+        success: false,
+        message: "공정 이력 조회 실패",
+      });
+    }
+  },
+);
+
+// 공정 라인 상태 변경 API (PATCH /api/process/lines/:id/status)
+app.patch(
+  "/api/process/lines/:id/status",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { status, reason } = req.body;
+
+      // 1. 라인 조회
+      const line = await ProcessLine.findByPk(id);
+      if (!line) {
+        return res.status(404).json({
+          success: false,
+          message: "해당 공정 라인을 찾을 수 없습니다.",
+        });
+      }
+
+      const previousStatus = line.status;
+
+      // 2. 라인 상태 업데이트
+      await line.update({ status });
+
+      // 3. 상태 변경 이력 테이블에 저장
+      await ProcessStatusLog.create({
+        lineId: line.id,
+        lineName: line.lineName,
+        previousStatus,
+        newStatus: status,
+        changedBy: req.user?.empId || "관리자",
+        reason: reason || "공정 상태 변경",
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "공정 라인 상태가 변경되었습니다.",
+        line,
+      });
+    } catch (error) {
+      console.error("공정 라인 상태 변경 오류:", error);
+      return res.status(500).json({
+        success: false,
+        message: "공정 라인 상태 변경 실패",
+      });
+    }
+  },
+);
 
 // SCM API
 app.get("/api/scm/components", verifyToken, async (req, res) => {
