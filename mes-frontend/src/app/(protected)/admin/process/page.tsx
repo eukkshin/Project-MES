@@ -206,6 +206,7 @@ export default function ProcessPage() {
         return dateStr;
       }
       return d.toLocaleString("ko-KR", {
+        year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
@@ -315,7 +316,7 @@ export default function ProcessPage() {
             <FaWrench />
           </S.SummaryIcon>
           <S.SummaryContent>
-            <span>점검 중 (보전)</span>
+            <span>점검 중</span>
             <strong>{summary.maintenance}</strong>
             <small>유지보수 상태</small>
           </S.SummaryContent>
@@ -557,7 +558,6 @@ export default function ProcessPage() {
 
                     {/* 하단: 상태 제어 버튼 바 */}
                     <S.StatusControl>
-                      {/* 원클릭 즉시 토글 버튼 (애플 감성 세련된 캡슐 버튼) */}
                       <S.QuickToggleButton
                         type="button"
                         $isRunning={isRunning}
@@ -573,7 +573,6 @@ export default function ProcessPage() {
                         {isRunning ? "원클릭 정지" : "원클릭 가동"}
                       </S.QuickToggleButton>
 
-                      {/* 상태변경: 라벨 + 가동/점검/정지 버튼 (아이콘 포함) */}
                       <S.StatusRightGroup>
                         <S.StatusControlLabel>
                           <FaGear />
@@ -693,7 +692,6 @@ export default function ProcessPage() {
         </S.HistoryList>
       </S.Panel>
 
-      {/* 5. 안전 확인 모달 (Modal.styles.ts 스타일 적용) */}
       {modal.isOpen && modal.line && (
         <S.ModalBackdrop onClick={closeModal}>
           <S.ModalContainer onClick={(e) => e.stopPropagation()}>
@@ -715,12 +713,12 @@ export default function ProcessPage() {
 
             <S.ModalBody>
               <S.ModalInfo>
-                대상 라인: <strong>[{modal.line.lineName}]</strong>
+                대상 라인: <strong>{modal.line.lineName}</strong>
                 <br />
                 변경 상태:{" "}
                 <strong>
-                  [{getStatusInfo(modal.line.status).label}] ➔ [
-                  {getStatusInfo(modal.targetStatus).label}]
+                  {getStatusInfo(modal.line.status).label} ➔ 
+                  {getStatusInfo(modal.targetStatus).label}
                 </strong>
               </S.ModalInfo>
 

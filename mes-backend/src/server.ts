@@ -489,9 +489,18 @@ app.get(
         limit: 50,
       });
 
+      const result = history.map((item) => {
+        const data = item.toJSON();
+
+        return {
+          ...data,
+          createdAt: data.CREATED_AT,
+        };
+      });
+
       return res.status(200).json({
         success: true,
-        history,
+        history: result,
       });
     } catch (error) {
       console.error("공정 이력 조회 오류:", error);
