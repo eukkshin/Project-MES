@@ -53,6 +53,17 @@ export default function LoginClientPage() {
     }
   } ,[])
 
+  useEffect(() => {
+    const authExpired = sessionStorage.getItem("authExpired");
+  
+    if (authExpired) {
+      showAlert("로그인이 만료되었습니다. 다시 로그인해 주세요.","error");
+  
+      sessionStorage.removeItem("authExpired");
+    }
+  }, []);
+
+
    if (!isInitialized || isAuth) {
     return (
       <div className="flex min-h-screen items-center justify-center">

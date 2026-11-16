@@ -221,6 +221,9 @@ api.interceptors.response.use(
 
         delete api.defaults.headers.common["Authorization"];
 
+        // 로그인 페이지에서 토큰 만료 Alert 표시하기 위한 값 저장
+        sessionStorage.setItem("authExpired", "true");
+
         window.location.assign(LOGIN_PATH);
         
       } catch {
