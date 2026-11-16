@@ -64,7 +64,6 @@ export const useGetPendingUsers = () => {
     });
   };
 
-
   // 회원가입 반려
 export const useRejectPendingUser = () => {
   const queryClient = useQueryClient();
