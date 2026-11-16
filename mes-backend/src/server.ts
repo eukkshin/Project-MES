@@ -228,6 +228,282 @@ app.post(
     }
   },
 );
+//====================================
+// 관리자 회원가입 승인 관리
+//====================================
+
+// 1. 가입 승인 대기자 목록 조회 (GET /api/admin/pending-users)
+app.get(
+  "/api/admin/pending-users",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const pendingUsers = await User.findAll({
+        where: {
+          approvalStatus: "PENDING",
+        },
+        attributes: [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "companyName",
+          "position",
+          "tel",
+          "approvalStatus",
+          "accountStatus",
+          "CREATED_AT",
+        ],
+        order: [["id", "DESC"]],
+      });
+
+      const userList = pendingUsers.map((item: any) => {
+        const user = item.toJSON();
+
+        return {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: `${user.lastName ?? ""}${user.firstName ?? ""}`.trim(),
+          email: user.email,
+          companyName: user.companyName ?? null,
+          position: user.position ?? null,
+          tel: user.tel ?? null,
+          approvalStatus: user.approvalStatus,
+          accountStatus: user.accountStatus,
+          createdAt: user.CREATED_AT ?? user.createdAt ?? null,
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        users: userList,
+      });
+    } catch (error) {
+      console.error("승인 대기자 목록 조회 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "승인 대기자 목록을 불러오지 못했습니다.",
+      });
+    }
+  },
+);
+
+// 다음 사원번호 자동 생성 헬퍼 (예: EMP011 -> EMP012)
+const generateNextEmpId = async (
+  transaction: Transaction,
+): Promise<string> => {
+  const employees = await Employee.findAll({
+    attributes: ["id"],
+    transaction,
+  });
+
+  let maxNum = 0;
+
+  for (const emp of employees) {
+    const id: string = emp.id || "";
+    const match = id.match(/^EMP(\d+)$/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (num > maxNum) {
+        maxNum = num;
+      }
+    }
+  }
+
+  const nextNum = maxNum + 1;
+  return `EMP${String(nextNum).padStart(3, "0")}`;
+};
+
+// 회원가입 승인 및 Employee 신규 생성 (POST /api/admin/pending-users/:id/approve)
+app.post(
+  "/api/admin/pending-users/:id/approve",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response): Promise<void> => {
+    const userId = Number(req.params.id);
+    const {
+      department, // 배정 부서
+      position,   // 직급 (미입력 시 회원가입 때 적은 position 사용)
+      role,       // 시스템 권한 ("ADMIN" | "EMPLOYEE")
+      joinDate,   // 입사일 (YYYY-MM-DD, 미입력 시 오늘 날짜)
+    } = req.body;
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({
+        success: false,
+        message: "유효하지 않은 사용자 ID입니다.",
+      });
+      return;
+    }
+
+    if (typeof department !== "string" || !department.trim()) {
+      res.status(400).json({
+        success: false,
+        message: "배정 부서를 입력해 주세요.",
+      });
+      return;
+    }
+
+    if (!["ADMIN", "EMPLOYEE"].includes(role)) {
+      res.status(400).json({
+        success: false,
+        message: "올바르지 않은 권한입니다.",
+      });
+      return;
+    }
+
+    const trimmedDepartment = department.trim();
+
+    try {
+      const result = await sequelize.transaction(
+        async (transaction: Transaction) => {
+          // 1) 승인 대상 User 조회
+          const user = await User.findByPk(userId, { transaction });
+
+          if (!user) {
+            throw new Error("USER_NOT_FOUND");
+          }
+
+          if (user.approvalStatus !== "PENDING" || user.empId) {
+            throw new Error("ALREADY_PROCESSED");
+          }
+          // 2) 다음 사원번호 자동 발급 (트랜잭션 내부 실행)
+          const generatedEmpId = await generateNextEmpId(transaction);
+
+          // 3) Employee 테이블 신규 레코드 생성 (INSERT)
+          const fullName = `${user.lastName ?? ""}${user.firstName ?? ""}`.trim();
+          const finalPosition =
+            typeof position === "string" && position.trim()
+              ? position.trim()
+              : user.position || "사원";
+          const finalJoinDate =
+            typeof joinDate === "string" && joinDate.trim()
+              ? joinDate.trim()
+              : new Date().toISOString().split("T")[0];
+
+          const newEmployee = await Employee.create(
+            {
+              id: generatedEmpId,
+              name: fullName,
+              department: trimmedDepartment,
+              position: finalPosition,
+              role,
+              status: "active", // 기존 Employee 상태값("active" | "leave" | "resigned") 일치
+              joinDate: finalJoinDate,
+            },
+            { transaction },
+          );
+
+          // 4) User 테이블 승인 완료 + 계정 활성화 + 사번 연결 (UPDATE)
+          await user.update(
+            {
+              empId: generatedEmpId,
+              approvalStatus: "APPROVED",
+              accountStatus: "ACTIVE",
+            },
+            { transaction },
+          );
+
+          return {
+            employee: {
+              ...newEmployee.toJSON(),
+              accountStatus: "ACTIVE",
+              approvalStatus: "APPROVED",
+            },
+          };
+        },
+      );
+
+      res.status(201).json({
+        success: true,
+        message: `회원가입 승인 및 직원 등록(${result.employee.id})이 완료되었습니다.`,
+        employee: result.employee,
+      });
+    } catch (error) {
+      console.error("회원가입 승인 처리 오류:", error);
+
+      if (error instanceof Error) {
+        if (error.message === "USER_NOT_FOUND") {
+          res.status(404).json({
+            success: false,
+            message: "승인할 사용자를 찾을 수 없습니다.",
+          });
+          return;
+        }
+        if (error.message === "ALREADY_PROCESSED") {
+          res.status(400).json({
+            success: false,
+            message: "이미 승인 처리되었거나 대기 상태가 아닌 계정입니다.",
+          });
+          return;
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "회원가입 승인 처리에 실패했습니다.",
+      });
+    }
+  },
+);
+
+// 3. 회원가입 반려 처리 (PATCH /api/admin/pending-users/:id/reject)
+app.patch(
+  "/api/admin/pending-users/:id/reject",
+  verifyToken,
+  verifyAdmin,
+  async (req: Request, res: Response): Promise<void> => {
+    const userId = Number(req.params.id);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({
+        success: false,
+        message: "유효하지 않은 사용자 ID입니다.",
+      });
+      return;
+    }
+
+    try {
+      const user = await User.findByPk(userId);
+
+      if (!user) {
+        res.status(404).json({
+          success: false,
+          message: "사용자를 찾을 수 없습니다.",
+        });
+        return;
+      }
+
+      if (user.approvalStatus !== "PENDING") {
+        res.status(400).json({
+          success: false,
+          message: "승인 대기 중인 계정만 반려할 수 있습니다.",
+        });
+        return;
+      }
+
+      await user.update({
+        approvalStatus: "REJECTED",
+        accountStatus: "INACTIVE",
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "회원가입 요청이 반려되었습니다.",
+      });
+    } catch (error) {
+      console.error("회원가입 반려 처리 오류:", error);
+
+      res.status(500).json({
+        success: false,
+        message: "회원가입 반려 처리에 실패했습니다.",
+      });
+    }
+  },
+);
 
 // 로그인 API
 app.post(
@@ -489,7 +765,7 @@ app.get(
         limit: 50,
       });
 
-      const result = history.map((item) => {
+      const result = history.map((item:any) => {
         const data = item.toJSON();
 
         return {

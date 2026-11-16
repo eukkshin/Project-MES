@@ -57,7 +57,7 @@ export default function LoginClientPage() {
     const authExpired = sessionStorage.getItem("authExpired");
   
     if (authExpired) {
-      showAlert("로그인이 만료되었습니다. 다시 로그인해 주세요.","error");
+      showAlert("로그인이 만료되었습니다. 다시 로그인해 주세요.","info");
   
       sessionStorage.removeItem("authExpired");
     }

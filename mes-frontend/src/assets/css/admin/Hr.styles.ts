@@ -1,5 +1,5 @@
 
-import styled from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 import { NoDrag } from "../common/Common.styles";
 
 export {
@@ -751,4 +751,220 @@ export const HREmptyState = styled.div`
 `;
 
 
+// 말풍선이 위아래로 살짝 둥실거리는 애니메이션
+const floatTooltip = keyframes`
+  0%, 100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -3px);
+  }
+`;
 
+// 언더라인 인디케이터 탭 + ::before 말풍선 알림
+
+export const HRTabBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-top: 8px;
+`;
+
+export const HRTabButton = styled.button<{
+  $active: boolean;
+}>`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  min-width: 148px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: ${({ $active }) => ($active ? 700 : 500)};
+  color: ${({ $active }) => ($active ? "#2563eb" : "#64748b")};
+  cursor: pointer;
+  transition: color 0.15s ease;
+
+  svg {
+    font-size: 16px;
+  }
+
+  &:hover {
+    color: ${({ $active }) => ($active ? "#2563eb" : "#334155")};
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2.5px;
+    border-radius: 2px 2px 0 0;
+    background: #2563eb;
+    transform: scaleX(${({ $active }) => ($active ? 1 : 0)});
+    transform-origin: center;
+    transition: transform 0.2s ease;
+  }
+
+  
+`;
+
+export const HRTabBadge = styled.span<{
+  $active?: boolean;
+  $highlight?: boolean;
+  $hasAlert?: boolean;
+  $alertText?: string;
+}>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  background: ${({ $highlight, $active }) =>
+    $highlight
+      ? "#eff6ff"
+      : $active
+        ? "#eff6ff"
+        : "#f1f5f9"};
+  color: ${({ $highlight, $active }) =>
+    $highlight
+      ? "#2563eb"
+      : $active
+        ? "#2563eb"
+        : "#64748b"};
+  border: 1px solid
+    ${({ $highlight }) => ($highlight ? "#bfdbfe" : "transparent")};
+
+  ${({ $hasAlert, $alertText }) =>
+    $hasAlert &&
+    css`
+      /* 1) 말풍선 몸통 */
+      &::before {
+        content: "${$alertText || "승인 대기 요청"}";
+        position: absolute;
+        bottom: calc(100%);
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #2563eb;
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: nowrap;
+        box-shadow: 0 1px 4px rgba(37, 99, 235, 0.2);
+        pointer-events: none;
+        animation: ${floatTooltip} 2s ease-in-out infinite;
+        z-index: 10;
+      }
+
+      /* 2) 말풍선 꼬리 (몸통 바로 아래 1px 겹쳐서 빈틈 차단) */
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: calc(100% + 4px); /* 몸통 bottom(100% + 9px) - 꼬리 높이(5px) = 정확히 맞닿음 */
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px 5px 0 5px;
+        border-style: solid;
+        border-color: #2563eb transparent transparent transparent;
+        pointer-events: none;
+        animation: ${floatTooltip} 2s ease-in-out infinite;
+        z-index: 10;
+      }
+      /* 2) 말풍선 꼬리 (몸통 바로 아래 1px 겹쳐서 빈틈 차단) */
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: calc(100% - 4px); 
+        left: 50%;
+        transform: translateX(-50%);
+        border-width: 5px 5px 0 5px;
+        border-style: solid;
+        border-color: #2563eb transparent transparent transparent;
+        pointer-events: none;
+        animation: ${floatTooltip} 2s ease-in-out infinite;
+        z-index: 10;
+      }
+    `}
+`;
+
+
+export const HRActionGroup = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+export const HRActionButton = styled.button<{
+  $variant: "approve" | "reject";
+}>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  min-width: 68px;
+  padding: 6px 12px;
+
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+
+  transition: all 0.18s ease;
+
+  ${({ $variant }) =>
+    $variant === "approve"
+      ? `
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+        color: #2563eb;
+
+        &:hover:not(:disabled) {
+          background: #dbeafe;
+          border-color: #93c5fd;
+          color: #1d4ed8;
+        }
+      `
+      : `
+        border: 1px solid #fecaca;
+        background: #fff5f5;
+        color: #dc2626;
+
+        &:hover:not(:disabled) {
+          background: #fee2e2;
+          border-color: #fca5a5;
+          color: #b91c1c;
+        }
+      `}
+
+  svg {
+    font-size: 0.8rem;
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:focus-visible {
+    outline: 3px solid #dbeafe;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+`;

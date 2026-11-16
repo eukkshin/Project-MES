@@ -50,6 +50,12 @@ const INITIAL_STATE: EquipmentForm = {
   humidity: "45.0",
 };
 
+const STATUS_OPTIONS = [
+  { value: "NORMAL", label: "정상 가동" },
+  { value: "WARNING", label: "주의" },
+  { value: "ERROR", label: "이상 발생" },
+];
+
 export const SELECT_OPTIONS = [
   { label: '전체 상태', value: 'ALL' },
   { label: '정상', value: 'NORMAL' },
@@ -77,6 +83,8 @@ export default function CleanroomPage() {
 
   const queryClient = useQueryClient();
   const showAlert = useAlertStore(state=>state.showAlert);
+
+  const [openSelectId, setOpenSelectId]= useState<string|null>(null);
 
   const [form, setForm] = useState<EquipmentForm>({ ...INITIAL_STATE });
   const [searchTerm, setSearchTerm] = useState("");
@@ -480,7 +488,10 @@ export default function CleanroomPage() {
                 <S.ResultCount>
                   검색 결과 {filteredEquipment.length}건
                 </S.ResultCount>
-                <Select id="1" options={SELECT_OPTIONS} value={statusFilter}
+                <Select id="1" 
+                width="100px"
+                openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
+                options={SELECT_OPTIONS} value={statusFilter}
                 onChange={(newValue:string)=>setStatusFilter(newValue)}
                 >
                   <Select.Toggle/>
@@ -581,20 +592,20 @@ export default function CleanroomPage() {
                             설비 상태 변경
                           </S.StatusControlLabel>
 
-                          <S.StatusSelect
-                            value={selectedStatuses[item.id] ?? item.status}
-                            onChange={(e) =>
+                          <Select id="2" 
+                            width="100px"
+                            openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
+                            options={STATUS_OPTIONS} value={selectedStatuses[item.id] ?? item.status}
+                            onChange={(value) =>
                               setSelectedStatuses((prev) => ({
                                 ...prev,
-                                [item.id]: e.target.value,
+                                [item.id]:value,
                               }))
                             }
-                            disabled={updatingId !== null}
-                          >
-                            <option value="NORMAL">정상 가동</option>
-                            <option value="WARNING">주의</option>
-                            <option value="ERROR">이상 발생</option>
-                          </S.StatusSelect>
+                            >
+                              <Select.Toggle/>
+                              <Select.Menu/>
+                            </Select>
 
                           <S.StatusUpdateButton
                             type="button"

@@ -178,7 +178,7 @@ export const HRFormGroup = styled.div`
     padding: 0 12px;
     
     background: #f5f5f7; 
-    border: 0.5px solid transparent;
+    border: 1.5px solid transparent;
     border-radius: 8px;
     
     outline: none;
@@ -189,9 +189,8 @@ export const HRFormGroup = styled.div`
     transition: all 0.15s ease;
 
     &:focus {
-      background: #ffffff;
+      background: #F8FBFF;
       border-color: #0066cc;
-      box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.12);
     }
   }
 `;
@@ -248,12 +247,11 @@ export const HRModalButton = styled.button<{
     $variant === "primary" || $variant === "danger" ? "#ffffff" : "#1d1d1f"};
 
   box-shadow: ${({ $variant }) =>
-    $variant === "primary"
-      ? "0 2px 6px rgba(0, 102, 204, 0.25)"
-      : $variant === "danger"
-      ? "0 2px 6px rgba(255, 59, 48, 0.25)"
-      : "0 1px 2px rgba(0, 0, 0, 0.04)"};
-
+  $variant === "primary"
+    ? "0 1px 2px rgba(0, 102, 204, 0.12)"
+    : $variant === "danger"
+    ? "0 1px 2px rgba(255, 59, 48, 0.10)"
+    : "none"};
   &:hover {
     opacity: 0.9;
     transform: translateY(-0.5px);

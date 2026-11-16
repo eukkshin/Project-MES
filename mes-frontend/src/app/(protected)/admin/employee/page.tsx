@@ -15,7 +15,10 @@ import {
     FaRegEnvelope, 
     FaRotate, 
     FaEnvelope,
-    FaUserShield 
+    FaUserShield, 
+    FaAddressCard,
+    FaRegAddressBook,
+    FaAddressBook
 } from "react-icons/fa6";
 import * as S from "@/assets/css/admin/Hr.styles";
 import CommonError from "@/components/common/CommonError";
@@ -220,16 +223,23 @@ export default function EmployeeDirectoryPage(){
                 </S.RefreshButton>
             </S.PageHeader>
             <S.Panel>
-                <S.HRPanelHeader>
-                    <S.HRPanelTitle>
-                    <h2>전체 직원 목록</h2>
-                    <p>동료들의 연락처와 재직 정보를 확인할 수 있습니다.</p>
-                    </S.HRPanelTitle>
+                <S.PanelHeader>
+                    <S.PanelHeading>
+                        <S.PanelIcon>
+                            <FaAddressBook/>
+                        </S.PanelIcon>
+                    <div>
+                    <S.PanelTitle>
+                    전체 직원 목록
+                    </S.PanelTitle>
+                    <S.PanelDescription>동료들의 연락처와 재직 정보를 확인할 수 있습니다.</S.PanelDescription>
+                    </div>
+                    </S.PanelHeading>
 
                     <S.HRItemCount>
                         {filteredEmployees.length}명
                     </S.HRItemCount>
-                </S.HRPanelHeader>
+                </S.PanelHeader>
 
                 <S.HRToolbar>
                     <S.HRSearchWrapper>

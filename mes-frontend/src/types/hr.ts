@@ -51,6 +51,23 @@ export interface EmployeeDirectory {
   status: "active" | "leave";
 }
 
+export interface PendingUser {
+  id: number;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  companyName: string | null;
+  position: string | null;
+  tel: string | null;
+  approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
+  accountStatus: "ACTIVE" | "INACTIVE";
+  createdAt: string | null;
+}
 
-
-
+export interface ApproveUserRequest {
+  department: string;
+  position: string;
+  role: "ADMIN" | "EMPLOYEE";
+  joinDate: string;
+}

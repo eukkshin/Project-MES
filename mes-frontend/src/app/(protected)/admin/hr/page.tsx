@@ -17,21 +17,36 @@ import {
   FaArrowRotateRight,
   FaUserShield,
   FaPenToSquare,
+  FaUserPlus,
+  FaCheck,
+  FaXmark,
+  FaAddressBook,
+  FaStamp,
+  FaAddressCard,
 } from "react-icons/fa6";
 
 import { createPortal } from "react-dom";
 import * as S from "@/assets/css/admin/Hr.styles";
-import HrEditModal from "@/components/modal/hr/HrEditModal";
-import type { 
+import HrEditModal from "@/components/modal/hr/hrEditModal";
+import HrApproveModal from "@/components/modal/hr/HrApproveModal";
+import type {
   ModalType,
-  EmployeeStatus, 
-  EmployeeRole, 
-  Employee, 
+  EmployeeStatus,
+  EmployeeRole,
+  Employee,
   EmployeePosition,
-  EmployeeDepartment
-} from '@/types/hr';
-import {DEPARTMENT_OPTIONS} from '@/types/hr';
-import { useGetEmployees, useUpdateEmployee } from "@/hooks/useHr";
+  EmployeeDepartment,
+  ApproveUserRequest,
+  PendingUser,
+} from "@/types/hr";
+import { DEPARTMENT_OPTIONS } from "@/types/hr";
+import {
+  useApprovePendingUser,
+  useGetEmployees,
+  useGetPendingUsers,
+  useRejectPendingUser,
+  useUpdateEmployee,
+} from "@/hooks/useHr";
 import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 import CommonError from "@/components/common/CommonError";
 import { useAlertStore } from "@/store/useAlertStore";
@@ -42,12 +57,12 @@ interface ModalState {
 }
 
 const actionLabels: Record<ModalType, string> = {
-    role: "권한 변경",
-    position: "직급 변경",
-    info: "직원 정보 수정",
-    status: "재직 상태 변경",
-    deactivate: "계정 상태 변경",
-  };
+  role: "권한 변경",
+  position: "직급 변경",
+  info: "직원 정보 수정",
+  status: "재직 상태 변경",
+  deactivate: "계정 상태 변경",
+};
 
 const statusLabels: Record<EmployeeStatus, string> = {
   active: "재직",
@@ -63,10 +78,29 @@ const STATUS_OPTIONS = [
 ];
 
 export default function HRPage() {
-  
-  const { data:employees=[], isLoading, isFetching, isError, error, refetch } = useGetEmployees();
-  const showAlert = useAlertStore(state=>state.showAlert);
+  const {
+    data: employees = [],
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useGetEmployees();
+
+  const {
+    data: pendingUsers = [],
+    isFetching: isFetchingPending,
+    refetch: refetchPending,
+  } = useGetPendingUsers();
+
+  const showAlert = useAlertStore((state) => state.showAlert);
   const updateMutate = useUpdateEmployee();
+  const approveMutate = useApprovePendingUser();
+  const rejectMutate = useRejectPendingUser();
+
+  // 탭 상태 ("EMPLOYEES": 전체 직원 | "PENDING": 가입 승인 대기)
+  const [activeTab, setActiveTab] = useState<"EMPLOYEES" | "PENDING">("EMPLOYEES");
+  const [approvingUser, setApprovingUser] = useState<PendingUser | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");
@@ -79,7 +113,8 @@ export default function HRPage() {
   const [editRole, setEditRole] = useState<EmployeeRole>("EMPLOYEE");
   const [editPosition, setEditPosition] = useState<EmployeePosition>("사원");
   const [editName, setEditName] = useState("");
-  const [editDepartment, setEditDepartment] = useState<EmployeeDepartment>("생산관리팀");
+  const [editDepartment, setEditDepartment] =
+    useState<EmployeeDepartment>("생산관리팀");
   const [editStatus, setEditStatus] = useState<EmployeeStatus>("active");
 
   const selectedEmployee = employees.find(
@@ -87,24 +122,24 @@ export default function HRPage() {
   );
 
   const [menuPosition, setMenuPosition] = useState<{
-  top: number;
-  right: number;
+    top: number;
+    right: number;
   } | null>(null);
 
   useEffect(() => {
-  if (!openMenuId) return;
+    if (!openMenuId) return;
 
-  const handleScroll = () => {
-    setOpenMenuId(null);
-  };
+    const handleScroll = () => {
+      setOpenMenuId(null);
+    };
 
-  window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("scroll", handleScroll, true);
 
-  return () => {
-    window.removeEventListener("scroll", handleScroll, true);
-  };
-}, [openMenuId]);
-  
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [openMenuId]);
+
   // 요약 데이터
   const summary = useMemo(
     () => ({
@@ -112,8 +147,9 @@ export default function HRPage() {
       active: employees.filter((item) => item.status === "active").length,
       leave: employees.filter((item) => item.status === "leave").length,
       resigned: employees.filter((item) => item.status === "resigned").length,
+      pending: pendingUsers.length,
     }),
-    [employees],
+    [employees, pendingUsers],
   );
 
   // 검색 및 필터
@@ -131,12 +167,24 @@ export default function HRPage() {
         employee.department === departmentFilter;
 
       const matchesStatus =
-        statusFilter === "ALL" ||
-        employee.status === statusFilter;
+        statusFilter === "ALL" || employee.status === statusFilter;
 
       return matchesSearch && matchesDepartment && matchesStatus;
     });
   }, [employees, searchTerm, departmentFilter, statusFilter]);
+
+  // 승인 대기자 검색 필터
+  const filteredPendingUsers = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+    if (!keyword) return pendingUsers;
+
+    return pendingUsers.filter(
+      (user) =>
+        user.name.toLowerCase().includes(keyword) ||
+        user.email.toLowerCase().includes(keyword) ||
+        (user.tel && user.tel.toLowerCase().includes(keyword)),
+    );
+  }, [pendingUsers, searchTerm]);
 
   // 모달 열기
   const openEditModal = (type: ModalType, employee: Employee) => {
@@ -163,24 +211,22 @@ export default function HRPage() {
   const handleSave = () => {
     if (!modal || !selectedEmployee) return;
 
-     if (modal.type === "info" &&
-        (!editName.trim() || !editDepartment.trim())){
-          showAlert("이름과 부서를 입력해 주세요.");
-          return;
-      } 
+    if (
+      modal.type === "info" &&
+      (!editName.trim() || !editDepartment.trim())
+    ) {
+      showAlert("이름과 부서를 입력해 주세요.");
+      return;
+    }
 
-    let updateData: Partial<Employee>={};
+    let updateData: Partial<Employee> = {};
 
-    switch(modal.type){
-      case 'role':
-        updateData = {
-          role: editRole,
-        };
+    switch (modal.type) {
+      case "role":
+        updateData = { role: editRole };
         break;
-      case 'position':
-        updateData = {
-          position: editPosition,
-        }
+      case "position":
+        updateData = { position: editPosition };
         break;
       case "info":
         updateData = {
@@ -188,41 +234,97 @@ export default function HRPage() {
           department: editDepartment,
         };
         break;
-      case 'status':
-        updateData = {
-          status: editStatus,
-        }
+      case "status":
+        updateData = { status: editStatus };
         break;
-      case 'deactivate':
+      case "deactivate":
         if (!selectedEmployee.accountStatus) {
-        showAlert("연결된 계정이 없습니다.");
-        return;
+          showAlert("연결된 계정이 없습니다.");
+          return;
         }
         updateData = {
-          accountStatus: 
-          selectedEmployee?.accountStatus === 'ACTIVE' 
-          ? 'INACTIVE'
-          : 'ACTIVE' 
-        }
+          accountStatus:
+            selectedEmployee?.accountStatus === "ACTIVE"
+              ? "INACTIVE"
+              : "ACTIVE",
+        };
         break;
     }
 
-    updateMutate.mutate({
-      id: selectedEmployee.id,
-      data: updateData,
-    },
-    { 
-       onSuccess: ()=>{
-        closeModal();
-        showAlert(`${selectedEmployee?.name}님의 ${actionLabels[modal.type]}이 완료하였습니다`, "success")
-    }
-    },)
+    updateMutate.mutate(
+      {
+        id: selectedEmployee.id,
+        data: updateData,
+      },
+      {
+        onSuccess: () => {
+          closeModal();
+          showAlert(
+            `${selectedEmployee?.name}님의 ${actionLabels[modal.type]}이 완료하였습니다`,
+            "success",
+          );
+        },
+      },
+    );
+  };
+
+  // 신규 회원가입 승인 처리
+  const handleApproveUser = (userId: number, payload: ApproveUserRequest) => {
+    approveMutate.mutate(
+      { userId, payload },
+      {
+        onSuccess: (res) => {
+          setApprovingUser(null);
+          showAlert(
+            res.message || "회원가입 승인 및 직원 등록이 완료되었습니다.",
+            "success",
+          );
+        },
+        onError: (err) => {
+          const msg = axios.isAxiosError(err)
+            ? err.response?.data?.message
+            : "회원가입 승인 처리에 실패했습니다.";
+          showAlert(msg, "error");
+        },
+      },
+    );
+  };
+
+  // 신규 회원가입 반려 처리
+  const handleRejectUser = (user: PendingUser) => {
+    showAlert(
+      `${user.name} (${user.email})님의 가입 신청을 반려하시겠습니까?`,
+      "error",
+      "반려 확인",
+      () => {
+        rejectMutate.mutate(user.id, {
+          onSuccess: (res) => {
+            showAlert(
+              res.message || "회원가입 요청이 반려되었습니다.",
+              "success",
+            );
+          },
+          onError: (err) => {
+            const msg = axios.isAxiosError(err)
+              ? err.response?.data?.message
+              : "회원가입 반려 처리에 실패했습니다.";
+            showAlert(msg, "error");
+          },
+        });
+      },
+    );
   };
 
   const handleRefresh = () => {
     setSearchTerm("");
     setDepartmentFilter("ALL");
     setStatusFilter("ALL");
+    setOpenMenuId(null);
+  };
+
+  const handleTabChange = (tab: "EMPLOYEES" | "PENDING") => {
+    setActiveTab(tab);
+    setSearchTerm("");
     setOpenMenuId(null);
   };
 
@@ -241,9 +343,10 @@ export default function HRPage() {
     // 버튼 아래 남은 공간 계산
     const spaceBelow = window.innerHeight - rect.bottom;
 
-    const topPosition = spaceBelow < MENU_HEIGHT 
-      ? rect.top - MENU_HEIGHT - 3  // 위로 띄울 때
-      : rect.bottom + 3;            // 아래로 띄울 때
+    const topPosition =
+      spaceBelow < MENU_HEIGHT
+        ? rect.top - MENU_HEIGHT - 3
+        : rect.bottom + 3;
 
     setMenuPosition({
       top: topPosition,
@@ -252,20 +355,16 @@ export default function HRPage() {
     setOpenMenuId(employee.id);
   };
 
-  if( isLoading ){
-    return <EqualizerLoader message="직원 목록을 불러오는 중입니다"/>
+  if (isLoading) {
+    return <EqualizerLoader message="직원 목록을 불러오는 중입니다" />;
   }
 
-  if(isError){
-    const errorMessage = axios.isAxiosError(error) 
-    ? error.response?.data?.message 
-    : undefined;
+  if (isError) {
+    const errorMessage = axios.isAxiosError(error)
+      ? error.response?.data?.message
+      : undefined;
 
-    return (
-      <CommonError 
-      message={errorMessage}
-      reset={refetch}/>
-    )
+    return <CommonError message={errorMessage} reset={refetch} />;
   }
 
   return (
@@ -281,11 +380,14 @@ export default function HRPage() {
 
         <S.RefreshButton
           type="button"
-          onClick={() => void refetch()}
-          disabled={isFetching}
+          onClick={() => {
+            void refetch();
+            void refetchPending();
+          }}
+          disabled={isFetching || isFetchingPending}
         >
           <FaArrowRotateRight />
-          {isFetching ? "조회 중..." : "새로고침"}
+          {isFetching || isFetchingPending ? "조회 중..." : "새로고침"}
         </S.RefreshButton>
       </S.PageHeader>
 
@@ -335,18 +437,64 @@ export default function HRPage() {
         </S.HRSummaryCard>
       </S.HRSummaryGrid>
 
+        <S.HRTabBar>
+          <S.HRTabButton
+            type="button"
+            $active={activeTab === "EMPLOYEES"}
+            onClick={() => handleTabChange("EMPLOYEES")}
+          >
+            <FaUsers />
+            전체 직원 목록
+            {/* <S.HRTabBadge $active={activeTab === "EMPLOYEES"}>
+              {summary.total}
+            </S.HRTabBadge> */}
+          </S.HRTabButton>
+
+          <S.HRTabButton
+            type="button"
+            $active={activeTab === "PENDING"}
+            onClick={() => handleTabChange("PENDING")}
+          >
+            <FaUserPlus />
+            가입 승인 대기
+            <S.HRTabBadge 
+            $active={activeTab === "PENDING"}
+            $highlight={summary.pending > 0}
+            $alertText={`신규 가입 승인 대기 ${summary.pending}건!`}
+            $hasAlert={summary.pending > 0 && activeTab === "EMPLOYEES"}
+            >
+              {summary.pending}
+            </S.HRTabBadge>
+          </S.HRTabButton>
+        </S.HRTabBar>
+
       {/* 직원 목록 */}
       <S.Panel>
-        <S.HRPanelHeader>
-          <S.HRPanelTitle>
-            <h2>전체 직원 목록</h2>
-            <p>등록된 직원의 정보와 계정 상태를 확인합니다.</p>
-          </S.HRPanelTitle>
+        <S.PanelHeader>
+          <S.PanelHeading>
+            <S.PanelIcon>
+            {activeTab === "EMPLOYEES" ? <FaAddressCard /> : <FaStamp />}
+            </S.PanelIcon>
+            <div>
+              <S.PanelTitle>
+                {activeTab === "EMPLOYEES"
+                  ? "전체 직원 목록"
+                  : "가입 승인 대기 목록"}
+              </S.PanelTitle>
+              <S.PanelDescription>
+                {activeTab === "EMPLOYEES"
+                  ? "등록된 직원의 정보와 계정 상태를 확인합니다."
+                  : "신규 회원가입 신청자를 검토하고 사번을 발급하여 승인합니다."}
+              </S.PanelDescription>
+            </div>
+          </S.PanelHeading>
 
           <S.HRItemCount>
-            {filteredEmployees.length}명
+            {activeTab === "EMPLOYEES"
+              ? `${filteredEmployees.length}명`
+              : `${filteredPendingUsers.length}명`}
           </S.HRItemCount>
-        </S.HRPanelHeader>
+        </S.PanelHeader>
 
         {/* 검색 및 필터 */}
         <S.HRToolbar>
@@ -355,158 +503,253 @@ export default function HRPage() {
             <S.HRSearchInput
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="이름, 사번, 부서 검색"
+              placeholder={
+                activeTab === "EMPLOYEES"
+                  ? "이름, 사번, 부서 검색"
+                  : "이름, 이메일, 연락처 검색"
+              }
             />
           </S.HRSearchWrapper>
 
-          <S.HRFilterGroup>
-            <S.HRFilterSelect
-              value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
-            > 
-              <option value="ALL">전체 부서</option>
-              
-              {DEPARTMENT_OPTIONS.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
-            </S.HRFilterSelect>
+          {activeTab === "EMPLOYEES" && (
+            <S.HRFilterGroup>
+              <S.HRFilterSelect
+                value={departmentFilter}
+                onChange={(e) => setDepartmentFilter(e.target.value)}
+              >
+                <option value="ALL">전체 부서</option>
 
-            <S.HRFilterSelect
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-            {STATUS_OPTIONS.map(opt=> (
-              <option value={opt.value} key={opt.value}>{opt.label}</option>
-            ))}
-            </S.HRFilterSelect>
+                {DEPARTMENT_OPTIONS.map((department) => (
+                  <option key={department} value={department}>
+                    {department}
+                  </option>
+                ))}
+              </S.HRFilterSelect>
 
-            <S.ResetButton
-              type="button"
-              onClick={handleRefresh}
-              title="검색 및 필터 초기화"
-            >
-              <FaRotate />
-            </S.ResetButton>
-          </S.HRFilterGroup>
+              <S.HRFilterSelect
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option value={opt.value} key={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </S.HRFilterSelect>
+
+              <S.ResetButton
+                type="button"
+                onClick={handleRefresh}
+                title="검색 및 필터 초기화"
+              >
+                <FaRotate />
+              </S.ResetButton>
+            </S.HRFilterGroup>
+          )}
         </S.HRToolbar>
 
-        {/* 직원 테이블 */}
-        {filteredEmployees.length > 0 ? (
-          <S.HRTableWrapper>
-            <S.HRTable>
-              <thead>
-                <tr>
-                  <th>직원 정보</th>
-                  <th>사번</th>
-                  <th>부서</th>
-                  <th>직급 / 직책</th>
-                  <th>재직 상태</th>
-                  <th>입사일</th>
-                  <th>관리</th>
-                </tr>
-              </thead>
+        {/* 탭 1) 직원 테이블 */}
+        {activeTab === "EMPLOYEES" ? (
+          filteredEmployees.length > 0 ? (
+            <S.HRTableWrapper>
+              <S.HRTable>
+                <thead>
+                  <tr>
+                    <th>직원 정보</th>
+                    <th>사번</th>
+                    <th>부서</th>
+                    <th>직급 / 직책</th>
+                    <th>재직 상태</th>
+                    <th>입사일</th>
+                    <th>관리</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {filteredEmployees.map((employee) => (
-                  <tr key={employee.id}>
-                    <td>
-                      <S.HREmployeeIdentity >
-                        <S.HRAvatar $role={employee.role}>
-                           {employee.role === "ADMIN" ? (
+                <tbody>
+                  {filteredEmployees.map((employee) => (
+                    <tr key={employee.id}>
+                      <td>
+                        <S.HREmployeeIdentity>
+                          <S.HRAvatar $role={employee.role}>
+                            {employee.role === "ADMIN" ? (
                               <FaUserShield />
                             ) : (
                               employee.name.charAt(0)
                             )}
+                          </S.HRAvatar>
+                          <div>
+                            <strong>{employee.name}</strong>
+                          </div>
+                        </S.HREmployeeIdentity>
+                      </td>
+
+                      <td>{employee.id}</td>
+                      <td>{employee.department}</td>
+                      <td>{employee.position ?? "-"}</td>
+
+                      <td>
+                        <S.HRStatusBadge $status={employee.status}>
+                          {statusLabels[employee.status]}
+                        </S.HRStatusBadge>
+                      </td>
+
+                      <td>{employee.joinDate}</td>
+
+                      <td>
+                        <S.HRMoreWrapper>
+                          <S.HRMoreButton
+                            type="button"
+                            aria-label={`${employee.name} 관리 메뉴`}
+                            onClick={(e) => toggleMenu(e, employee)}
+                          >
+                            <FaEllipsisVertical />
+                          </S.HRMoreButton>
+
+                          {openMenuId === employee.id &&
+                            menuPosition &&
+                            typeof document !== "undefined" &&
+                            createPortal(
+                              <S.HRMoreMenu
+                                style={{
+                                  top: menuPosition?.top,
+                                  right: menuPosition?.right,
+                                }}
+                              >
+                                <S.HRMenuItem
+                                  type="button"
+                                  onClick={() =>
+                                    openEditModal("role", employee)
+                                  }
+                                >
+                                  <FaShieldHalved />
+                                  권한 변경
+                                </S.HRMenuItem>
+
+                                <S.HRMenuItem
+                                  type="button"
+                                  onClick={() =>
+                                    openEditModal("position", employee)
+                                  }
+                                >
+                                  <FaBriefcase />
+                                  직급 / 직책 변경
+                                </S.HRMenuItem>
+
+                                <S.HRMenuItem
+                                  type="button"
+                                  onClick={() =>
+                                    openEditModal("status", employee)
+                                  }
+                                >
+                                  <FaUserCheck />
+                                  재직 상태 변경
+                                </S.HRMenuItem>
+
+                                <S.HRMenuItem
+                                  type="button"
+                                  onClick={() =>
+                                    openEditModal("info", employee)
+                                  }
+                                >
+                                  <FaPenToSquare />
+                                  직원 정보 변경
+                                </S.HRMenuItem>
+
+                                <S.HRMenuItem
+                                  type="button"
+                                  $danger
+                                  onClick={() =>
+                                    openEditModal("deactivate", employee)
+                                  }
+                                >
+                                  <FaBan />
+                                  {employee.accountStatus === "ACTIVE"
+                                    ? "계정 비활성화"
+                                    : "계정 활성화"}
+                                </S.HRMenuItem>
+                              </S.HRMoreMenu>,
+                              document.getElementById("portal-root")!,
+                            )}
+                        </S.HRMoreWrapper>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </S.HRTable>
+            </S.HRTableWrapper>
+          ) : (
+            <S.HREmptyState>
+              <FaBuilding />
+              <strong>검색 결과가 없습니다.</strong>
+              <span>검색어나 필터 조건을 변경해 보세요.</span>
+            </S.HREmptyState>
+          )
+        ) : /* 탭 2) 가입 승인 대기 테이블 */
+        filteredPendingUsers.length > 0 ? (
+          <S.HRTableWrapper>
+            <S.HRTable>
+              <thead>
+                <tr>
+                  <th>신청자 정보</th>
+                  <th>이메일</th>
+                  <th>연락처</th>
+                  <th>희망 직급</th>
+                  <th>가입 신청일</th>
+                  <th>상태</th>
+                  <th>승인 처리</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredPendingUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td>
+                      <S.HREmployeeIdentity>
+                        <S.HRAvatar $role="EMPLOYEE">
+                          {user.name.charAt(0)}
                         </S.HRAvatar>
                         <div>
-                          <strong>{employee.name}</strong> 
+                          <strong>{user.name}</strong>
                         </div>
                       </S.HREmployeeIdentity>
                     </td>
 
-                    <td>{employee.id}</td>
-                    <td>{employee.department}</td>
-                    <td>{employee.position ?? "-"}</td>
+                    <td>{user.email}</td>
+                    <td>{user.tel ?? "-"}</td>
+                    <td>{user.position ?? "-"}</td>
+                    <td>
+                      {user.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString("ko-KR")
+                        : "-"}
+                    </td>
 
                     <td>
-                      <S.HRStatusBadge $status={employee.status}>
-                        {statusLabels[employee.status]}
+                      <S.HRStatusBadge $status="leave">
+                        승인 대기
                       </S.HRStatusBadge>
                     </td>
 
-                    <td>{employee.joinDate}</td>
-
                     <td>
-                      <S.HRMoreWrapper>
-                        <S.HRMoreButton
+                      <S.HRActionGroup>
+                        <S.HRActionButton
                           type="button"
-                          aria-label={`${employee.name} 관리 메뉴`}
-                          onClick={(e) => toggleMenu(e, employee)}
+                          $variant="approve"
+                          onClick={() => setApprovingUser(user)}
                         >
-                          <FaEllipsisVertical />
-                        </S.HRMoreButton>
+                          <FaCheck />
+                          승인
+                        </S.HRActionButton>
 
-                        {openMenuId === employee.id && menuPosition && 
-                         typeof document !== "undefined" && 
-                        createPortal(
-                          <S.HRMoreMenu style={{top:menuPosition?.top, right:menuPosition?.right}}>
-                            <S.HRMenuItem
-                              type="button"
-                              onClick={() =>
-                                openEditModal("role", employee)
-                              }
-                            >
-                              <FaShieldHalved />
-                              권한 변경
-                            </S.HRMenuItem>
-
-                            <S.HRMenuItem
-                              type="button"
-                              onClick={() =>
-                                openEditModal("position", employee)
-                              }
-                            >
-                              <FaBriefcase />
-                              직급 / 직책 변경
-                            </S.HRMenuItem>
-
-                             <S.HRMenuItem
-                              type="button"
-                              onClick={() =>
-                                openEditModal("status", employee)
-                              }
-                            >
-                              <FaUserCheck />
-                              재직 상태 변경
-                            </S.HRMenuItem>
-
-                            <S.HRMenuItem
-                              type="button"
-                              onClick={() =>
-                                openEditModal("info", employee)
-                              }
-                            >
-                              <FaPenToSquare />
-                              직원 정보 변경
-                            </S.HRMenuItem>
-
-                            <S.HRMenuItem
-                              type="button"
-                              $danger
-                              onClick={() =>
-                                openEditModal("deactivate", employee)
-                              }
-                            >
-                              <FaBan />
-                              {employee.accountStatus === "ACTIVE"
-                                ? "계정 비활성화"
-                                : "계정 활성화"}
-                            </S.HRMenuItem>
-                          </S.HRMoreMenu>
-                        , document.getElementById('portal-root')!)}
-                      </S.HRMoreWrapper>
+                        <S.HRActionButton
+                          type="button"
+                          $variant="reject"
+                          onClick={() => handleRejectUser(user)}
+                          disabled={rejectMutate.isPending}
+                        >
+                          <FaXmark />
+                          반려
+                        </S.HRActionButton>
+                      </S.HRActionGroup>
                     </td>
                   </tr>
                 ))}
@@ -515,28 +758,37 @@ export default function HRPage() {
           </S.HRTableWrapper>
         ) : (
           <S.HREmptyState>
-            <FaBuilding />
-            <strong>검색 결과가 없습니다.</strong>
-            <span>검색어나 필터 조건을 변경해 보세요.</span>
+            <FaUserXmark />
+            <strong>가입 승인 대기 중인 사용자가 없습니다.</strong>
+            <span>신규 회원가입 요청이 들어오면 이곳에 표시됩니다.</span>
           </S.HREmptyState>
         )}
       </S.Panel>
 
+      {/* 기존 직원 수정 모달 */}
       <HrEditModal
-      modal={modal}
-      selectedEmployee={selectedEmployee}
-      closeModal={closeModal}
-      editRole={editRole}
-      setEditRole={setEditRole}
-      editPosition={editPosition}
-      setEditPosition={setEditPosition}
-      editName={editName}
-      setEditName={setEditName}
-      editDepartment={editDepartment}
-      setEditDepartment={setEditDepartment}
-      editStatus={editStatus}
-      setEditStatus={setEditStatus}
-      handleSave={handleSave}
+        modal={modal}
+        selectedEmployee={selectedEmployee}
+        closeModal={closeModal}
+        editRole={editRole}
+        setEditRole={setEditRole}
+        editPosition={editPosition}
+        setEditPosition={setEditPosition}
+        editName={editName}
+        setEditName={setEditName}
+        editDepartment={editDepartment}
+        setEditDepartment={setEditDepartment}
+        editStatus={editStatus}
+        setEditStatus={setEditStatus}
+        handleSave={handleSave}
+      />
+
+      {/* 신규 가입 승인 및 사번 발급 모달 */}
+      <HrApproveModal
+        user={approvingUser}
+        isSubmitting={approveMutate.isPending}
+        onClose={() => setApprovingUser(null)}
+        onApprove={handleApproveUser}
       />
     </S.PageContainer>
   );
