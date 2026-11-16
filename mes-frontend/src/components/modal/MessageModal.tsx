@@ -47,8 +47,10 @@ export default function MessageModal({
     const showAlert = useAlertStore(state=> state.showAlert);
     const { mutate: deleteMutate, isPending: isDeleting} = useDeleteMessage();
     const { mutate, isPending } = useSendMessage();
-    const {data: receivedMessages=[], isLoading: isReceivedLoading } = useGetMessagesReceived();
-    const {data: sentMessages=[], isLoading:isSentLoading} = useGetMessagesSent();
+    const {data: receivedMessages=[], isLoading: isReceivedLoading } 
+    = useGetMessagesReceived(receiver?.id, !!receiver);
+    const {data: sentMessages=[], isLoading:isSentLoading} 
+    = useGetMessagesSent(receiver?.id, !!receiver);
     const {mutate: updateIsReadMutate} = useUpdateMessageIsRead();
 
     const [title, setTitle]= useState('');
@@ -57,15 +59,6 @@ export default function MessageModal({
     const [activeTab, setActiveTab] = useState<MessageTab>("write");
     const [selectedMessage, setSelectedMessage] = useState<Message|null>(null);
 
-    const filteredReceivedMessages = receivedMessages.filter(
-        message=> message.senderEmpId === receiver?.id
-    )
-
-    const filteredSentMessages = sentMessages.filter(
-    (message) => message.receiverEmpId === receiver?.id
-    );
-    
-    
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
         if(!receiver || !title.trim() || !content.trim()) return;
@@ -93,7 +86,7 @@ export default function MessageModal({
         if(message.isRead === 'N'){
             updateIsReadMutate(message.id, {
                 onSuccess:()=>{
-                    setSelectedMessage((prev)=> prev? {...prev,isRead:"Y"}: prev)
+                    setSelectedMessage((prev)=> prev?.id === message.id ? { ...prev, isRead:"Y" }: prev)
                 },
                 onError:(error)=>{
                     console.error("읽음 처리 실패:", error);
@@ -310,13 +303,13 @@ export default function MessageModal({
                         {isReceivedLoading ? (
                             <EqualizerLoader message="받은 쪽지를 불러오는 중"/>
                         ):(
-                        filteredReceivedMessages.length > 0 ? (
+                        receivedMessages.length > 0 ? (
                         <>
                         <S.MessageGuide>
                             <FaRegEnvelopeOpen />
                             쪽지를 클릭하면 내용을 확인하고 읽음으로 표시됩니다.
                         </S.MessageGuide>
-                        {filteredReceivedMessages.map((message) => (
+                        {receivedMessages.map((message) => (
                             <S.MessageCard
                             key={message.id}
                             $unread={message.isRead === "N"}
@@ -424,8 +417,8 @@ export default function MessageModal({
                         {isSentLoading ? (
                                 <EqualizerLoader message="보낸 쪽지를 불러오는 중"/>
                             ):(
-                        filteredSentMessages.length > 0 ? (
-                        filteredSentMessages.map((message) => (
+                        sentMessages .length > 0 ? (
+                        sentMessages .map((message) => (
                             <S.MessageCard 
                             key={message.id}
                             $unread={message.isRead==='N'}

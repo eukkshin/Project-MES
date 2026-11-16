@@ -387,3 +387,48 @@ export const FooterLinks = styled.div`
     }
   }
 `;
+
+
+export const MessageButton = styled.button<{$unread:boolean, $count:string}>`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: #64748b;
+  font-size: 23px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  &::after{
+    content: "${({$count})=> $count}";
+    content: '9';
+    display: ${({$unread})=> $unread ? 'flex' : 'none'};
+    position: absolute;
+    top: 1px;
+    right: -5px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 4px;
+    align-items: center;
+    justify-content:center;
+
+    border: 1px solid #fff;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+  }
+`;

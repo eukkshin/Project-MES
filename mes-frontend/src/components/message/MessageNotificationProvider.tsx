@@ -14,7 +14,7 @@ export default function MessageNotificationProvider({children,
     const { 
         data:receivedMessages=[], 
         isSuccess
-    }= useGetMessagesReceived(isAuth && isInitialized);
+    }= useGetMessagesReceived(undefined,isAuth && isInitialized);
 
     //이미 확인한 쪽지 ID 저장하기
     const knownMessageIds =  useRef<Set<number>|null>(null);

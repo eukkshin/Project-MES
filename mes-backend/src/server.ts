@@ -1022,7 +1022,7 @@ app.get('/api/admin/employees',
           {
             model: User,
             as: "user",
-            attributes: ["accountStatus"],
+            attributes: ["accountStatus", "approvalStatus"],
             required: false,
           }
         ],
@@ -1041,6 +1041,7 @@ app.get('/api/admin/employees',
           status: employee.status,
           joinDate: employee.joinDate,
           accountStatus: employee.user?.accountStatus ?? null,
+          approvalStatus: employee.user?.approvalStatus ?? null,
         };
       });
 
@@ -1337,18 +1338,25 @@ app.post(
   }
 );
 
-// 받은 쪽지 조회
+// 받은 쪽지 조회 (+/api/messages/received?employeeId=EMP011)
 app.get(
   "/api/messages/received",
   verifyToken,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const receiverEmpId = (req as any).user?.empId;
+    
+      // 상대방 사원 ID (없으면 전체 조회)
+      const employeeId =
+        typeof req.query.employeeId === "string"
+          ? req.query.employeeId
+          : undefined;
 
       const messages = await Message.findAll({
         where: {
           receiverEmpId,
           receiverDeleted: "N",
+          ...(employeeId && { senderEmpId: employeeId }),
         },
         include:[
           {
@@ -1398,10 +1406,17 @@ app.get(
     try {
       const senderEmpId = (req as any).user?.empId;
 
+      // 상대방 사원 ID 가져오기
+      const employeeId =
+        typeof req.query.employeeId === "string"
+          ? req.query.employeeId
+          : undefined;
+      
       const messages = await Message.findAll({
         where: {
           senderEmpId,
           senderDeleted: "N",
+          ...(employeeId && { receiverEmpId: employeeId }),
         },
         include: [
           {

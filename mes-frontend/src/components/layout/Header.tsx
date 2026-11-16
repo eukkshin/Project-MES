@@ -7,6 +7,7 @@ import {
   FaBars,
   FaChevronRight,
   FaIndustry,
+  FaRegEnvelope,
   FaRightFromBracket,
   FaUser,
   FaXmark,
@@ -69,7 +70,7 @@ export const Header = () => {
   const isInitialized = useAuthStore(state=>state.isInitialized);
   const isAuth = useAuthStore(state=> state.isAuth);
 
-  const {data: receivedMessages =[]} = useGetMessagesReceived(isAuth && isInitialized);
+  const {data: receivedMessages =[]} = useGetMessagesReceived(undefined, isAuth && isInitialized);
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
@@ -112,7 +113,16 @@ export const Header = () => {
   }
 
   const unreadCount = receivedMessages.filter(message=> message.isRead === 'N').length;
-  
+
+  console.log(
+    "안 읽은 쪽지:",
+    receivedMessages
+      .filter(message => message.isRead === 'N')
+      .map(message => ({
+        id: message.id,
+        isRead: message.isRead,
+      }))
+  );
   return (
     <>
       <S.HeaderContainer>
@@ -133,6 +143,21 @@ export const Header = () => {
         </S.HeaderLeft>
 
         <S.UserSection>
+          <S.MessageButton
+          type="button"
+          $unread={unreadCount > 0}
+          $count={unreadCount > 99 ? '99+' : String(unreadCount)}
+          onClick={()=>router.push('/admin/messages')}
+          title="쪽지함"
+          aria-label={
+            unreadCount > 0 
+            ? `쪽지함, 읽지않은 쪽지 ${unreadCount}개`
+            : "쪽지함"
+          }
+          >
+            <FaRegEnvelope/>
+          </S.MessageButton>
+          
           <S.UserAvatar>
             <FaUser />
           </S.UserAvatar>
@@ -142,6 +167,7 @@ export const Header = () => {
             <span>내 정보 관리</span>
           </S.UserInfoButton>
 
+      
           <S.HeaderDivider />
 
           <S.LogoutButton
