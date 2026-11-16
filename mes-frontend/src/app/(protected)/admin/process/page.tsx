@@ -21,6 +21,7 @@ import type { ProcessLine } from "@/types/process";
 import * as S from "@/assets/css/admin/Process.styles";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useCreateProcessLine, useFetchProcessHistory, useFetchProcessLines, useUpdateLineStatus } from "@/hooks/useMes";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ProcessForm {
   lineName: string;
@@ -53,6 +54,9 @@ const getStatusInfo = (status?: string) => {
 
 export default function ProcessPage() {
   const showAlert = useAlertStore((state) => state.showAlert);
+
+  const role = useAuthStore((state) => state.role);
+  const isAdmin = role === "ADMIN";
 
   // 등록 폼 상태
   const [form, setForm] = useState<ProcessForm>({ ...INITIAL_STATE });
@@ -527,14 +531,20 @@ export default function ProcessPage() {
                         </div>
                       </S.LineIdentity>
 
-                      {/* 상태 배지 (클릭 시 토글 모달 호출, 가동 중일 때 pulse 깜빡임 효과) */}
+                      {/* 상태 배지 (클릭 시 토글 모달 호출) */}
                       <S.StatusBadge
                         $tone={statusInfo.tone}
-                        $clickable
-                        onClick={() =>
-                          openStatusModal(line, isRunning ? "STOP" : "RUNNING")
+                        $clickable={isAdmin}
+                        onClick={
+                          isAdmin 
+                          ? ()=>openStatusModal(line, isRunning ? "STOP" : "RUNNING")
+                          : undefined
                         }
-                        title="배지를 클릭하여 상태를 빠르게 전환할 수 있습니다."
+                        title={
+                          isAdmin 
+                          ? "배지를 클릭하여 상태를 빠르게 전환할 수 있습니다."
+                          : "현재 공정 상태입니다."
+                         }
                       >
                         <S.StatusDot $pulse={isRunning} />
                         {statusInfo.label}
@@ -557,6 +567,7 @@ export default function ProcessPage() {
                     </S.LineCardBottom>
 
                     {/* 하단: 상태 제어 버튼 바 */}
+                    {isAdmin && (
                     <S.StatusControl>
                       <S.QuickToggleButton
                         type="button"
@@ -618,6 +629,7 @@ export default function ProcessPage() {
                         </S.StatusActionButtons>
                       </S.StatusRightGroup>
                     </S.StatusControl>
+                    )}
                   </S.LineCard>
                 );
               })

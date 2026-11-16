@@ -516,6 +516,7 @@ app.get(
 app.patch(
   "/api/process/lines/:id/status",
   verifyToken,
+  verifyAdmin,
   async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
