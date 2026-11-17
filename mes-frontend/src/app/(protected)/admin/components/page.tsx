@@ -14,29 +14,16 @@ import {
   FaTriangleExclamation,
   FaWarehouse,
 } from "react-icons/fa6";
+import {
+  useFetchComponents,
+  useCreateComponent,
+  type ComponentItem,
+  type ComponentForm,
+} from "@/hooks/useSCM";
 
 import * as S from "@/assets/css/admin/Scm.styles";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createComponent, fetchComponents } from "@/api/mes.http";
 import { useAlertStore } from "@/store/useAlertStore";
 
-interface ComponentItem {
-  id: number;
-  componentName: string;
-  category: string;
-  stockQuantity: number;
-  minThreshold: number;
-  supplier: string;
-  status: string;
-}
-
-interface ComponentForm {
-  componentName: string;
-  category: string;
-  stockQuantity: number;
-  minThreshold: number;
-  supplier: string;
-}
 
 const INITIAL_STATE: ComponentForm = {
   componentName: "",
@@ -47,36 +34,22 @@ const INITIAL_STATE: ComponentForm = {
 };
 
 export default function ScmPage() {
-  const queryClient = useQueryClient();
   const showAlert = useAlertStore(state=>state.showAlert);
   
   const [form, setForm] = useState<ComponentForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");
 
-  const {data: components=[], isLoading, isError, error, refetch} = useQuery<ComponentItem[]>({
-    queryKey: ['scm-components'],
-    queryFn: async()=>{
-      const payload = await fetchComponents();
-      if(!payload.success){
-        throw new Error('부품 목록 조회에 실패했습니다.');
-      }
-      const data = payload.components ?? payload.data ?? [];
-      return Array.isArray(data) ? data : [];
-  }});
+  const {
+    data: components = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useFetchComponents();
 
-  const { mutate, isPending:isSubmitting } =useMutation({
-    mutationFn: createComponent,
-    onSuccess: ()=>{
-      showAlert("부품 SCM 등록이 완료되었습니다.", "success");
-      queryClient.invalidateQueries({queryKey: ['scm-components']});
-      setForm({...INITIAL_STATE})
-    },
-    onError: (err)=>{
-      console.error("부품 SCM 등록 오류:", err);
-      showAlert("부품 SCM 등록에 실패했습니다.", "error");
-    }
-  })
+  const { mutate, isPending: isSubmitting } = useCreateComponent();
+
   const handleChange = <K extends keyof ComponentForm>(
     field: K,
     value: ComponentForm[K],
@@ -118,7 +91,16 @@ export default function ScmPage() {
       minThreshold: form.minThreshold,
       supplier: form.supplier.trim(),
       }
-      mutate(formData);
+      mutate(formData, {
+        onSuccess: () => {
+          showAlert("부품 SCM 등록이 완료되었습니다.", "success");
+          setForm({ ...INITIAL_STATE });
+        },
+        onError: (err) => {
+          console.error("부품 SCM 등록 오류:", err);
+          showAlert("부품 SCM 등록에 실패했습니다.", "error");
+        },
+      });
   };
 
   const isWarning = (item: ComponentItem) =>

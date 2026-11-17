@@ -39,6 +39,8 @@ import {
 import * as S from '@/assets/css/admin/DashChart.styles';
 import { useToastContext } from '@/context/ToastContext';
 import { useMesAlertStore } from '@/store/useMesAlertStore';
+import { useFetchEquipment } from '@/hooks/useEquipment';
+import { useFetchComponents } from '@/hooks/useSCM';
 
 // 백엔드 응답 배열 정규화 유틸 (배열 또는 { data / records / ... } 형태 모두 안전하게 처리)
 function extractList<T>(payload: unknown, keys: string[]): T[] {
@@ -118,35 +120,12 @@ export default function DashboardPage() {
   });
 
   // 4. 클린룸 설비 조회 (EQUIPMENTS)
-  const equipmentQuery = useQuery({
-    queryKey: ['equipment'],
-    queryFn: fetchEquipment,
-    select: (res) =>
-      extractList<{
-        id: number;
-        equipmentName: string;
-        cleanroomZone: string;
-        temperature: number;
-        humidity: number;
-        status: 'NORMAL' | 'WARNING' | 'ERROR';
-      }>(res, ['equipments', 'equipment', 'data']),
+  const equipmentQuery = useFetchEquipment({
     refetchInterval: 15000,
   });
 
-  // 5. 부품 SCM 조회 (COMPONENT_SCM)
-  const scmQuery = useQuery({
-    queryKey: ['scm-components'],
-    queryFn: fetchComponents,
-    select: (res) =>
-      extractList<{
-        id: number;
-        componentName: string;
-        category: string;
-        stockQuantity: number;
-        minThreshold: number;
-        supplier: string;
-        status: 'NORMAL' | 'WARNING' | 'DANGER';
-      }>(res, ['components', 'scm', 'data']),
+  //부품조회 components
+  const scmQuery = useFetchComponents({
     refetchInterval: 15000,
   });
 

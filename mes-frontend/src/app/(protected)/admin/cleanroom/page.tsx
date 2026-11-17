@@ -14,12 +14,16 @@ import {
   FaTriangleExclamation,
   FaWarehouse,
 } from "react-icons/fa6";
+import {
+  useFetchEquipment,
+  useCreateEquipment,
+  useUpdateEquipmentStatus,
+} from "@/hooks/useEquipment";
 
 import * as S from "@/assets/css/admin/Cleanroom.styles";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createEquipment, fetchEquipment, updateEquipmentStatus } from "@/api/mes.http";
 import { Select } from "@/ui/Select/Select";
 import { useAlertStore } from "@/store/useAlertStore";
+
 interface EquipmentItem {
   id: number;
   equipmentName: string;
@@ -36,12 +40,6 @@ interface EquipmentForm {
   humidity: string;
 }
 
-interface EquipmentResponse {
-  success: boolean;
-  equipment?: EquipmentItem[];
-  equipments?: EquipmentItem[];
-  data?: EquipmentItem[];
-}
 
 const INITIAL_STATE: EquipmentForm = {
   equipmentName: "",
@@ -81,7 +79,6 @@ const getStatusInfo = (status: string) => {
 
 export default function CleanroomPage() {
 
-  const queryClient = useQueryClient();
   const showAlert = useAlertStore(state=>state.showAlert);
 
   const [openSelectId, setOpenSelectId]= useState<string|null>(null);
@@ -96,66 +93,20 @@ export default function CleanroomPage() {
     Record<number, string>
   >({});
 
-  const {data: equipment=[], isLoading, isError, error, refetch } = useQuery<EquipmentItem[]>({
-    queryKey: ['equipment'],
-    queryFn: async()=>{
-      const data = await LoadEquipment();
-      return data;
-    }
-  })
+  const {
+    data: equipment = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useFetchEquipment();
 
-  const {mutate, isPending:isSubmitting} = useMutation({
-    mutationFn: createEquipment,
-    onSuccess: ()=>{
-      showAlert("설비 환경 정보가 등록되었습니다.", "success");
-      queryClient.invalidateQueries({queryKey: ['equipment']})
-      setForm({...INITIAL_STATE})
-    },
-    onError: (err)=>{
-      console.error("클린룸 설비 등록 오류:", err);
-      showAlert("설비 환경 정보 등록에 실패했습니다.", "error");
-    }
-  })
+  console.log("equipment:", equipment);
+console.log("배열 여부:", Array.isArray(equipment));
 
-  const { mutate:updateStatusMutation } = useMutation({
-    mutationFn: ({id, nextStatus}:{ id: number; nextStatus: string })=>
-      updateEquipmentStatus(id,{status: nextStatus}),
-    onSuccess: (_, variables)=>{
-      showAlert("설비 상태가 변경되었습니다.", "success");
-      queryClient.invalidateQueries({queryKey: ['equipment']})
-      
-      setSelectedStatuses(prev=>{
-        const next = {...prev};
-        delete next[variables.id];
-        return next;
-      })
-    },
-    onError: (error)=>{
-      console.error("설비 상태 변경 오류:", error);
-      showAlert("설비 상태 변경에 실패했습니다.", "error");
-    },
-    onSettled: (_, __, variables)=> {
-        setUpdatingId(null);
-    },
-  })
+  const { mutate, isPending: isSubmitting } = useCreateEquipment();
 
-  const LoadEquipment = async (): Promise<EquipmentItem[]> => {
-
-      const payload = await fetchEquipment();
-
-      if (!Array.isArray(payload) && payload.success === false) {
-        throw new Error("설비 조회에 실패했습니다.");
-      }
-
-      const data = Array.isArray(payload)
-        ? payload
-        : (payload.equipment ?? payload.equipments ?? payload.data ?? []);
-
-      if (!Array.isArray(data)) {
-        throw new Error("설비 조회 응답 형식이 올바르지 않습니다.");
-      }
-      return data;
-  };
+  const { mutate: updateStatusMutation } = useUpdateEquipmentStatus();
 
 
   const handleChange = <K extends keyof EquipmentForm>(
@@ -199,7 +150,17 @@ export default function CleanroomPage() {
           temperature,
           humidity,
         }
-    mutate(formData); //전송
+
+    mutate(formData,{
+      onSuccess: () => {
+        showAlert("설비 환경 정보가 등록되었습니다.", "success");
+        setForm({ ...INITIAL_STATE });
+      },
+      onError: (err) => {
+        console.error("클린룸 설비 등록 오류:", err);
+        showAlert("설비 환경 정보 등록에 실패했습니다.", "error");
+      },
+    }); 
   };
 
   const summary = useMemo(() => {
@@ -261,7 +222,27 @@ export default function CleanroomPage() {
 
     setUpdatingId(item.id);
 
-    updateStatusMutation({id: item.id,nextStatus})
+    updateStatusMutation(
+      {id: item.id,nextStatus},
+      {
+        onSuccess: (_, variables) => {
+          showAlert("설비 상태가 변경되었습니다.", "success");
+    
+          setSelectedStatuses((prev) => {
+            const next = { ...prev };
+            delete next[variables.id];
+            return next;
+          });
+        },
+        onError: (error) => {
+          console.error("설비 상태 변경 오류:", error);
+          showAlert("설비 상태 변경에 실패했습니다.", "error");
+        },
+        onSettled: () => {
+          setUpdatingId(null);
+        },
+      }
+    )
   };
 
   return (

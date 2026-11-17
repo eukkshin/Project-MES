@@ -5,10 +5,12 @@ import React, { useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { FaTriangleExclamation, FaXmark } from 'react-icons/fa6';
 
-import { fetchComponents, fetchEquipment } from '@/api/mes.http';
+import { fetchComponents } from '@/api/mes.http';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMesAlertStore } from '@/store/useMesAlertStore';
 import * as S from '@/assets/css/components/LiveAlertToast.styles';
+import { useFetchEquipment } from '@/hooks/useEquipment';
+import { useFetchComponents } from '@/hooks/useSCM';
 
 export default function MesAlertWatcher() {
   const { liveAlert, triggerLiveAlert, clearLiveAlert } = useMesAlertStore();
@@ -20,16 +22,12 @@ export default function MesAlertWatcher() {
   // 동일 경보가 15초 폴링마다 중복으로 계속 뜨는 것을 방지
   const alertedKeysRef = useRef<Set<string>>(new Set());
 
-  const equipmentQuery = useQuery({
-    queryKey: ['equipment'],
-    queryFn: fetchEquipment,
+  const equipmentQuery = useFetchEquipment({
     enabled: isAuthenticated,
     refetchInterval: 15000,
   });
 
-  const scmQuery = useQuery({
-    queryKey: ['scm-components'],
-    queryFn: fetchComponents,
+  const scmQuery = useFetchComponents({
     enabled: isAuthenticated,
     refetchInterval: 15000,
   });
@@ -38,16 +36,10 @@ export default function MesAlertWatcher() {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const eqRaw = equipmentQuery.data;
-    const equipments = Array.isArray(eqRaw)
-      ? eqRaw
-      : (eqRaw?.equipments ?? eqRaw?.equipment ?? eqRaw?.data ?? []);
+    const equipments = equipmentQuery.data ?? [];
 
-    const compRaw = scmQuery.data;
-    const components = Array.isArray(compRaw)
-      ? compRaw
-      : (compRaw?.components ?? compRaw?.scm ?? compRaw?.data ?? []);
-
+    const components = scmQuery.data ?? [];
+    
     // 설비가 정상으로 복구되면 기존 경보 기록 삭제
     if (Array.isArray(equipments)) {
       equipments.forEach((e: any) => {
