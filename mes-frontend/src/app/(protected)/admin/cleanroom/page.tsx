@@ -222,6 +222,15 @@ console.log("배열 여부:", Array.isArray(equipment));
 
     setUpdatingId(item.id);
 
+    // 사용자가 직접 변경한 설비 상태 기록
+    sessionStorage.setItem(
+      "mes-manual-equipment-status",
+      JSON.stringify({
+        id: item.id,
+        nextStatus,
+      })
+    );
+
     updateStatusMutation(
       {id: item.id,nextStatus},
       {
@@ -235,6 +244,7 @@ console.log("배열 여부:", Array.isArray(equipment));
           });
         },
         onError: (error) => {
+          sessionStorage.removeItem("mes-manual-equipment-status");
           console.error("설비 상태 변경 오류:", error);
           showAlert("설비 상태 변경에 실패했습니다.", "error");
         },
@@ -469,7 +479,7 @@ console.log("배열 여부:", Array.isArray(equipment));
                 <S.ResultCount>
                   검색 결과 {filteredEquipment.length}건
                 </S.ResultCount>
-                <Select id="1" 
+                <Select id="filter" 
                 width="100px"
                 openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
                 options={SELECT_OPTIONS} value={statusFilter}
@@ -573,7 +583,8 @@ console.log("배열 여부:", Array.isArray(equipment));
                             설비 상태 변경
                           </S.StatusControlLabel>
 
-                          <Select id="2" 
+                          <Select 
+                            id={`status-${item.id}`}
                             width="100px"
                             openSelectId={openSelectId} setOpenSelectId={setOpenSelectId}
                             options={STATUS_OPTIONS} value={selectedStatuses[item.id] ?? item.status}
