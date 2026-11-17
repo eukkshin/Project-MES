@@ -1,0 +1,1646 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const express_1 = __importDefault(require("express"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+dotenv_1.default.config();
+const sequelize = require("./db");
+const User = require("./model/User");
+const ProcessLine = require("./model/ProcessLine");
+const ProcessStatusLog = require("./model/ProcessStatusLog");
+const ComponentSCM = require("./model/ComponentSCM");
+const QualityInspection = require("./model/QualityInspection");
+const Equipment = require("./model/Equipment");
+const ProductionRecord = require("./model/ProductionRecord");
+const Employee = require('./model/Employee');
+const Schedule = require('./model/Schedule');
+const Message = require('./model/Message');
+//============================================
+// 👇 모델 관계 설정
+//============================================
+//User ↔ Employee
+User.belongsTo(Employee, {
+    foreignKey: "empId",
+    targetKey: "id",
+    as: "employee",
+});
+Employee.hasOne(User, {
+    foreignKey: "empId",
+    sourceKey: "id",
+    as: "user",
+});
+// Employee ↔ Schedule
+Schedule.belongsTo(Employee, {
+    foreignKey: "createdBy",
+    targetKey: "id",
+    as: "creator",
+});
+Employee.hasMany(Schedule, {
+    foreignKey: "createdBy",
+    sourceKey: "id",
+    as: "schedules",
+});
+Message.belongsTo(Employee, {
+    foreignKey: "senderEmpId",
+    targetKey: "id",
+    as: "sender",
+});
+Message.belongsTo(Employee, {
+    foreignKey: "receiverEmpId",
+    targetKey: "id",
+    as: "receiver",
+});
+//========================================
+const app = (0, express_1.default)();
+// 기본 미들웨어
+app.use(express_1.default.json());
+app.use((0, cors_1.default)({
+    origin: "http://localhost:3000",
+    credentials: true,
+}));
+app.use("/api/holidays", require("./routes/holiday"));
+// JWT 비밀키
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET 환경변수가 설정되지 않았습니다.");
+}
+// JWT 인증 미들웨어
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    // 토큰이 없는 경우
+    if (!authHeader?.startsWith("Bearer ")) {
+        res.status(401).json({
+            success: false,
+            code: "TOKEN_REQUIRED",
+            message: "인증 토큰이 제공되지 않았습니다.",
+        });
+        return;
+    }
+    const token = authHeader.slice(7).trim();
+    // 토큰 형식이 잘못된 경우
+    if (!token) {
+        res.status(401).json({
+            success: false,
+            code: "INVALID_TOKEN",
+            message: "인증 토큰이 올바르지 않습니다.",
+        });
+        return;
+    }
+    try {
+        const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+        // 토큰 안의 사용자 정보가 잘못된 경우
+        if (typeof decoded === "string" ||
+            typeof decoded.id !== "number" ||
+            typeof decoded.email !== "string" ||
+            typeof decoded.empId !== 'string' ||
+            !["ADMIN", "EMPLOYEE"].includes(decoded.role)) {
+            res.status(401).json({
+                success: false,
+                code: "INVALID_TOKEN",
+                message: "인증 토큰의 사용자 정보가 올바르지 않습니다.",
+            });
+            return;
+        }
+        req.user = decoded;
+        next();
+    }
+    catch (error) {
+        // 만료되었거나 유효하지 않은 토큰
+        res.status(401).json({
+            success: false,
+            code: "INVALID_TOKEN",
+            message: "유효하지 않거나 만료된 토큰입니다.",
+        });
+    }
+};
+const verifyAdmin = (req, res, next) => {
+    if (req.user?.role !== 'ADMIN') {
+        res.status(403).json({
+            success: false,
+            code: "FORBIDDEN",
+            message: "관리자 권한이 필요합니다.",
+        });
+        return;
+    }
+    next();
+};
+// 회원가입 API
+app.post("/api/auth/register", async (req, res) => {
+    try {
+        const { firstName, lastName, email, password, companyName, position, tel, address, detailAddress, gender, } = req.body;
+        if (!firstName || !lastName || !email || !password) {
+            res.status(400).json({
+                success: false,
+                message: "이름, 성, 이메일, 비밀번호는 필수입니다.",
+            });
+            return;
+        }
+        // 이메일 중복 확인
+        const existingUser = await User.findOne({
+            where: { email },
+        });
+        if (existingUser) {
+            res.status(409).json({
+                success: false,
+                message: "이미 존재하는 이메일입니다.",
+            });
+            return;
+        }
+        // 비밀번호 암호화
+        const hashedPassword = await bcryptjs_1.default.hash(password, 10);
+        // 사용자 등록
+        await User.create({
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            companyName,
+            position,
+            tel,
+            address,
+            detailAddress,
+            gender,
+        });
+        res.status(201).json({
+            success: true,
+            message: "회원가입이 완료되었습니다.",
+        });
+    }
+    catch (error) {
+        console.error("회원가입 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "회원가입 중 서버 오류가 발생했습니다.",
+        });
+    }
+});
+//====================================
+// 관리자 회원가입 승인 관리
+//====================================
+// 1. 가입 승인 대기자 목록 조회 (GET /api/admin/pending-users)
+app.get("/api/admin/pending-users", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const pendingUsers = await User.findAll({
+            where: {
+                approvalStatus: "PENDING",
+            },
+            attributes: [
+                "id",
+                "firstName",
+                "lastName",
+                "email",
+                "companyName",
+                "position",
+                "tel",
+                "approvalStatus",
+                "accountStatus",
+                "CREATED_AT",
+            ],
+            order: [["id", "DESC"]],
+        });
+        const userList = pendingUsers.map((item) => {
+            const user = item.toJSON();
+            return {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                name: `${user.lastName ?? ""}${user.firstName ?? ""}`.trim(),
+                email: user.email,
+                companyName: user.companyName ?? null,
+                position: user.position ?? null,
+                tel: user.tel ?? null,
+                approvalStatus: user.approvalStatus,
+                accountStatus: user.accountStatus,
+                createdAt: user.CREATED_AT ?? user.createdAt ?? null,
+            };
+        });
+        res.status(200).json({
+            success: true,
+            users: userList,
+        });
+    }
+    catch (error) {
+        console.error("승인 대기자 목록 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "승인 대기자 목록을 불러오지 못했습니다.",
+        });
+    }
+});
+// 다음 사원번호 자동 생성 헬퍼 (예: EMP011 -> EMP012)
+const generateNextEmpId = async (transaction) => {
+    const employees = await Employee.findAll({
+        attributes: ["id"],
+        transaction,
+    });
+    let maxNum = 0;
+    for (const emp of employees) {
+        const id = emp.id || "";
+        const match = id.match(/^EMP(\d+)$/i);
+        if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum) {
+                maxNum = num;
+            }
+        }
+    }
+    const nextNum = maxNum + 1;
+    return `EMP${String(nextNum).padStart(3, "0")}`;
+};
+// 회원가입 승인 및 Employee 신규 생성 (POST /api/admin/pending-users/:id/approve)
+app.post("/api/admin/pending-users/:id/approve", verifyToken, verifyAdmin, async (req, res) => {
+    const userId = Number(req.params.id);
+    const { department, // 배정 부서
+    position, // 직급 (미입력 시 회원가입 때 적은 position 사용)
+    role, // 시스템 권한 ("ADMIN" | "EMPLOYEE")
+    joinDate, // 입사일 (YYYY-MM-DD, 미입력 시 오늘 날짜)
+     } = req.body;
+    if (!Number.isInteger(userId) || userId <= 0) {
+        res.status(400).json({
+            success: false,
+            message: "유효하지 않은 사용자 ID입니다.",
+        });
+        return;
+    }
+    if (typeof department !== "string" || !department.trim()) {
+        res.status(400).json({
+            success: false,
+            message: "배정 부서를 입력해 주세요.",
+        });
+        return;
+    }
+    if (!["ADMIN", "EMPLOYEE"].includes(role)) {
+        res.status(400).json({
+            success: false,
+            message: "올바르지 않은 권한입니다.",
+        });
+        return;
+    }
+    const trimmedDepartment = department.trim();
+    try {
+        const result = await sequelize.transaction(async (transaction) => {
+            // 1) 승인 대상 User 조회
+            const user = await User.findByPk(userId, { transaction });
+            if (!user) {
+                throw new Error("USER_NOT_FOUND");
+            }
+            if (user.approvalStatus !== "PENDING" || user.empId) {
+                throw new Error("ALREADY_PROCESSED");
+            }
+            // 2) 다음 사원번호 자동 발급 (트랜잭션 내부 실행)
+            const generatedEmpId = await generateNextEmpId(transaction);
+            // 3) Employee 테이블 신규 레코드 생성 (INSERT)
+            const fullName = `${user.lastName ?? ""}${user.firstName ?? ""}`.trim();
+            const finalPosition = typeof position === "string" && position.trim()
+                ? position.trim()
+                : user.position || "사원";
+            const finalJoinDate = typeof joinDate === "string" && joinDate.trim()
+                ? joinDate.trim()
+                : new Date().toISOString().split("T")[0];
+            const newEmployee = await Employee.create({
+                id: generatedEmpId,
+                name: fullName,
+                department: trimmedDepartment,
+                position: finalPosition,
+                role,
+                status: "active", // 기존 Employee 상태값("active" | "leave" | "resigned") 일치
+                joinDate: finalJoinDate,
+            }, { transaction });
+            // 4) User 테이블 승인 완료 + 계정 활성화 + 사번 연결 (UPDATE)
+            await user.update({
+                empId: generatedEmpId,
+                approvalStatus: "APPROVED",
+                accountStatus: "ACTIVE",
+            }, { transaction });
+            return {
+                employee: {
+                    ...newEmployee.toJSON(),
+                    accountStatus: "ACTIVE",
+                    approvalStatus: "APPROVED",
+                },
+            };
+        });
+        res.status(201).json({
+            success: true,
+            message: `회원가입 승인 및 직원 등록(${result.employee.id})이 완료되었습니다.`,
+            employee: result.employee,
+        });
+    }
+    catch (error) {
+        console.error("회원가입 승인 처리 오류:", error);
+        if (error instanceof Error) {
+            if (error.message === "USER_NOT_FOUND") {
+                res.status(404).json({
+                    success: false,
+                    message: "승인할 사용자를 찾을 수 없습니다.",
+                });
+                return;
+            }
+            if (error.message === "ALREADY_PROCESSED") {
+                res.status(400).json({
+                    success: false,
+                    message: "이미 승인 처리되었거나 대기 상태가 아닌 계정입니다.",
+                });
+                return;
+            }
+        }
+        res.status(500).json({
+            success: false,
+            message: "회원가입 승인 처리에 실패했습니다.",
+        });
+    }
+});
+// 3. 회원가입 반려 처리 (PATCH /api/admin/pending-users/:id/reject)
+app.patch("/api/admin/pending-users/:id/reject", verifyToken, verifyAdmin, async (req, res) => {
+    const userId = Number(req.params.id);
+    if (!Number.isInteger(userId) || userId <= 0) {
+        res.status(400).json({
+            success: false,
+            message: "유효하지 않은 사용자 ID입니다.",
+        });
+        return;
+    }
+    try {
+        const user = await User.findByPk(userId);
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "사용자를 찾을 수 없습니다.",
+            });
+            return;
+        }
+        if (user.approvalStatus !== "PENDING") {
+            res.status(400).json({
+                success: false,
+                message: "승인 대기 중인 계정만 반려할 수 있습니다.",
+            });
+            return;
+        }
+        await user.update({
+            approvalStatus: "REJECTED",
+            accountStatus: "INACTIVE",
+        });
+        res.status(200).json({
+            success: true,
+            message: "회원가입 요청이 반려되었습니다.",
+        });
+    }
+    catch (error) {
+        console.error("회원가입 반려 처리 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "회원가입 반려 처리에 실패했습니다.",
+        });
+    }
+});
+// 로그인 API
+app.post("/api/auth/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            res.status(400).json({
+                success: false,
+                message: "이메일과 비밀번호는 필수입니다.",
+            });
+            return;
+        }
+        // 사용자 조회
+        const user = await User.findOne({
+            where: { email },
+            include: [
+                {
+                    model: Employee,
+                    as: "employee",
+                    attributes: ["id", "role"],
+                },
+            ],
+        });
+        if (!user) {
+            res.status(401).json({
+                success: false,
+                code: "INVALID_CREDENTIALS",
+                message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+            });
+            return;
+        }
+        // 비밀번호 검증
+        const isPasswordValid = await bcryptjs_1.default.compare(password, user.password);
+        if (!isPasswordValid) {
+            res.status(401).json({
+                success: false,
+                code: "INVALID_CREDENTIALS",
+                message: "이메일 또는 비밀번호가 올바르지 않습니다.",
+            });
+            return;
+        }
+        // 가입 승인 상태 검증 (APPROVAL_STATUS)
+        const approvalStatus = user.approvalStatus ?? user.APPROVAL_STATUS;
+        if (approvalStatus === 'PENDING') {
+            res.status(403).json({
+                success: false,
+                code: 'ACCOUNT_PENDING',
+                message: '관리자 승인 대기 중인 계정입니다. 승인 완료 후 로그인할 수 있습니다.',
+            });
+            return;
+        }
+        if (approvalStatus === 'REJECTED') {
+            res.status(403).json({
+                success: false,
+                code: 'ACCOUNT_REJECTED',
+                message: '가입 승인이 반려된 계정입니다. 관리자에게 문의해주세요.',
+            });
+            return;
+        }
+        if (approvalStatus && approvalStatus !== 'APPROVED') {
+            res.status(403).json({
+                success: false,
+                code: 'ACCOUNT_NOT_APPROVED',
+                message: '승인되지 않은 계정입니다. 관리자에게 문의해주세요.',
+            });
+            return;
+        }
+        // 계정 활성 상태 검증 (ACCOUNT_STATUS)
+        const accountStatus = user.accountStatus ?? user.ACCOUNT_STATUS;
+        if (accountStatus === 'INACTIVE') {
+            res.status(403).json({
+                success: false,
+                code: 'ACCOUNT_INACTIVE',
+                message: '비활성화된 계정입니다. 인사관리 담당자 또는 시스템 관리자에게 문의해주세요.',
+            });
+            return;
+        }
+        const role = user.employee?.role;
+        if (!role) {
+            res.status(403).json({
+                success: false,
+                code: "FORBIDDEN",
+                message: "직원 권한 정보를 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // JWT 생성
+        const token = jsonwebtoken_1.default.sign({
+            id: user.id,
+            email: user.email,
+            empId: user.empId,
+            role,
+        }, JWT_SECRET, {
+            expiresIn: "2h",
+        });
+        res.status(200).json({
+            success: true,
+            message: "로그인이 완료되었습니다.",
+            token,
+            user: {
+                id: user.id,
+                empId: user.empId,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                name: `${user.lastName ?? ""}${user.firstName ?? ""}`.trim(),
+                email: user.email,
+            },
+            role,
+        });
+    }
+    catch (error) {
+        console.error("로그인 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "로그인 중 서버 오류가 발생했습니다.",
+        });
+    }
+});
+// 사용자 프로필 조회 API
+app.get("/api/user/profile", verifyToken, async (req, res) => {
+    try {
+        const decoded = req.user;
+        if (!decoded ||
+            typeof decoded === "string" ||
+            typeof decoded.id !== "number") {
+            res.status(401).json({
+                success: false,
+                message: "사용자 인증 정보가 올바르지 않습니다.",
+            });
+            return;
+        }
+        const userId = decoded.id;
+        // OracleDB에서 사용자 조회
+        const user = await User.findByPk(userId, {
+            attributes: [
+                "id",
+                "firstName",
+                "lastName",
+                "email",
+                "tel",
+                "companyName",
+                "position",
+                "address",
+                "detailAddress",
+                "gender",
+            ],
+        });
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "사용자를 찾을 수 없습니다.",
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            user: {
+                id: user.id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                name: `${user.lastName ?? ""}${user.firstName ?? ""}`.trim(),
+                email: user.email,
+                tel: user.tel,
+                companyName: user.companyName,
+                position: user.position,
+                address: user.address,
+                detailAddress: user.detailAddress,
+                gender: user.gender,
+            },
+        });
+    }
+    catch (error) {
+        console.error("사용자 정보 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "사용자 정보를 불러오지 못했습니다.",
+        });
+    }
+});
+app.get("/api/process/lines", verifyToken, async (req, res) => {
+    try {
+        const line = await ProcessLine.findAll({
+            order: [["id", "ASC"]],
+        });
+        return res.status(200).json({
+            success: true,
+            line,
+        });
+    }
+    catch (error) {
+        console.error("라인 조회 실패:", error);
+        res.status(500).json({
+            success: false,
+            message: "라인 조회 실패",
+        });
+    }
+});
+app.post("/api/process/lines", verifyToken, async (req, res) => {
+    try {
+        const { lineName, processType, currentProduct, operator } = req.body;
+        const newLine = await ProcessLine.create({
+            lineName,
+            processType,
+            currentProduct,
+            operator,
+        });
+        return res.status(201).json({
+            success: true,
+            line: newLine,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "서버 오류가 발생했습니다.",
+        });
+    }
+});
+// 공정 라인 상태 변경 이력 조회 API (GET /api/process/lines/history)
+app.get("/api/process/lines/history", verifyToken, async (req, res) => {
+    try {
+        const history = await ProcessStatusLog.findAll({
+            order: [["id", "DESC"]],
+            limit: 50,
+        });
+        const result = history.map((item) => {
+            const data = item.toJSON();
+            return {
+                ...data,
+                createdAt: data.CREATED_AT,
+            };
+        });
+        return res.status(200).json({
+            success: true,
+            history: result,
+        });
+    }
+    catch (error) {
+        console.error("공정 이력 조회 오류:", error);
+        return res.status(500).json({
+            success: false,
+            message: "공정 이력 조회 실패",
+        });
+    }
+});
+// 공정 라인 상태 변경 API (PATCH /api/process/lines/:id/status)
+app.patch("/api/process/lines/:id/status", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { status, reason } = req.body;
+        // 1. 라인 조회
+        const line = await ProcessLine.findByPk(id);
+        if (!line) {
+            return res.status(404).json({
+                success: false,
+                message: "해당 공정 라인을 찾을 수 없습니다.",
+            });
+        }
+        const previousStatus = line.status;
+        // 2. 라인 상태 업데이트
+        await line.update({ status });
+        // 3. 상태 변경 이력 테이블에 저장
+        await ProcessStatusLog.create({
+            lineId: line.id,
+            lineName: line.lineName,
+            previousStatus,
+            newStatus: status,
+            changedBy: req.user?.empId || "관리자",
+            reason: reason || "공정 상태 변경",
+        });
+        return res.status(200).json({
+            success: true,
+            message: "공정 라인 상태가 변경되었습니다.",
+            line,
+        });
+    }
+    catch (error) {
+        console.error("공정 라인 상태 변경 오류:", error);
+        return res.status(500).json({
+            success: false,
+            message: "공정 라인 상태 변경 실패",
+        });
+    }
+});
+// SCM API
+app.get("/api/scm/components", verifyToken, async (req, res) => {
+    try {
+        const components = await ComponentSCM.findAll();
+        return res.status(200).json({
+            success: true,
+            components,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "SCM 자재 조회 실패",
+        });
+    }
+});
+app.post("/api/scm/components", verifyToken, async (req, res) => {
+    try {
+        const { componentName, category, stockQuantity, minThreshold, supplier } = req.body;
+        const status = stockQuantity <= minThreshold ? "WARNING" : "NORMAL";
+        const components = await ComponentSCM.create({
+            componentName,
+            category,
+            stockQuantity,
+            minThreshold,
+            supplier,
+            status,
+        });
+        return res.status(201).json({
+            success: true,
+            components,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "SCM 자재 조회 실패",
+        });
+    }
+});
+// quality API
+app.get("/api/quality/inspections", verifyToken, async (req, res) => {
+    try {
+        const inspections = await QualityInspection.findAll({
+            limit: 50,
+            order: [["INSPECTED_AT", "DESC"]],
+        });
+        return res.status(200).json({
+            success: true,
+            inspections,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "품질 검사 이력 조회 실패",
+        });
+    }
+});
+app.post("/api/quality/inspections", verifyToken, async (req, res) => {
+    try {
+        const { serialNumber, inspectionType, result, defectReason, inspector } = req.body;
+        const inspection = await QualityInspection.create({
+            serialNumber,
+            inspectionType,
+            result,
+            defectReason,
+            inspector,
+        });
+        return res.status(201).json({
+            success: true,
+            inspection,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "품질 검사 결과 등록 실패",
+        });
+    }
+});
+//equipment API
+app.get("/api/equipment/status", verifyToken, async (req, res) => {
+    try {
+        const equipments = await Equipment.findAll();
+        return res.status(200).json({
+            success: true,
+            equipments,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "설비 상태 조회 실패",
+        });
+    }
+});
+app.post("/api/equipment/status", verifyToken, async (req, res) => {
+    try {
+        const { equipmentName, cleanroomZone, temperature, humidity, status } = req.body;
+        const equipment = await Equipment.create({
+            equipmentName,
+            cleanroomZone,
+            temperature,
+            humidity,
+            status,
+        });
+        return res.status(201).json({
+            success: true,
+            equipment,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "설비 상태 등록 실패",
+        });
+    }
+});
+// 설비 상태 변경 API
+app.patch("/api/equipment/status/:id", verifyToken, async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { status } = req.body;
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "유효하지 않은 설비 ID입니다.",
+            });
+        }
+        if (!["NORMAL", "WARNING", "ERROR"].includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "유효하지 않은 설비 상태입니다.",
+            });
+        }
+        const equipment = await Equipment.findByPk(id);
+        if (!equipment) {
+            return res.status(404).json({
+                success: false,
+                message: "해당 설비를 찾을 수 없습니다.",
+            });
+        }
+        await equipment.update({ status });
+        return res.status(200).json({
+            success: true,
+            message: "설비 상태가 변경되었습니다.",
+            equipment,
+        });
+    }
+    catch (error) {
+        console.error("설비 상태 변경 오류:", error);
+        return res.status(500).json({
+            success: false,
+            message: "설비 상태 변경 실패",
+        });
+    }
+});
+//production API
+app.get("/api/analytics/records", verifyToken, async (req, res) => {
+    try {
+        const records = await ProductionRecord.findAll();
+        return res.status(200).json({
+            success: true,
+            records,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "통합 관제 데이터 조회 실패",
+        });
+    }
+});
+app.post("/api/analytics/records", verifyToken, async (req, res) => {
+    try {
+        const { lineName, targetCount, actualCount, defectCount } = req.body;
+        const total = actualCount + defectCount;
+        const yieldRate = total > 0 ? Number(((actualCount / total) * 100).toFixed(2)) : 100.0;
+        const records = await ProductionRecord.create({
+            lineName,
+            targetCount,
+            actualCount,
+            defectCount,
+            yieldRate,
+        });
+        return res.status(201).json({
+            success: true,
+            records,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "통합 관제 데이터 등록 실패",
+        });
+    }
+});
+//====================================
+// 일정
+//===================================
+// 일정 목록 조회
+app.get("/api/schedules", verifyToken, async (req, res) => {
+    try {
+        const decoded = req.user;
+        if (!decoded || typeof decoded === "string") {
+            res.status(401).json({
+                success: false,
+                message: "인증 정보가 올바르지 않습니다.",
+            });
+            return;
+        }
+        // 로그인한 사용자의 사번
+        const empId = decoded.empId;
+        if (!empId) {
+            res.status(400).json({
+                success: false,
+                message: "직원 정보가 연결되지 않은 계정입니다.",
+            });
+            return;
+        }
+        const schedules = await Schedule.findAll({
+            where: {
+                [require("sequelize").Op.or]: [
+                    { scheduleType: "PUBLIC" },
+                    {
+                        scheduleType: "PERSONAL",
+                        createdBy: empId,
+                    },
+                    {
+                        scheduleType: "NOTICE",
+                    },
+                ],
+            },
+            order: [
+                ["scheduleDate", "ASC"],
+                ["time", "ASC"],
+            ],
+        });
+        res.status(200).json({
+            success: true,
+            schedules: schedules.map((item) => {
+                const schedule = item.toJSON();
+                return {
+                    ...schedule,
+                    createdAt: schedule.CREATED_AT,
+                    updatedAt: schedule.UPDATED_AT,
+                };
+            }),
+        });
+    }
+    catch (error) {
+        console.error("일정 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "일정을 불러오지 못했습니다.",
+        });
+    }
+});
+// 일정 등록
+app.post("/api/schedules", verifyToken, async (req, res) => {
+    try {
+        const decoded = req.user;
+        if (!decoded || typeof decoded === "string" || !decoded.empId) {
+            res.status(400).json({
+                success: false,
+                message: "직원 정보가 연결되지 않은 계정입니다.",
+            });
+            return;
+        }
+        const { scheduleType, title, content, scheduleDate, time, alarmEnabled, status, } = req.body;
+        if (!scheduleDate || !content) {
+            res.status(400).json({
+                success: false,
+                message: "일정 날짜와 내용은 필수입니다.",
+            });
+            return;
+        }
+        // 일반 직원은 개인 일정만 등록 가능
+        if (scheduleType !== "PERSONAL") {
+            res.status(403).json({
+                success: false,
+                message: "개인 일정만 등록할 수 있습니다.",
+            });
+            return;
+        }
+        const schedule = await Schedule.create({
+            scheduleType: "PERSONAL",
+            title,
+            content,
+            scheduleDate,
+            time,
+            alarmEnabled: alarmEnabled ? 1 : 0,
+            status: status ?? "PENDING",
+            createdBy: decoded.empId,
+        });
+        res.status(201).json(schedule);
+    }
+    catch (error) {
+        console.error("일정 등록 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "일정을 등록하지 못했습니다.",
+        });
+    }
+});
+// 일정 수정
+app.patch("/api/schedules/:id", verifyToken, async (req, res) => {
+    try {
+        const decoded = req.user;
+        if (!decoded || typeof decoded === "string" || !decoded.empId) {
+            res.status(400).json({
+                success: false,
+                message: "직원 정보가 연결되지 않은 계정입니다.",
+            });
+            return;
+        }
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+            res.status(400).json({
+                success: false,
+                message: "유효하지 않은 일정 ID입니다.",
+            });
+            return;
+        }
+        // 일정 조회
+        const schedule = await Schedule.findByPk(id);
+        if (!schedule) {
+            res.status(404).json({
+                success: false,
+                message: "수정할 일정을 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // PUBLIC은 관리자만 수정 가능
+        if (schedule.scheduleType === "PUBLIC" &&
+            decoded.role !== "ADMIN") {
+            res.status(403).json({
+                success: false,
+                message: "전체 일정은 관리자만 수정할 수 있습니다.",
+            });
+            return;
+        }
+        // PERSONAL은 작성자 또는 관리자만 수정 가능
+        if (schedule.scheduleType === "PERSONAL" &&
+            schedule.createdBy !== decoded.empId &&
+            decoded.role !== "ADMIN") {
+            res.status(403).json({
+                success: false,
+                message: "본인이 작성한 일정만 수정할 수 있습니다.",
+            });
+            return;
+        }
+        const { scheduleType, createdBy, id: requestId, ...updateData } = req.body;
+        // 작성자와 일정 유형은 클라이언트가 변경할 수 없음
+        await schedule.update({
+            ...updateData,
+            alarmEnabled: updateData.alarmEnabled === undefined
+                ? schedule.alarmEnabled
+                : updateData.alarmEnabled
+                    ? 1
+                    : 0,
+        });
+        res.status(200).json({
+            success: true,
+            message: "일정이 수정되었습니다.",
+            schedule,
+        });
+    }
+    catch (error) {
+        console.error("일정 수정 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "일정을 수정하지 못했습니다.",
+        });
+    }
+});
+// 일정 삭제
+app.delete("/api/schedules/:id", verifyToken, async (req, res) => {
+    try {
+        const decoded = req.user;
+        if (!decoded || typeof decoded === "string" || !decoded.empId) {
+            res.status(400).json({
+                success: false,
+                message: "직원 정보가 연결되지 않은 계정입니다.",
+            });
+            return;
+        }
+        const id = Number(req.params.id);
+        if (!Number.isInteger(id) || id <= 0) {
+            res.status(400).json({
+                success: false,
+                message: "유효하지 않은 일정 ID입니다.",
+            });
+            return;
+        }
+        // 일정 조회
+        const schedule = await Schedule.findByPk(id);
+        if (!schedule) {
+            res.status(404).json({
+                success: false,
+                message: "삭제할 일정을 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // PUBLIC은 관리자만 삭제 가능
+        if (schedule.scheduleType === "PUBLIC" &&
+            decoded.role !== "ADMIN") {
+            res.status(403).json({
+                success: false,
+                message: "전체 일정은 관리자만 삭제할 수 있습니다.",
+            });
+            return;
+        }
+        // PERSONAL은 작성자 또는 관리자만 삭제 가능
+        if (schedule.scheduleType === "PERSONAL" &&
+            schedule.createdBy !== decoded.empId &&
+            decoded.role !== "ADMIN") {
+            res.status(403).json({
+                success: false,
+                message: "본인이 작성한 일정만 삭제할 수 있습니다.",
+            });
+            return;
+        }
+        await schedule.destroy();
+        res.status(200).json({
+            success: true,
+            message: "일정이 삭제되었습니다.",
+        });
+    }
+    catch (error) {
+        console.error("일정 삭제 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "일정을 삭제하지 못했습니다.",
+        });
+    }
+});
+//===============================
+// 관리자 전용 public 일정
+//===============================
+app.post("/api/schedules/public", verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const { title, content, scheduleDate, time, alarmEnabled, status, } = req.body;
+        // 필수값 확인
+        if (!scheduleDate || !content) {
+            res.status(400).json({
+                success: false,
+                message: "일정 날짜, 내용은 필수입니다.",
+            });
+            return;
+        }
+        // 로그인한 관리자 정보
+        const admin = req.user;
+        const schedule = await Schedule.create({
+            scheduleType: "PUBLIC",
+            title,
+            content,
+            scheduleDate,
+            time,
+            alarmEnabled: alarmEnabled ? 1 : 0,
+            status: status ?? "PENDING",
+            createdBy: admin.empId,
+        });
+        res.status(201).json({
+            success: true,
+            message: "전체 일정이 등록되었습니다.",
+            schedule,
+        });
+    }
+    catch (error) {
+        console.error("전체 일정 등록 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "전체 일정을 등록하지 못했습니다.",
+        });
+    }
+});
+//===============================
+// 관리자 인사관리  
+//===============================
+app.get('/api/admin/employees', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const employees = await Employee.findAll({
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["accountStatus", "approvalStatus"],
+                    required: false,
+                }
+            ],
+            order: [["joinDate", "DESC"]]
+        });
+        const employeeList = employees.map((item) => {
+            const employee = item.toJSON();
+            return {
+                id: employee.id,
+                name: employee.name,
+                department: employee.department,
+                role: employee.role,
+                position: employee.position,
+                status: employee.status,
+                joinDate: employee.joinDate,
+                accountStatus: employee.user?.accountStatus ?? null,
+                approvalStatus: employee.user?.approvalStatus ?? null,
+            };
+        });
+        res.status(200).json({
+            success: true,
+            employees: employeeList,
+        });
+    }
+    catch (error) {
+        console.error("직원 목록 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "직원 목록을 불러오지 못했습니다.",
+        });
+    }
+});
+app.patch("/api/admin/employees/:id", verifyToken, verifyAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { name, department, role, position, status, accountStatus, } = req.body;
+    try {
+        // 1. 수정할 직원 조회
+        const employee = await Employee.findByPk(id);
+        if (!employee) {
+            res.status(404).json({
+                success: false,
+                message: "직원을 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // 2. 수정할 직원 정보 구성
+        const employeeUpdates = {};
+        if (name !== undefined) {
+            if (typeof name !== "string" || !name.trim()) {
+                res.status(400).json({
+                    success: false,
+                    message: "이름을 입력해 주세요.",
+                });
+                return;
+            }
+            employeeUpdates.name = name.trim();
+        }
+        if (department !== undefined) {
+            if (typeof department !== "string" || !department.trim()) {
+                res.status(400).json({
+                    success: false,
+                    message: "부서를 입력해 주세요.",
+                });
+                return;
+            }
+            employeeUpdates.department = department.trim();
+        }
+        if (role !== undefined) {
+            if (!["ADMIN", "EMPLOYEE"].includes(role)) {
+                res.status(400).json({
+                    success: false,
+                    message: "올바르지 않은 권한입니다.",
+                });
+                return;
+            }
+            employeeUpdates.role = role;
+        }
+        if (position !== undefined) {
+            if (typeof position !== "string") {
+                res.status(400).json({
+                    success: false,
+                    message: "올바르지 않은 직급입니다.",
+                });
+                return;
+            }
+            employeeUpdates.position = position.trim();
+        }
+        if (status !== undefined) {
+            if (!["active", "leave", "resigned"].includes(status)) {
+                res.status(400).json({
+                    success: false,
+                    message: "올바르지 않은 재직 상태입니다.",
+                });
+                return;
+            }
+            employeeUpdates.status = status;
+        }
+        if (accountStatus !== undefined &&
+            !["ACTIVE", "INACTIVE"].includes(accountStatus)) {
+            res.status(400).json({
+                success: false,
+                message: "올바르지 않은 계정 상태입니다.",
+            });
+            return;
+        }
+        // 3. 수정할 데이터가 있는지 확인
+        if (Object.keys(employeeUpdates).length === 0 &&
+            accountStatus === undefined) {
+            res.status(400).json({
+                success: false,
+                message: "수정할 정보가 없습니다.",
+            });
+            return;
+        }
+        // 4. 트랜잭션으로 데이터 수정
+        const result = await sequelize.transaction(async (transaction) => {
+            let user = null;
+            // 계정 상태 수정 요청이 있다면 연결된 User 조회
+            if (accountStatus !== undefined) {
+                user = await User.findOne({
+                    where: { empId: id },
+                    transaction,
+                });
+                if (!user) {
+                    throw new Error("연결된 계정을 찾을 수 없습니다.");
+                }
+            }
+            // EMPLOYEES 수정
+            if (Object.keys(employeeUpdates).length > 0) {
+                await employee.update(employeeUpdates, { transaction });
+            }
+            // USERS 수정
+            if (user && accountStatus !== undefined) {
+                await user.update({ accountStatus }, { transaction });
+            }
+            return {
+                ...employee.toJSON(),
+                accountStatus: user?.accountStatus ?? null,
+            };
+        });
+        res.status(200).json({
+            success: true,
+            message: "직원 정보가 수정되었습니다.",
+            employee: result,
+        });
+    }
+    catch (error) {
+        console.error("직원 정보 수정 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: error instanceof Error &&
+                error.message === "연결된 계정을 찾을 수 없습니다."
+                ? error.message
+                : "직원 정보 수정에 실패했습니다.",
+        });
+    }
+});
+//===============================
+// 사내 주소록
+//===============================
+app.get("/api/employees/directory", verifyToken, async (req, res) => {
+    try {
+        const employees = await Employee.findAll({
+            where: {
+                status: ["active", "leave"],
+            },
+            include: [
+                {
+                    model: User,
+                    as: "user",
+                    attributes: ["email"],
+                    required: false,
+                },
+            ],
+            order: [["joinDate", "DESC"]],
+        });
+        const employeeList = employees.map((item) => {
+            const employee = item.toJSON();
+            return {
+                id: employee.id,
+                name: employee.name,
+                role: employee.role,
+                department: employee.department,
+                position: employee.position,
+                status: employee.status,
+                email: employee.user?.email ?? null,
+            };
+        });
+        res.status(200).json({
+            success: true,
+            directory: employeeList,
+        });
+    }
+    catch (error) {
+        console.error("직원 디렉터리 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "직원 목록을 불러오지 못했습니다.",
+        });
+    }
+});
+//===============================
+//  쪽지보내기
+//===============================
+app.post("/api/messages", verifyToken, async (req, res) => {
+    try {
+        const senderEmpId = req.user?.empId;
+        const { receiverEmpId, title, content } = req.body;
+        // 필수값 확인
+        if (!receiverEmpId || !title?.trim() || !content?.trim()) {
+            res.status(400).json({
+                success: false,
+                message: "받는 사람, 제목, 내용을 입력해주세요.",
+            });
+            return;
+        }
+        // 본인에게 쪽지 보내는 것 방지
+        if (senderEmpId === receiverEmpId) {
+            res.status(400).json({
+                success: false,
+                message: "본인에게는 쪽지를 보낼 수 없습니다.",
+            });
+            return;
+        }
+        // 받는 사람 확인
+        const receiver = await Employee.findByPk(receiverEmpId);
+        if (!receiver) {
+            res.status(404).json({
+                success: false,
+                message: "받는 사람을 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // 쪽지 저장
+        const message = await Message.create({
+            senderEmpId,
+            receiverEmpId,
+            title: title.trim(),
+            content: content.trim(),
+            isRead: "N",
+        });
+        res.status(201).json({
+            success: true,
+            message: "쪽지를 성공적으로 보냈습니다.",
+            data: message,
+        });
+    }
+    catch (error) {
+        console.error("쪽지 전송 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "쪽지를 보내지 못했습니다.",
+        });
+    }
+});
+// 받은 쪽지 조회 (+/api/messages/received?employeeId=EMP011)
+app.get("/api/messages/received", verifyToken, async (req, res) => {
+    try {
+        const receiverEmpId = req.user?.empId;
+        // 상대방 사원 ID (없으면 전체 조회)
+        const employeeId = typeof req.query.employeeId === "string"
+            ? req.query.employeeId
+            : undefined;
+        const messages = await Message.findAll({
+            where: {
+                receiverEmpId,
+                receiverDeleted: "N",
+                ...(employeeId && { senderEmpId: employeeId }),
+            },
+            include: [
+                {
+                    model: Employee,
+                    as: "sender",
+                    attributes: ["id", "name"],
+                },
+            ],
+            order: [["sentAt", "DESC"]],
+        });
+        const messageList = messages.map((item) => {
+            const message = item.toJSON();
+            return {
+                id: message.id,
+                senderEmpId: message.senderEmpId,
+                receiverEmpId: message.receiverEmpId,
+                senderName: message.sender?.name ?? "알 수 없음",
+                title: message.title,
+                content: message.content,
+                isRead: message.isRead,
+                sentAt: message.sentAt,
+            };
+        });
+        res.status(200).json({
+            success: true,
+            messages: messageList,
+        });
+    }
+    catch (error) {
+        console.error("받은 쪽지 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "받은 쪽지를 불러오지 못했습니다.",
+        });
+    }
+});
+// 보낸 쪽지 조회
+app.get("/api/messages/sent", verifyToken, async (req, res) => {
+    try {
+        const senderEmpId = req.user?.empId;
+        // 상대방 사원 ID 가져오기
+        const employeeId = typeof req.query.employeeId === "string"
+            ? req.query.employeeId
+            : undefined;
+        const messages = await Message.findAll({
+            where: {
+                senderEmpId,
+                senderDeleted: "N",
+                ...(employeeId && { receiverEmpId: employeeId }),
+            },
+            include: [
+                {
+                    model: Employee,
+                    as: "receiver",
+                    attributes: ["id", "name"],
+                },
+            ],
+            order: [["sentAt", "DESC"]],
+        });
+        const messageList = messages.map((item) => {
+            const message = item.toJSON();
+            return {
+                id: message.id,
+                senderEmpId: message.senderEmpId,
+                receiverEmpId: message.receiverEmpId,
+                receiverName: message.receiver?.name ?? "알 수 없음",
+                title: message.title,
+                content: message.content,
+                isRead: message.isRead,
+                sentAt: message.sentAt,
+            };
+        });
+        res.status(200).json({
+            success: true,
+            messages: messageList,
+        });
+    }
+    catch (error) {
+        console.error("보낸 쪽지 조회 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "보낸 쪽지를 불러오지 못했습니다.",
+        });
+    }
+});
+// 쪽지 읽음 처리
+app.patch("/api/messages/:id/read", verifyToken, async (req, res) => {
+    try {
+        const receiverEmpId = req.user?.empId;
+        const { id } = req.params;
+        // 쪽지 조회
+        const message = await Message.findOne({
+            where: {
+                id,
+                receiverEmpId,
+            },
+        });
+        // 쪽지가 없거나 본인이 받은 쪽지가 아닌 경우
+        if (!message) {
+            res.status(404).json({
+                success: false,
+                message: "쪽지를 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // 이미 읽은 쪽지인지 확인
+        if (message.isRead === "Y") {
+            res.status(200).json({
+                success: true,
+                message: "이미 읽은 쪽지입니다.",
+            });
+            return;
+        }
+        // 읽음 상태 변경
+        await message.update({
+            isRead: "Y",
+        });
+        res.status(200).json({
+            success: true,
+            message: "쪽지 읽음을 처리했습니다.",
+        });
+    }
+    catch (error) {
+        console.error("쪽지 읽음 처리 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "쪽지 읽음 처리에 실패했습니다.",
+        });
+    }
+});
+// 쪽지 삭제
+app.delete("/api/messages/:id", verifyToken, async (req, res) => {
+    try {
+        const empId = req.user?.empId;
+        const { id } = req.params;
+        // 쪽지 조회
+        const message = await Message.findByPk(id);
+        if (!message) {
+            res.status(404).json({
+                success: false,
+                message: "쪽지를 찾을 수 없습니다.",
+            });
+            return;
+        }
+        // 보낸 사람인지 확인
+        if (message.senderEmpId === empId) {
+            if (message.senderDeleted === "Y") {
+                res.status(200).json({
+                    success: true,
+                    message: "이미 삭제한 쪽지입니다.",
+                });
+                return;
+            }
+            await message.update({
+                senderDeleted: "Y",
+            });
+        }
+        // 받은 사람인지 확인
+        else if (message.receiverEmpId === empId) {
+            if (message.receiverDeleted === "Y") {
+                res.status(200).json({
+                    success: true,
+                    message: "이미 삭제한 쪽지입니다.",
+                });
+                return;
+            }
+            await message.update({
+                receiverDeleted: "Y",
+            });
+        }
+        // 쪽지와 관계없는 사용자인 경우
+        else {
+            res.status(403).json({
+                success: false,
+                message: "쪽지를 삭제할 권한이 없습니다.",
+            });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            message: "쪽지를 삭제했습니다.",
+        });
+    }
+    catch (error) {
+        console.error("쪽지 삭제 오류:", error);
+        res.status(500).json({
+            success: false,
+            message: "쪽지 삭제에 실패했습니다.",
+        });
+    }
+});
+console.log("등록된 모델:", Object.keys(sequelize.models));
+// 서버 실행
+const PORT = Number(process.env.PORT) || 4000;
+sequelize
+    .sync({ force: false })
+    .then(() => {
+    console.log("😄 데이터베이스 연결 완료");
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+})
+    .catch((error) => {
+    console.error("데이터베이스 연결 오류:", error);
+});
+//# sourceMappingURL=server.js.map

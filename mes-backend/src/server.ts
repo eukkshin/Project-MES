@@ -305,7 +305,7 @@ const generateNextEmpId = async (
   for (const emp of employees) {
     const id: string = emp.id || "";
     const match = id.match(/^EMP(\d+)$/i);
-    if (match) {
+    if (match && match[1]) {
       const num = parseInt(match[1], 10);
       if (num > maxNum) {
         maxNum = num;
@@ -1993,7 +1993,7 @@ const PORT = Number(process.env.PORT) || 4000;
 sequelize
   .sync({ force: false })
   .then(() => {
-    console.log("데이터베이스 연결 완료");
+    console.log("😄 데이터베이스 연결 완료");
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
