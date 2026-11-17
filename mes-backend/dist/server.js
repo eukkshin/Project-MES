@@ -60,7 +60,11 @@ const app = (0, express_1.default)();
 // 기본 미들웨어
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: "http://localhost:3000",
+    origin: [
+        "http://localhost:3000",
+        "https://heartbreakkid.co.kr",
+        "https://heartbreakkid.co.kr",
+    ],
     credentials: true,
 }));
 app.use("/api/holidays", require("./routes/holiday"));

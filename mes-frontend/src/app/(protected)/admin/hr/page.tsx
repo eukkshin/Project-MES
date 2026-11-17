@@ -27,7 +27,7 @@ import {
 
 import { createPortal } from "react-dom";
 import * as S from "@/assets/css/admin/Hr.styles";
-import HrEditModal from "@/components/modal/hr/hrEditModal";
+import HrEditModal from "@/components/modal/hr/HrEditModal";
 import HrApproveModal from "@/components/modal/hr/HrApproveModal";
 import type {
   ModalType,
