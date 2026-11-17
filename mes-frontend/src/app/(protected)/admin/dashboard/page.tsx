@@ -353,19 +353,17 @@ export default function DashboardPage() {
           <S.RefreshButton
             type="button"
             onClick={() => {
-              setIsSimulating((prev) => {
-                const next = !prev;
-                if (next) {
-                  triggerLiveAlert({
-                    title: '실시간 공정 임계치 초과 경보 (시뮬레이션)',
-                    description:
-                      '클린룸 Laser Welding Unit #2 온도 이탈(29.4℃) 및 LTPO OLED 패널 안전재고 부족(12 EA)',
-                  });
-                }else{
-                  clearLiveAlert();
-                }
-                return next;
-              });
+              const next = !isSimulating;
+              setIsSimulating(next);
+              if (next) {
+                triggerLiveAlert({
+                  title: '실시간 공정 임계치 초과 경보 (시뮬레이션)',
+                  description:
+                    '클린룸 Laser Welding Unit #2 온도 이탈(29.4℃) 및 LTPO OLED 패널 안전재고 부족(12 EA)',
+                });
+              } else {
+                clearLiveAlert();
+              }
             }}
             style={
               isSimulating
