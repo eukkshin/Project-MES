@@ -31,6 +31,11 @@ async function createAdmin() {
     // 1. DB 연결
     await sequelize.authenticate();
 
+    // 테이블 생성 및 확인
+    await sequelize.sync();
+
+    console.log("DB 테이블 준비 완료!");
+
     // 2. 기존 관리자 확인
     const existingAdmin = await Employee.findOne({
       where: { role: "ADMIN" },
