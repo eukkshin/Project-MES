@@ -1,7 +1,4 @@
 "use client";
-//TODO: TanStack Query 적용 누락 나중에 리팩토링하기
-import axios from "axios";
-import { useEffect, useState } from "react";
 import {
   FaBriefcase,
   FaBuilding,
@@ -11,6 +8,8 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/mypage/MyPage.styles";
+import { useGetUserProfile } from "@/hooks/useRegister";
+import EqualizerLoader from "@/ui/feedback/EqualizerLoading";
 
 interface UserInfo {
   name: string;
@@ -20,77 +19,20 @@ interface UserInfo {
   position: string;
 }
 
-interface ProfileUser {
-  firstName?: string;
-  lastName?: string;
-  email: string;
-  tel?: string;
-  companyName?: string;
-  position?: string;
-}
-
-interface ProfileResponse {
-  success: boolean;
-  user: ProfileUser;
-  message?: string;
-}
 
 export default function DefaultInfo() {
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const token = localStorage.getItem("token");
+    const {data:user, isLoading, isError} = useGetUserProfile();
+    if (isLoading) {
+      return <EqualizerLoader message="사용자 정보를 불러오는 중..."/>
+    }
+    if (isError || !user) {
+      return <div>사용자 정보를 불러올 수 없습니다.</div>;
+    }
 
-        if (!token) {
-          setUser(null);
-          return;
-        }
-
-        const response = await axios.get<ProfileResponse>(
-          "http://localhost:4000/api/user/profile",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        if (!response.data.success || !response.data.user) {
-          throw new Error("사용자 정보 조회에 실패했습니다.");
-        }
-
-        const data = response.data.user;
-
-        setUser({
-          name:
-            `${data.lastName ?? ""}${data.firstName ?? ""}`.trim() ||
-            "이름 없음",
-          email: data.email ?? "",
-          tel: data.tel ?? "",
-          companyName: data.companyName ?? "",
-          position: data.position ?? "",
-        });
-      } catch (error) {
-        console.error("사용자 정보 조회 실패:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserInfo();
-  }, []);
-
-  if (loading) {
-    return <div>사용자 정보를 불러오는 중...</div>;
-  }
-
-  if (!user) {
-    return <div>사용자 정보를 불러올 수 없습니다.</div>;
-  }
+    const userName =
+    `${user?.lastName ?? ""}${user?.firstName ?? ""}`.trim() ||
+    "이름 없음";
 
   return (
     <S.DeContainer>
@@ -101,7 +43,7 @@ export default function DefaultInfo() {
         </S.DeProfileImage>
 
         <S.DeProfileText>
-          <S.DeUserName>{user.name}</S.DeUserName>
+          <S.DeUserName>{userName}</S.DeUserName>
 
           <S.DeUserRole>
             {user.companyName || "-"} · {user.position || "-"}

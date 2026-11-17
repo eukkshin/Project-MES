@@ -1,6 +1,18 @@
 import { motion } from "motion/react";
 import styled from "styled-components";
 
+
+export {
+  PwContainer,
+  PwCard,
+  PwHeader,
+  PwIcon,
+  PwHeaderText,
+  PwTitle,
+  PwDescription,
+  PwDivider,
+  PwForm,
+}from '@/assets/css/admin/mypage/ChangePassword.styles'
 interface MyPageAnimationProps {
   $isClosing: boolean;
 }
@@ -447,4 +459,126 @@ export const DeSecurityButton = styled.button`
   &:hover {
     background-color: #e9ecef;
   }
+`;
+
+
+export const DeEditActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  width: 100%;
+  grid-column: 1 / -1;
+`;
+
+export const DeSaveButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: -10px;
+
+  padding: 10px 22px;
+
+  border: none;
+  border-radius: 6px;
+
+  background-color: #2563eb;
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  &:disabled {
+    background-color: #adb5bd;
+    cursor: not-allowed;
+  }
+`;
+
+interface DeEditFieldProps {
+  $fullWidth?: boolean;
+}
+
+export const DeEditGrid = styled.form`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 18px;
+
+  padding: 5px 10px;
+
+`;
+
+export const DeEditField = styled.div<DeEditFieldProps>`
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+
+  min-width: 0;
+
+  grid-column: ${({ $fullWidth }) =>
+    $fullWidth ? "1 / -1" : "auto"};
+`;
+
+export const DeEditLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+
+  svg {
+    color: #868e96;
+    font-size: 13px;
+  }
+`;
+
+export const DeEditInput = styled.input`
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+
+  border: 1px solid #e9ecef;
+  border-radius: 7px;
+
+  outline: none;
+  background: #fff;
+
+  color: #343a40;
+  font-size: 13px;
+
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    border-color: #2563eb;
+  }
+`;
+
+export const InfoContainer = styled.div`
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin-top: -30px;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  padding: 8px 0 24px;
+`;
+
+export const InfoCard = styled.div`
+  width: 100%;
+  max-width: 620px;
+  min-width: 0;
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 `;

@@ -14,6 +14,26 @@ export interface RegisterFormData  {
     gender: string;
 }
 
+interface ProfileResponse {
+  success: boolean;
+  user: ProfileUser;
+}
+
+
+export interface ProfileUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  tel?: string;
+  companyName?: string;
+  position?: string;
+  address?: string;
+  detailAddress?: string;
+  gender?: string;
+}
+
+
 export type RegisterRequest = Omit<RegisterFormData, "repeatPassword">
 
 //회원가입
@@ -30,4 +50,9 @@ export const loginMember = async({email,password}:{email:string, password:string
 export const changePassword = async({oldPassword,newPassword}:{oldPassword:string, newPassword:string })=>{
     const response = await api.post('/api/members/change-password', {oldPassword,newPassword})
     return response.data;
+}
+
+export const getUserProfile = async():  Promise<ProfileUser>=>{
+    const response = await api.get<ProfileResponse>("/api/user/profile");  
+    return response.data.user;
 }

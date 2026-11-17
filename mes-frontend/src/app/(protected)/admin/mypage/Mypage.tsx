@@ -9,6 +9,7 @@ import ChangePassword from "./change-password/ChangePassword";
 import DefaultInfo from "./default-info/DefaultInfo";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { EditInfoPage } from "./edit-info/EditInfo";
 
 interface MyPageProps {
   onClose: () => void;
@@ -135,6 +136,8 @@ export default function MyPage({ onClose }: MyPageProps) {
 
             {activeMenu === "비밀번호 변경" && <ChangePassword />}
 
+            {activeMenu === "계정 정보 변경" && <EditInfoPage />}
+            
             <S.CloseButton onClick={onClose}>+</S.CloseButton>
           </S.MainContent>
         </S.MyPageContainer>
