@@ -1,6 +1,7 @@
 "use client";
 import { createGlobalStyle } from "styled-components";
 
+//background-color: ${(props) => props.theme.colors.background || "#536692"};
 export const GlobalStyle = createGlobalStyle`
   * {
     @font-face {
@@ -69,11 +70,24 @@ export const GlobalStyle = createGlobalStyle`
     padding: 0;
     box-sizing: border-box;
   }
-  body {
-    background-color: ${(props) => props.theme.colors.background || "#536692"};
+  /* body {
     color: ${(props) => props.theme.colors.text || "#333"};
     font-family: 'Escoredream';
     font-weight: 400;
+  } */
+  html {
+    /* 테마 모드에 맞춰 브라우저 기본 스크롤바, 폼 컨트롤 색상 자동 전환 */
+    color-scheme: ${({ theme }) => (theme.mode === 'light' ? 'light' : 'dark')};
+  }
+
+  body {
+    background-color: ${({ theme }) => theme.colors.bg.canvas};
+    color: ${({ theme }) => theme.colors.text.primary};
+    font-size: ${({ theme }) => theme.typography.fontSize.body};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.regular};
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   a{
     color: inherit;

@@ -1,0 +1,580 @@
+]633;E;for f in model/*.js\x3b do echo "=== $f ==="\x3b cat "$f"\x3b echo ""\x3b done > all_models.txt;cf8b4a0e-560b-4332-a28c-5f69db7c72e8]633;C=== model/ComponentSCM.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const ComponentSCM = sequelize.define(
+  "ComponentSCM",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+    componentName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: "COMPONENT_NAME", // 예: "A19 Pro AP Chip", "48MP Camera Module"
+    },
+    category: {
+      type: DataTypes.STRING(50),
+      field: "CATEGORY", // 예: "CHIP", "CAMERA", "FRAME", "DISPLAY"
+    },
+    stockQuantity: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: "STOCK_QUANTITY",
+    },
+    minThreshold: {
+      type: DataTypes.INTEGER,
+      defaultValue: 100,
+      field: "MIN_THRESHOLD", // 최소 안전 재고
+    },
+    supplier: {
+      type: DataTypes.STRING(100),
+      field: "SUPPLIER", // 협력사 이름
+    },
+    status: {
+      type: DataTypes.STRING(30),
+      defaultValue: "NORMAL",
+      field: "STATUS", // NORMAL(정상), WARNING(부족), DANGER(위험)
+    },
+  },
+  {
+    tableName: "COMPONENT_SCM",
+    timestamps: true,
+    createdAt: "CREATED_AT",
+    updatedAt: "UPDATED_AT",
+  },
+);
+
+module.exports = ComponentSCM;
+
+=== model/Employee.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const Employee = sequelize.define(
+  "Employee",
+  {
+    id: {
+      type: DataTypes.STRING(20),
+      primaryKey: true,
+      allowNull: false,
+      field: "EMP_ID",
+    },
+    name: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      field: "NAME",
+    },
+    department: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      field: "DEPARTMENT",
+    },
+    role: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      field: "ROLE",  //ADMIN, EMPLOYEE
+    },
+    position: {
+      type: DataTypes.STRING(30),
+      allowNull: true,
+      field: "POSITION",  //직책
+    },
+    status: {
+      type: DataTypes.STRING(20),
+      defaultValue: "active",
+      field: "STATUS",  //active / leave / resigned
+    },
+    joinDate: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      field: "JOIN_DATE",  
+    },
+  },
+  {
+    tableName: "EMPLOYEES", 
+    timestamps: false,
+  }
+);
+
+module.exports = Employee;
+=== model/Equipment.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const Equipment = sequelize.define(
+  "Equipment",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+    equipmentName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: "EQUIPMENT_NAME", // 예: "CNC Machine #3", "SMT Mounter #1"
+    },
+    cleanroomZone: {
+      type: DataTypes.STRING(50),
+      field: "CLEANROOM_ZONE", // 예: "Zone A (Class 100)"
+    },
+    temperature: {
+      type: DataTypes.FLOAT,
+      field: "TEMPERATURE", // 클린룸 온도 (℃)
+    },
+    humidity: {
+      type: DataTypes.FLOAT,
+      field: "HUMIDITY", // 클린룸 습도 (%)
+    },
+    status: {
+      type: DataTypes.STRING(30),
+      defaultValue: "NORMAL",
+      field: "STATUS", // NORMAL, WARNING, ERROR
+    },
+  },
+  {
+    tableName: "EQUIPMENTS",
+    timestamps: true,
+    createdAt: "CREATED_AT",
+    updatedAt: "UPDATED_AT",
+  },
+);
+
+module.exports = Equipment;
+
+=== model/Message.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const Message = sequelize.define(
+  "Message",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      allowNull: false,
+      field: "MESSAGE_ID",
+    },
+    senderEmpId: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      field: "SENDER_EMP_ID",
+    },
+    receiverEmpId: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      field: "RECEIVER_EMP_ID",
+    },
+    title: {
+      type: DataTypes.STRING(200),
+      allowNull: false,
+      field: "TITLE",
+    },
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+      field: "CONTENT",
+    },
+    isRead: {
+      type: DataTypes.STRING(1),
+      defaultValue: "N",
+      allowNull: false,
+      field: "IS_READ", // Y / N
+    },
+    sentAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      allowNull: false,
+      field: "SENT_AT",
+    },
+    senderDeleted: {
+      type: DataTypes.STRING(1),
+      allowNull: false,
+      defaultValue: "N",
+      field: "SENDER_DELETED",
+    },
+    receiverDeleted: {
+      type: DataTypes.STRING(1),
+      allowNull: false,
+      defaultValue: "N",
+      field: "RECEIVER_DELETED",
+    }
+  },
+  {
+    tableName: "MESSAGE",
+    timestamps: false,
+  }
+);
+
+module.exports = Message;
+=== model/ProcessLine.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const ProcessLine = sequelize.define(
+  "ProcessLine",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+    lineName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: "LINE_NAME", // 예: "AP SMT Line 1", "Titanium CNC Line"
+    },
+    processType: {
+      type: DataTypes.STRING(50),
+      field: "PROCESS_TYPE", // 예: "SMT", "CNC", "ASSEMBLY"
+    },
+    status: {
+      type: DataTypes.STRING(30),
+      defaultValue: "RUNNING",
+      field: "STATUS", // RUNNING(가동), STOP(정지), MAINTENANCE(점검)
+    },
+    currentProduct: {
+      type: DataTypes.STRING(50),
+      field: "CURRENT_PRODUCT", // 예: "iPhone 18 Pro"
+    },
+    operator: {
+      type: DataTypes.STRING(50),
+      field: "OPERATOR",
+    },
+  },
+  {
+    tableName: "PROCESS_LINES",
+    timestamps: true,
+    createdAt: "CREATED_AT",
+    updatedAt: "UPDATED_AT",
+  },
+);
+
+module.exports = ProcessLine;
+
+=== model/ProcessStatusLog.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const ProcessStatusLog = sequelize.define(
+  "ProcessStatusLog",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+    lineId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      field: "LINE_ID",
+    },
+    lineName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: "LINE_NAME",
+    },
+    previousStatus: {
+      type: DataTypes.STRING(30),
+      field: "PREVIOUS_STATUS",
+    },
+    newStatus: {
+      type: DataTypes.STRING(30),
+      allowNull: false,
+      field: "NEW_STATUS",
+    },
+    changedBy: {
+      type: DataTypes.STRING(50),
+      field: "CHANGED_BY",
+    },
+    reason: {
+      type: DataTypes.STRING(255),
+      field: "REASON",
+    },
+  },
+  {
+    tableName: "PROCESS_STATUS_LOGS",
+    timestamps: true,
+    createdAt: "CREATED_AT",
+    updatedAt: false,
+  }
+);
+
+module.exports = ProcessStatusLog;
+
+=== model/ProductionRecord.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const ProductionRecord = sequelize.define(
+  "ProductionRecord",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+    lineName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: "LINE_NAME",
+    },
+    targetCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: "TARGET_COUNT", // 목표 생산 대수
+    },
+    actualCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: "ACTUAL_COUNT", // 실제 양품 생산 대수
+    },
+    defectCount: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+      field: "DEFECT_COUNT", // 불량 대수
+    },
+    yieldRate: {
+      type: DataTypes.FLOAT,
+      defaultValue: 100.0,
+      field: "YIELD_RATE", // 수율 (%)
+    },
+  },
+  {
+    tableName: "PRODUCTION_RECORDS",
+    timestamps: true,
+    createdAt: "RECORDED_AT",
+    updatedAt: "UPDATED_AT",
+  },
+);
+
+module.exports = ProductionRecord;
+
+=== model/QualityInspection.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const QualityInspection = sequelize.define(
+  "QualityInspection",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+    serialNumber: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
+      field: "SERIAL_NUMBER", // 아이폰 개별 시리얼 번호
+    },
+    inspectionType: {
+      type: DataTypes.STRING(50),
+      field: "INSPECTION_TYPE", // 예: "VISION_SCRATCH", "WATERPROOF_TEST"
+    },
+    result: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      field: "RESULT", // PASS 또는 FAIL
+    },
+    defectReason: {
+      type: DataTypes.STRING(255),
+      field: "DEFECT_REASON", // 불량 판정 시 사유
+    },
+    inspector: {
+      type: DataTypes.STRING(50),
+      field: "INSPECTOR", // 담당 AI 유닛 또는 오퍼레이터
+    },
+  },
+  {
+    tableName: "QUALITY_INSPECTIONS",
+    timestamps: true,
+    createdAt: "INSPECTED_AT",
+    updatedAt: false,
+  },
+);
+
+module.exports = QualityInspection;
+
+=== model/Schedule.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const Schedule = sequelize.define(
+  "Schedule",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      field: "ID",
+    },
+
+    // PUBLIC / PERSONAL / NOTICE
+    scheduleType: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "PERSONAL",
+      field: "SCHEDULE_TYPE",
+      validate: {
+        isIn: [["PUBLIC", "PERSONAL", "NOTICE"]],
+      },
+    },
+
+    title: {
+      type: DataTypes.STRING(150),
+      allowNull: true,
+      field: "TITLE",
+    },
+
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      field: "CONTENT",
+    },
+
+    // 일정 날짜: YYYY-MM-DD
+    scheduleDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+      field: "SCHEDULE_DATE",
+    },
+
+    // 일정 시간: HH:mm
+    time: {
+      type: DataTypes.STRING(8),
+      allowNull: true,
+      field: "TIME",
+    },
+
+    alarmEnabled: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      field: "ALARM_ENABLED",
+    },
+
+    status: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "PENDING",
+      field: "STATUS",
+      validate: {
+        isIn: [["PENDING", "IN_PROGRESS", "COMPLETED"]],
+      },
+    },
+
+    // 일정을 등록한 직원 ID
+    createdBy: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      field: "CREATED_BY",
+    },
+  },
+  {
+    tableName: "SCHEDULES",
+    timestamps: true,
+    createdAt: "CREATED_AT",
+    updatedAt: "UPDATED_AT",
+  },
+);
+
+module.exports = Schedule;
+=== model/User.js ===
+const { DataTypes } = require("sequelize");
+const sequelize = require("../db");
+
+const User = sequelize.define(
+  "User",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true, // IDENTITY 자동 증가 매핑
+      field: "ID",
+    },
+    firstName: {
+      type: DataTypes.STRING(50),
+      field: "FIRST_NAME",
+    },
+    lastName: {
+      type: DataTypes.STRING(50),
+      field: "LAST_NAME",
+    },
+    email: {
+      type: DataTypes.STRING(100),
+      unique: true,
+      allowNull: false,
+      field: "EMAIL",
+    },
+    password: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      field: "PASSWORD",
+    },
+    companyName: {
+      type: DataTypes.STRING(100),
+      field: "COMPANY_NAME",
+    },
+    position: {
+      type: DataTypes.STRING(50),
+      field: "POSITION",
+    },
+    tel: {
+      type: DataTypes.STRING(30),
+      field: "TEL",
+    },
+    address: {
+      type: DataTypes.STRING(255),
+      field: "ADDRESS",
+    },
+    detailAddress: {
+      type: DataTypes.STRING(255),
+      field: "DETAIL_ADDRESS",
+    },
+    gender: {
+      type: DataTypes.STRING(20),
+      field: "GENDER",
+    },
+    approvalStatus: { //회원가입 승인 여부
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "PENDING",
+      field: "APPROVAL_STATUS", //PENDING, APPROVED, REJECTED
+    },
+    accountStatus: {  //계정 로그인 가능 여부
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      defaultValue: "ACTIVE",
+      field: "ACCOUNT_STATUS",
+    },
+    // 직원 테이블과 연결할 사번
+    empId: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      field: "EMP_ID",
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: "CREATED_AT",
+    },
+  },
+  {
+    tableName: "USERS",
+    timestamps: false, // 수동으로 관리하므로 자동 타임스탬프 비활성화
+  },
+);
+
+module.exports = User;
+

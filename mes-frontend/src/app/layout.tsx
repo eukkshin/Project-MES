@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import * as S from "@/assets/css/LayoutWrapper";
 import ConditionalLayout from "@/components/provider/ConditionalLayout";
-import ThemeProviderWrapper from "@/components/provider/ThemeProviderWrapper";
+import  { ThemeProviderWrapper } from "@/components/provider/ThemeProviderWrapper";
 
 import StyledComponentsRegistry from "@/lib/registry";
 import QueryAlertProvider from "@/components/provider/QueryAlertProvider";
