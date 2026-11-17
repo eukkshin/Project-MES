@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 import {
   FaBars,
   FaChevronRight,
+  FaCommentDots,
   FaIndustry,
+  FaMessage,
+  FaPaperPlane,
   FaRegEnvelope,
   FaRightFromBracket,
   FaUser,
@@ -114,15 +117,6 @@ export const Header = () => {
 
   const unreadCount = receivedMessages.filter(message=> message.isRead === 'N').length;
 
-  console.log(
-    "안 읽은 쪽지:",
-    receivedMessages
-      .filter(message => message.isRead === 'N')
-      .map(message => ({
-        id: message.id,
-        isRead: message.isRead,
-      }))
-  );
   return (
     <>
       <S.HeaderContainer>
@@ -155,7 +149,7 @@ export const Header = () => {
             : "쪽지함"
           }
           >
-            <FaRegEnvelope/>
+            <FaCommentDots/>
           </S.MessageButton>
           
           <S.UserAvatar>

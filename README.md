@@ -32,7 +32,7 @@
 | **Client State** | **Zustand, React Context API** | 인증 세션(`useAuthStore`)·전역 알림(`useAlertStore`)과 서버 캐시 상태의 명확한 책임 분리 |
 | **HTTP Client** | **Axios** | 공통 인스턴스 기반 JWT 헤더 자동 주입 및 401/403 인증 예외·에러 메시지 일괄 정규화 |
 | **Styling** | **Styled-Components, Tailwind CSS** | 2계층 시맨틱 토큰(`theme.ts`) 기반 다크/고대비 테마 확장 및 컴포넌트 단위 스타일 캡슐화 |
-| **Backend & DB** | **Node.js (Express), TypeORM / SQL** | RESTful API 서버 구축, 도메인 모델 및 엔티티(`WorkOrder` 등) 기반 관계형 데이터 무결성 관리 |
+| **Backend & DB** | **Node.js (Express), Sequelize, SQLite** | 경량 관계형 DB(SQLite) 및 Sequelize ORM 기반 모델 정의·마이그레이션과 트랜잭션 데이터 무결성 관리 |
 
 ---
 
@@ -113,7 +113,7 @@
 ## 6. 🚀 로컬 실행 방법 (Getting Started)
 
 ### Prerequisites
-* Node.js v18 이상 / npm
+* Node.js v18 이상 / npm (SQLite 기반 로컬 파일 DB 자동 연동으로 별도 DB 서버 설치 불필요)
 
 ### 1) Backend 실행
     cd mes-backend

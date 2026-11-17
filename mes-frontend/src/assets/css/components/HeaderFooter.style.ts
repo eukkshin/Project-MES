@@ -394,28 +394,28 @@ export const MessageButton = styled.button<{$unread:boolean, $count:string}>`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   border: none;
-  border-radius: 12px;
+  border-radius: 50%;
   background: transparent;
-  color: #64748b;
-  font-size: 23px;
+  background-color: #3b82f6;
+  color: #fff;
+  font-size: 18px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #eff6ff;
+    background: #fff;
     color: #2563eb;
   }
 
   &::after{
     content: "${({$count})=> $count}";
-    content: '9';
     display: ${({$unread})=> $unread ? 'flex' : 'none'};
     position: absolute;
-    top: 1px;
-    right: -5px;
+    top: -5px;
+    right: -7px;
     min-width: 15px;
     height: 15px;
     padding: 0 4px;
