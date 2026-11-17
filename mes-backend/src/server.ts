@@ -78,7 +78,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "https://heartbreakkid.co.kr",
-      "https://heartbreakkid.co.kr",
+      "http://heartbreakkid.co.kr",
     ] ,
     credentials: true,
   }),
@@ -1990,7 +1990,6 @@ app.delete(
   }
 );
 
-console.log("등록된 모델:", Object.keys(sequelize.models));
 // 서버 실행
 const PORT = Number(process.env.PORT) || 4000;
 
@@ -1999,7 +1998,7 @@ sequelize
   .then(() => {
     console.log("😄 데이터베이스 연결 완료");
 
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
   })

@@ -19,7 +19,10 @@ require("dotenv").config();
 const sequelize = new Sequelize({
   dialect: "sqlite",
   storage: "./database.sqlite",
-  logging: false,
+  // logging: process.env.NODE_ENV === "development"
+  // ? console.log
+  // : false,
+  logging: console.log,
 });
 
 module.exports = sequelize;

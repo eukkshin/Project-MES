@@ -2,6 +2,7 @@
 .next/
 out/
 node_modules/
+dist/
 
 # --- 환경변수 및 보안 파일 ---
 .env
@@ -26,3 +27,6 @@ pnpm-debug.log*
 **/env/
 **/__pycache__/
 *.pyc
+
+*.sqlite
+*.sqlite3
