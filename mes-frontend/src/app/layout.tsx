@@ -9,6 +9,7 @@ import QueryAlertProvider from "@/components/provider/QueryAlertProvider";
 import { ScheduleProvider } from "@/context/ScheduleContext";
 import { AlarmToast } from "@/components/calendar/sheduleAlarm/Alarm";
 import ToastProvider from "@/context/ToastContext";
+import MesAlertWatcher from "@/components/provider/MesAlertWatcher";
 
 export const metadata: Metadata = {
   title: { template: "%s • MES", default: "MES 시스템" },
@@ -33,6 +34,7 @@ export default function RootLayout({
               <ToastProvider>
               <ScheduleProvider>
                 <AlarmToast/>
+                <MesAlertWatcher/> {/* 로그인 후 모든 페이지에서 실시간 위험 수치 감시 */}
                 <ConditionalLayout>{children}</ConditionalLayout>
               </ScheduleProvider>
               </ToastProvider>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme } from 'styled-components';
 import {
@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import {
   FaArrowRotateRight,
+  FaBell,
   FaBoxesStacked,
   FaChartLine,
   FaCircleCheck,
@@ -25,6 +26,7 @@ import {
   FaMicrochip,
   FaTemperatureHalf,
   FaTriangleExclamation,
+  FaWandMagicSparkles,
 } from 'react-icons/fa6';
 
 import {
@@ -35,6 +37,8 @@ import {
   fetchRecords,
 } from '@/api/mes.http';
 import * as S from '@/assets/css/admin/DashChart.styles';
+import { useToastContext } from '@/context/ToastContext';
+import { useMesAlertStore } from '@/store/useMesAlertStore';
 
 // 백엔드 응답 배열 정규화 유틸 (배열 또는 { data / records / ... } 형태 모두 안전하게 처리)
 function extractList<T>(payload: unknown, keys: string[]): T[] {
@@ -49,11 +53,32 @@ function extractList<T>(payload: unknown, keys: string[]): T[] {
 }
 
 export default function DashboardPage() {
+  // 시뮬레이션용 상태 (추후 삭제)
+  const [isSimulating, setIsSimulating] = useState(false);
+  const triggerLiveAlert = useMesAlertStore((state) => state.triggerLiveAlert);
+  const clearLiveAlert = useMesAlertStore((state) => state.clearLiveAlert);
+
   const theme = useTheme();
+
+  // 숫자 배열을 72x26 SVG polyline 좌표 문자열로 변환
+  function buildSparklinePoints(values: number[], fallback: string): string {
+    if (values.length < 2) return fallback;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min || 1;
+
+    return values
+      .map((v, idx) => {
+        const x = (idx / (values.length - 1)) * 72;
+        const y = 22 - ((v - min) / range) * 18;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(' ');
+  }
 
   // 1. 공정 라인 조회 (PROCESS_LINES)
   const linesQuery = useQuery({
-    queryKey: ['processLines'],
+    queryKey: ['process-lines'],
     queryFn: fetchProcessLines,
     refetchInterval: 15000,
   });
@@ -77,7 +102,7 @@ export default function DashboardPage() {
 
   // 3. 품질 검사 조회 (QUALITY_INSPECTIONS)
   const inspectionQuery = useQuery({
-    queryKey: ['qualityInspections'],
+    queryKey: ['inspections'],
     queryFn: async () => {
       const res = await fetchInspection();
       return extractList<{
@@ -94,27 +119,26 @@ export default function DashboardPage() {
 
   // 4. 클린룸 설비 조회 (EQUIPMENTS)
   const equipmentQuery = useQuery({
-    queryKey: ['cleanroomEquipments'],
-    queryFn: async () => {
-      const res = await fetchEquipment();
-      return extractList<{
+    queryKey: ['equipment'],
+    queryFn: fetchEquipment,
+    select: (res) =>
+      extractList<{
         id: number;
         equipmentName: string;
         cleanroomZone: string;
         temperature: number;
         humidity: number;
         status: 'NORMAL' | 'WARNING' | 'ERROR';
-      }>(res, ['equipments', 'equipment', 'data']);
-    },
+      }>(res, ['equipments', 'equipment', 'data']),
     refetchInterval: 15000,
   });
 
   // 5. 부품 SCM 조회 (COMPONENT_SCM)
   const scmQuery = useQuery({
-    queryKey: ['scmComponents'],
-    queryFn: async () => {
-      const res = await fetchComponents();
-      return extractList<{
+    queryKey: ['scm-components'],
+    queryFn: fetchComponents,
+    select: (res) =>
+      extractList<{
         id: number;
         componentName: string;
         category: string;
@@ -122,8 +146,7 @@ export default function DashboardPage() {
         minThreshold: number;
         supplier: string;
         status: 'NORMAL' | 'WARNING' | 'DANGER';
-      }>(res, ['components', 'scm', 'data']);
-    },
+      }>(res, ['components', 'scm', 'data']),
     refetchInterval: 15000,
   });
 
@@ -166,13 +189,40 @@ export default function DashboardPage() {
     const failCount = inspections.filter((i) => i.result === 'FAIL').length;
     const passRate = inspections.length > 0 ? (passCount / inspections.length) * 100 : 0;
 
-    // 클린룸 설비 이상 건수
-    const alertEquipments = equipments.filter((e) => e.status !== 'NORMAL');
+    // 클린룸 설비 이상 건수 (시뮬레이션 모드일 때 가상 경보 설비 추가)
+    const baseAlertEquipments = equipments.filter((e) => e.status !== 'NORMAL');
+    const alertEquipments = isSimulating
+      ? [
+          {
+            id: 9991,
+            equipmentName: 'Laser Welding Unit #2 (DEMO)',
+            cleanroomZone: 'Zone A (Class 100)',
+            temperature: 29.4,
+            humidity: 71.0,
+            status: 'ERROR' as const,
+          },
+          ...baseAlertEquipments,
+        ]
+      : baseAlertEquipments;
 
-    // 안전재고 미달 부품 건수 (stockQuantity < minThreshold 또는 status !== 'NORMAL')
-    const lowStockComponents = components.filter(
+    // 안전재고 미달 부품 건수 (시뮬레이션 모드일 때 가상 부족 부품 추가)
+    const baseLowStockComponents = components.filter(
       (c) => Number(c.stockQuantity) < Number(c.minThreshold) || c.status !== 'NORMAL'
     );
+    const lowStockComponents = isSimulating
+      ? [
+          {
+            id: 9992,
+            componentName: '6.3-inch LTPO OLED Panel (DEMO)',
+            category: 'DISPLAY',
+            stockQuantity: 12,
+            minThreshold: 120,
+            supplier: 'Samsung Display',
+            status: 'DANGER' as const,
+          },
+          ...baseLowStockComponents,
+        ]
+      : baseLowStockComponents;
 
     return {
       totalLines: lines.length,
@@ -196,7 +246,39 @@ export default function DashboardPage() {
     inspectionQuery.data,
     equipmentQuery.data,
     scmQuery.data,
+    isSimulating,
   ]);
+
+  // AI 실시간 진단 브리핑 메시지 생성
+  const aiBriefing = useMemo(() => {
+    const issues: string[] = [];
+
+    if (summary.alertEquipmentCount > 0) {
+      const targetEq = summary.alertEquipments[0];
+      issues.push(
+        `클린룸(${targetEq.cleanroomZone})의 '${targetEq.equipmentName}' 환경 수치 이탈(${targetEq.temperature}℃/${targetEq.humidity}%)`
+      );
+    }
+    if (summary.lowStockCount > 0) {
+      const targetComp = summary.lowStockComponents[0];
+      issues.push(`'${targetComp.componentName}' 포함 ${summary.lowStockCount}개 자재 안전재고 미달`);
+    }
+    if (summary.yieldRate > 0 && summary.yieldRate < 95) {
+      issues.push(`평균 수율 목표치 미달(${summary.yieldRate.toFixed(1)}%)`);
+    }
+
+    if (issues.length === 0) {
+      return {
+        isHealthy: true,
+        text: `현재 전 공정 가동률 ${summary.lineRunRate.toFixed(0)}%, 품질 합격률 ${summary.passRate.toFixed(1)}%로 모든 생산 라인과 클린룸 환경이 최적 임계치 내에서 안정 가동 중입니다.`,
+      };
+    }
+
+    return {
+      isHealthy: false,
+      text: `현재 ${issues.join(' 및 ')} 현상이 감지되었습니다. 불량률 확산 방지를 위해 해당 설비 파라미터 점검 및 긴급 자재 발주 승인을 권고합니다.`,
+    };
+  }, [summary]);
 
   // 생산 추이 차트 데이터 (AreaChart)
   const trendData = useMemo(() => {
@@ -219,6 +301,50 @@ export default function DashboardPage() {
     ],
     [summary.passCount, summary.failCount, theme]
   );
+
+  // 5대 KPI 카드별 실제 데이터 스파크라인 좌표 계산
+  const kpiSparklines = useMemo(() => {
+    const lines = linesQuery.data ?? [];
+    const records = [...(recordsQuery.data ?? [])].sort((a, b) => Number(a.id) - Number(b.id)).slice(-8);
+    const inspections = [...(inspectionQuery.data ?? [])].slice(-10);
+    const equipments = equipmentQuery.data ?? [];
+    const components = scmQuery.data ?? [];
+
+    // 1. 공정 라인: 각 라인 가동 상태 점수
+    const lineSeries = lines.map((l) => (l.status === 'RUNNING' ? 100 : l.status === 'MAINTENANCE' ? 50 : 10));
+
+    // 2. 누적 양품: 최근 생산 실적별 양품 생산량 추이
+    const actualSeries = records.map((r) => Number(r.actualCount || 0));
+
+    // 3. 품질 합격률: 최근 시리얼 검사 누적 합격률 추이
+    let passAcc = 0;
+    const passRateSeries = inspections.map((item, idx) => {
+      if (item.result === 'PASS') passAcc += 1;
+      return (passAcc / (idx + 1)) * 100;
+    });
+
+    // 4. 클린룸 설비: 설비별 현재 온도 분포
+    const tempSeries = equipments.map((e) => Number(e.temperature || 0));
+
+    // 5. 부품 SCM: 품목별 안전재고 대비 보유 비율(%)
+    const stockRatioSeries = components.map((c) =>
+      Number(c.minThreshold) > 0 ? (Number(c.stockQuantity) / Number(c.minThreshold)) * 100 : 100
+    );
+
+    return {
+      line: buildSparklinePoints(lineSeries, '0,20 18,16 36,16 54,10 72,6'),
+      actual: buildSparklinePoints(actualSeries, '0,22 20,17 40,14 60,9 72,5'),
+      quality: buildSparklinePoints(passRateSeries, '0,16 18,14 36,12 54,8 72,6'),
+      equipment: buildSparklinePoints(tempSeries, '0,12 24,14 48,11 72,13'),
+      scm: buildSparklinePoints(stockRatioSeries, '0,8 20,12 40,18 60,21 72,19'),
+    };
+  }, [
+    linesQuery.data,
+    recordsQuery.data,
+    inspectionQuery.data,
+    equipmentQuery.data,
+    scmQuery.data,
+  ]);
 
   const tooltipStyle = {
     backgroundColor: theme.colors.bg.elevated,
@@ -244,11 +370,80 @@ export default function DashboardPage() {
           </S.PageDescription>
         </S.PageHeading>
 
-        <S.RefreshButton type="button" onClick={handleRefreshAll} disabled={isLoading}>
-          <FaArrowRotateRight />
-          {isLoading ? '동기화 중...' : '전체 도메인 새로고침'}
-        </S.RefreshButton>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <S.RefreshButton
+            type="button"
+            onClick={() => {
+              setIsSimulating((prev) => {
+                const next = !prev;
+                if (next) {
+                  triggerLiveAlert({
+                    title: '실시간 공정 임계치 초과 경보 (시뮬레이션)',
+                    description:
+                      '클린룸 Laser Welding Unit #2 온도 이탈(29.4℃) 및 LTPO OLED 패널 안전재고 부족(12 EA)',
+                  });
+                }else{
+                  clearLiveAlert();
+                }
+                return next;
+              });
+            }}
+            style={
+              isSimulating
+                ? {
+                    backgroundColor: 'rgba(255, 59, 48, 0.12)',
+                    borderColor: '#ff3b30',
+                    color: '#ff3b30',
+                  }
+                : undefined
+            }
+          >
+            <FaTriangleExclamation />
+            {isSimulating ? '시뮬레이션 종료 (원복)' : '위험 임계치 시뮬레이션'}
+          </S.RefreshButton>
+
+          <S.RefreshButton type="button" onClick={handleRefreshAll} disabled={isLoading}>
+            <FaArrowRotateRight />
+            {isLoading ? '동기화 중...' : '전체 도메인 새로고침'}
+          </S.RefreshButton>
+        </div>
       </S.PageHeader>
+
+      {/* AI 실시간 진단 브리핑 카드 */}
+      <S.AiInsightCard>
+        <S.AiBadge>
+          <FaWandMagicSparkles /> AI FACTORY INSIGHT
+        </S.AiBadge>
+        <S.AiMessageText>
+          {aiBriefing.isHealthy ? (
+            aiBriefing.text
+          ) : (
+            <>
+              <strong>[이상 징후 분석]</strong> {aiBriefing.text}
+            </>
+          )}
+        </S.AiMessageText>
+      </S.AiInsightCard>
+
+      {/* 치명적 경보(설비 ERROR 또는 긴급 자재 부족) 존재 시 긴급 배너 노출 */}
+      {(summary.alertEquipmentCount > 0 || summary.lowStockCount > 0) && (
+        <S.CriticalAlertBanner role="alert">
+          <S.AlertBannerLeft>
+            <S.SquircleIconBox $tone="red">
+              <FaBell />
+            </S.SquircleIconBox>
+            <div>
+              <strong>
+                실시간 임계치 초과 경보 총 {summary.alertEquipmentCount + summary.lowStockCount}건 감지됨
+              </strong>
+              <span>
+                설비 이상 {summary.alertEquipmentCount}대 · 안전재고 미달 {summary.lowStockCount}품목에 대한 즉각적인 확인이 필요합니다.
+              </span>
+            </div>
+          </S.AlertBannerLeft>
+          <S.StatusPill $tone="danger">IMMEDIATE ACTION REQUIRED</S.StatusPill>
+        </S.CriticalAlertBanner>
+      )}
 
       {/* 1. 5대 핵심 도메인 통합 KPI 카드 */}
       <S.SummaryGrid>
@@ -276,7 +471,7 @@ export default function DashboardPage() {
                 stroke="#0071e3"
                 strokeWidth="2.4"
                 strokeLinecap="round"
-                points="0,20 18,16 36,16 54,10 72,6"
+                points={kpiSparklines.line}
               />
             </svg>
           </S.CardBottomRow>
@@ -304,7 +499,7 @@ export default function DashboardPage() {
                 stroke="#28cd41"
                 strokeWidth="2.4"
                 strokeLinecap="round"
-                points="0,22 20,17 40,14 60,9 72,5"
+                points={kpiSparklines.actual}
               />
             </svg>
           </S.CardBottomRow>
@@ -332,69 +527,73 @@ export default function DashboardPage() {
                 stroke="#5856d6"
                 strokeWidth="2.4"
                 strokeLinecap="round"
-                points="0,16 18,14 36,12 54,8 72,6"
+                points={kpiSparklines.quality}
               />
             </svg>
           </S.CardBottomRow>
         </S.SummaryCard>
 
         {/* KPI 4: 클린룸 설비 상태 (EQUIPMENTS) */}
-        <S.SummaryCard>
-          <S.CardTopRow>
-            <S.SummaryIcon $variant={summary.alertEquipmentCount > 0 ? 'orange' : 'green'}>
-              <FaTemperatureHalf />
-            </S.SummaryIcon>
-            <S.StatusPill $tone={summary.alertEquipmentCount > 0 ? 'danger' : 'success'}>
-              {summary.alertEquipmentCount > 0 ? `경고 ${summary.alertEquipmentCount}대` : '전 설비 정상'}
-            </S.StatusPill>
-          </S.CardTopRow>
-          <S.CardBottomRow>
-            <S.SummaryContent>
-              <span>클린룸 설비 관제</span>
-              <strong>
-                {summary.totalEquipments - summary.alertEquipmentCount} / {summary.totalEquipments}
-              </strong>
-              <small>온·습도 정상 가동 설비</small>
-            </S.SummaryContent>
-            <svg width="72" height="26" viewBox="0 0 72 26" fill="none">
-              <polyline
-                fill="none"
-                stroke={summary.alertEquipmentCount > 0 ? '#ff3b30' : '#28cd41'}
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                points="0,12 24,14 48,11 72,13"
-              />
-            </svg>
-          </S.CardBottomRow>
-        </S.SummaryCard>
+        <S.DangerPulseOverlay $active={summary.alertEquipmentCount > 0}>
+          <S.SummaryCard>
+            <S.CardTopRow>
+              <S.SummaryIcon $variant={summary.alertEquipmentCount > 0 ? 'orange' : 'green'}>
+                <FaTemperatureHalf />
+              </S.SummaryIcon>
+              <S.StatusPill $tone={summary.alertEquipmentCount > 0 ? 'danger' : 'success'}>
+                {summary.alertEquipmentCount > 0 ? `경고 ${summary.alertEquipmentCount}대` : '전 설비 정상'}
+              </S.StatusPill>
+            </S.CardTopRow>
+            <S.CardBottomRow>
+              <S.SummaryContent>
+                <span>클린룸 설비 관제</span>
+                <strong>
+                  {summary.totalEquipments - summary.alertEquipmentCount} / {summary.totalEquipments}
+                </strong>
+                <small>온·습도 정상 가동 설비</small>
+              </S.SummaryContent>
+              <svg width="72" height="26" viewBox="0 0 72 26" fill="none">
+                <polyline
+                  fill="none"
+                  stroke={summary.alertEquipmentCount > 0 ? '#ff3b30' : '#28cd41'}
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  points={kpiSparklines.equipment}
+                />
+              </svg>
+            </S.CardBottomRow>
+          </S.SummaryCard>
+        </S.DangerPulseOverlay>
 
         {/* KPI 5: 부품 SCM 안전재고 경고 (COMPONENT_SCM) */}
-        <S.SummaryCard>
-          <S.CardTopRow>
-            <S.SummaryIcon $variant={summary.lowStockCount > 0 ? 'orange' : 'blue'}>
-              <FaMicrochip />
-            </S.SummaryIcon>
-            <S.StatusPill $tone={summary.lowStockCount > 0 ? 'danger' : 'success'}>
-              {summary.lowStockCount > 0 ? '발주 필요' : '재고 안정'}
-            </S.StatusPill>
-          </S.CardTopRow>
-          <S.CardBottomRow>
-            <S.SummaryContent>
-              <span>안전재고 미달 부품</span>
-              <strong>{summary.lowStockCount}종</strong>
-              <small>총 {summary.totalComponents}개 핵심 품목 관리</small>
-            </S.SummaryContent>
-            <svg width="72" height="26" viewBox="0 0 72 26" fill="none">
-              <polyline
-                fill="none"
-                stroke={summary.lowStockCount > 0 ? '#ff3b30' : '#0071e3'}
-                strokeWidth="2.4"
-                strokeLinecap="round"
-                points="0,8 20,12 40,18 60,21 72,19"
-              />
-            </svg>
-          </S.CardBottomRow>
-        </S.SummaryCard>
+        <S.DangerPulseOverlay $active={summary.lowStockCount > 0}>
+          <S.SummaryCard>
+            <S.CardTopRow>
+              <S.SummaryIcon $variant={summary.lowStockCount > 0 ? 'orange' : 'blue'}>
+                <FaMicrochip />
+              </S.SummaryIcon>
+              <S.StatusPill $tone={summary.lowStockCount > 0 ? 'danger' : 'success'}>
+                {summary.lowStockCount > 0 ? '발주 필요' : '재고 안정'}
+              </S.StatusPill>
+            </S.CardTopRow>
+            <S.CardBottomRow>
+              <S.SummaryContent>
+                <span>안전재고 미달 부품</span>
+                <strong>{summary.lowStockCount}종</strong>
+                <small>총 {summary.totalComponents}개 핵심 품목 관리</small>
+              </S.SummaryContent>
+              <svg width="72" height="26" viewBox="0 0 72 26" fill="none">
+                <polyline
+                  fill="none"
+                  stroke={summary.lowStockCount > 0 ? '#ff3b30' : '#0071e3'}
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  points={kpiSparklines.scm}
+                />
+              </svg>
+            </S.CardBottomRow>
+          </S.SummaryCard>
+        </S.DangerPulseOverlay>
       </S.SummaryGrid>
 
       {/* 2. 메인 차트 섹션 (생산 실적 추이 + 품질 검사 합격률 도넛) */}
@@ -495,8 +694,7 @@ export default function DashboardPage() {
         </S.ChartPanel>
       </S.MainChartGrid>
 
-      {/* 3. 하단 섹션 (공정 라인 실시간 가동 현황 + 설비·부품 이상 경보 피드) */}
-     {/* 3. Apple 스타일 하단 2단 그리드 */}
+      {/* 3. 하단 2단 그리드 */}
       <S.BottomGrid>
         {/* 좌측: 공정 라인 실시간 가동 현황 */}
         <S.ChartPanel>

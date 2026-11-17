@@ -8,9 +8,6 @@ import {
   FaChevronRight,
   FaCommentDots,
   FaIndustry,
-  FaMessage,
-  FaPaperPlane,
-  FaRegEnvelope,
   FaRightFromBracket,
   FaUser,
   FaXmark,
@@ -26,7 +23,10 @@ import { useGetMessagesReceived } from "@/hooks/useMessage";
 const menuGroups = [
   {
     title: "WORKSPACE",
-    items: [{ label: "대시보드", href: "/admin" }],
+    items: [
+      { label: "일정관리", href: "/admin" },
+      { label: "관제 대시보드", href: "/admin/dashboard" },
+    ],
   },
   {
     title: "MES 업무",
@@ -50,7 +50,8 @@ const menuGroups = [
 ];
 
 const pageTitles: Record<string, string> = {
-  "/admin": "대시보드",
+  "/admin": "일정관리",
+  "/admin/dashboard": "관제대시보드",
   "/admin/process": "라인공정제어",
   "/admin/components": "핵심부품 SCM",
   "/admin/quality": "비전품질검사",

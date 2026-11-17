@@ -1,4 +1,4 @@
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 export {
   PageContainer,
   PageHeading,
@@ -36,6 +36,31 @@ const pulseRing = keyframes`
   0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); }
   70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(52, 199, 89, 0); }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+`;
+const dangerGlow = keyframes`
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.35);
+    border-color: rgba(255, 59, 48, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 18px 2px rgba(255, 59, 48, 0.18);
+    border-color: rgba(255, 59, 48, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.35);
+    border-color: rgba(255, 59, 48, 0.6);
+  }
+`;
+
+const slideDown = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 `;
 
 export const DashboardContainer = styled.div`
@@ -102,7 +127,6 @@ export const HeaderActions = styled.div`
   gap: 10px;
 `;
 
-/* 🍎 Apple Style 5열 KPI 요약 그리드 */
 export const SummaryGrid = styled.section`
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -622,3 +646,100 @@ export const AllClearBanner = styled.div`
     color: ${({ theme }) => theme.colors.text.secondary};
   }
 `;
+
+//이상경보 알람
+
+export const CriticalAlertBanner = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: ${({ theme }) =>
+    theme.mode === 'light'
+      ? 'linear-gradient(135deg, rgba(255, 59, 48, 0.08) 0%, rgba(255, 149, 0, 0.08) 100%)'
+      : 'linear-gradient(135deg, rgba(255, 69, 58, 0.18) 0%, rgba(255, 159, 10, 0.14) 100%)'};
+  border: 1px solid rgba(255, 59, 48, 0.45);
+  animation: ${slideDown} 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+`;
+
+export const AlertBannerLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors.status.danger.text};
+  }
+
+  span {
+    font-size: 12px;
+    color: ${({ theme }) => theme.colors.text.secondary};
+  }
+`;
+
+/* 2. AI 실시간 공정 인사이트 브리핑 바 */
+export const AiInsightCard = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: ${({ theme }) =>
+    theme.mode === 'light'
+      ? 'linear-gradient(135deg, #f8faff 0%, #eef4ff 100%)'
+      : 'linear-gradient(135deg, rgba(88, 86, 214, 0.14) 0%, rgba(0, 113, 227, 0.12) 100%)'};
+  border: 1px solid
+    ${({ theme }) =>
+      theme.mode === 'light' ? 'rgba(0, 113, 227, 0.2)' : 'rgba(102, 163, 224, 0.28)'};
+`;
+
+export const AiBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #0071e3 0%, #5856d6 100%);
+  flex-shrink: 0;
+`;
+
+export const AiMessageText = styled.p`
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: ${({ theme }) => theme.colors.text.primary};
+
+  strong {
+    font-weight: 700;
+    color: ${({ theme }) => theme.colors.primary.default};
+  }
+`;
+
+/* 3. 위험 임계치 도달 시 KPI 카드 글로우 효과 확장 */
+export const DangerPulseOverlay = styled.div<{ $active: boolean }>`
+  border-radius: 20px;
+  ${({ $active }) =>
+    $active &&
+    css`
+      animation: ${dangerGlow} 2.2s infinite ease-in-out;
+    `}
+`;
+
+
+

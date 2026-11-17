@@ -4,15 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FaAddressBook,
+  FaCalendarCheck,
   FaChartLine,
   FaChevronRight,
   FaClipboardCheck,
+  FaGaugeHigh,
   FaGear,
   FaIndustry,
-  FaLayerGroup,
   FaMicrochip,
   FaSliders,
-  FaUserGear,
   FaUsers,
   FaWarehouse,
 } from "react-icons/fa6";
@@ -24,9 +24,14 @@ const menuGroups = [
     title: "WORKSPACE",
     items: [
       {
-        label: "대시보드",
+        label: "일정관리",
         href: "/admin",
-        icon: FaLayerGroup,
+        icon: FaCalendarCheck,
+      },
+      {
+        label: "관제 대시보드",
+        href: "/admin/dashboard",
+        icon: FaGaugeHigh,
       },
     ],
   },
