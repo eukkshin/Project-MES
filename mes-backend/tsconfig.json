@@ -12,6 +12,7 @@
     "types": ["node", "express"],
     // Express등 commonjs 모듈을 ES6처럼 자연스럽게 import 하기 위해 필수
     "esModuleInterop": true,
+    "allowJs": true,
     //TypeORM 필수 설정
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
