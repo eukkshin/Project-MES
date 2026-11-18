@@ -26,6 +26,8 @@ const Employee = require('./model/Employee');
 const Schedule = require('./model/Schedule');
 const Message = require('./model/Message');
 
+const seedData = require("../seed");
+
 //============================================
 // 👇 모델 관계 설정
 //============================================
@@ -1993,15 +1995,36 @@ app.delete(
 // 서버 실행
 const PORT = Number(process.env.PORT) || 4000;
 
-sequelize
-  .sync({ force: false })
+// sequelize
+//   .sync({ force: false })
+//   .then(() => {
+//     console.log("😄 데이터베이스 연결 완료");
+
+//     app.listen(PORT, "0.0.0.0", () => {
+//       console.log(`Server running on port ${PORT}`);
+//     });
+//   })
+//   .catch((error: unknown) => {
+//     console.error("데이터베이스 연결 오류:", error);
+//   });
+
+  sequelize
+  .authenticate()
   .then(() => {
-    console.log("😄 데이터베이스 연결 완료");
+    console.log("✅ 데이터베이스 연결 완료");
+
+    return sequelize.sync({ force: false });
+  })
+  .then(async () => {
+    console.log("✅ 데이터베이스 테이블 동기화 완료");
+
+    await seedData();
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error: unknown) => {
-    console.error("데이터베이스 연결 오류:", error);
+    console.error("데이터베이스 초기화 오류:", error);
+    process.exit(1);
   });
