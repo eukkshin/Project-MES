@@ -1,11 +1,11 @@
 
 const sequelize = require("./src/db");
 
-const ProcessLine = require("./src/models/ProcessLine");
-const ProductionRecord = require("./src/models/ProductionRecord");
-const QualityInspection = require("./src/models/QualityInspection");
-const Equipment = require("./src/models/Equipment");
-const ComponentSCM = require("./src/models/ComponentSCM");
+const ProcessLine = require("./src/model/ProcessLine");
+const ProductionRecord = require("./src/model/ProductionRecord");
+const QualityInspection = require("./src/model/QualityInspection");
+const Equipment = require("./src/model/Equipment");
+const ComponentSCM = require("./src/model/ComponentSCM");
 
 const queryInterface = sequelize.getQueryInterface();
 
