@@ -144,6 +144,8 @@ export const SummaryGrid = styled.section`
 `;
 
 export const SummaryCard = styled.article`
+ flex: 1;
+  box-sizing: border-box;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -733,7 +735,10 @@ export const AiMessageText = styled.p`
 
 /* 3. 위험 임계치 도달 시 KPI 카드 글로우 효과 확장 */
 export const DangerPulseOverlay = styled.div<{ $active: boolean }>`
+  display: flex;
+  align-self: stretch;
   border-radius: 20px;
+  min-width: 0;
   ${({ $active }) =>
     $active &&
     css`
