@@ -17,12 +17,13 @@ import {
   FaUserGear,
   FaWrench,
 } from "react-icons/fa6";
-import type { ProcessLine } from "@/types/process";
+import type { ProcessLine } from "@/types/mes";
 import * as S from "@/assets/css/admin/Process.styles";
 import { useAlertStore } from "@/store/useAlertStore";
-import { useCreateProcessLine, 
-  useFetchProcessHistory,
-   useFetchProcessLines, 
+import { 
+   useCreateProcessLine, 
+   useGetProcessHistory,
+   useGetProcessLines, 
    useUpdateLineStatus 
   } from "@/hooks/useProcessLines";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -86,14 +87,14 @@ export default function ProcessPage() {
   });
 
   const { data: lines = [], isLoading, isError, error, refetch, } 
-  = useFetchProcessLines();
+  = useGetProcessLines();
 
   // 상태 변경 이력 목록 조회
   const {
     data: historyList = [],
     isLoading: isHistoryLoading,
     refetch: refetchHistory,
-  } = useFetchProcessHistory();
+  } = useGetProcessHistory();
 
   // 라인 신규 등록 Mutation
   const { mutate: createLineMutation, isPending: isSubmitting } 

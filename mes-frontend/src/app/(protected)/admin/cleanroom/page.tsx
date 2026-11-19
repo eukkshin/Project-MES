@@ -15,7 +15,7 @@ import {
   FaWarehouse,
 } from "react-icons/fa6";
 import {
-  useFetchEquipment,
+  useGetEquipment,
   useCreateEquipment,
   useUpdateEquipmentStatus,
 } from "@/hooks/useEquipment";
@@ -23,15 +23,8 @@ import {
 import * as S from "@/assets/css/admin/Cleanroom.styles";
 import { Select } from "@/ui/Select/Select";
 import { useAlertStore } from "@/store/useAlertStore";
+import type { EquipmentItem, EquipmentRequest } from "@/types/mes";
 
-interface EquipmentItem {
-  id: number;
-  equipmentName: string;
-  cleanroomZone: string;
-  temperature: number;
-  humidity: number;
-  status: string;
-}
 
 interface EquipmentForm {
   equipmentName: string;
@@ -39,7 +32,6 @@ interface EquipmentForm {
   temperature: string;
   humidity: string;
 }
-
 
 const INITIAL_STATE: EquipmentForm = {
   equipmentName: "",
@@ -99,14 +91,11 @@ export default function CleanroomPage() {
     isError,
     error,
     refetch,
-  } = useFetchEquipment();
-
-  console.log("equipment:", equipment);
-console.log("배열 여부:", Array.isArray(equipment));
+  } = useGetEquipment();
 
   const { mutate, isPending: isSubmitting } = useCreateEquipment();
 
-  const { mutate: updateStatusMutation } = useUpdateEquipmentStatus();
+  const { mutate: updateStatusMutate } = useUpdateEquipmentStatus();
 
 
   const handleChange = <K extends keyof EquipmentForm>(
@@ -119,7 +108,7 @@ console.log("배열 여부:", Array.isArray(equipment));
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!form.equipmentName.trim() || !form.cleanroomZone.trim()) {
@@ -144,7 +133,7 @@ console.log("배열 여부:", Array.isArray(equipment));
       showAlert("온도와 습도 값을 확인해 주세요. 습도는 0~100%입니다.", "info");
       return;
     }
-    const formData = {
+    const formData : EquipmentRequest= {
           equipmentName: form.equipmentName.trim(),
           cleanroomZone: form.cleanroomZone.trim(),
           temperature,
@@ -215,7 +204,7 @@ console.log("배열 여부:", Array.isArray(equipment));
     });
   }, [equipment, searchTerm, statusFilter]);
 
-  const handleStatusChange = async (item: EquipmentItem) => {
+  const handleStatusChange = (item: EquipmentItem) => {
     const nextStatus = selectedStatuses[item.id] ?? item.status;
 
     if (nextStatus === item.status || updatingId !== null) return;
@@ -231,7 +220,7 @@ console.log("배열 여부:", Array.isArray(equipment));
       })
     );
 
-    updateStatusMutation(
+    updateStatusMutate(
       {id: item.id,nextStatus},
       {
         onSuccess: (_, variables) => {

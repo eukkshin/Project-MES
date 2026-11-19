@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const isProduction = process.env.NODE_ENV === 'production'
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: "/group/three/2",
+  ...(isProduction && {
+    basePath: "/group/three/2",
+  }),
   trailingSlash: true,
   images: {
     unoptimized: true,

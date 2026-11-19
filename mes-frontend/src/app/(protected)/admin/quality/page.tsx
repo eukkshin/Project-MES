@@ -18,32 +18,17 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Quality.styles";
-import { createInspection, fetchInspection } from "@/api/mes.http";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Select } from "@/ui/Select/Select";
 import { useAlertStore } from "@/store/useAlertStore";
-
-interface InspectionItem {
-  id: number;
-  serialNumber: string;
-  inspectionType: string;
-  defectReason: string | null;
-  inspector: string;
-  result: string;
-}
+import { useCreateInspections, useGetInspections } from "@/hooks/useQualityInspections";
+import type { InspectionRequest } from "@/types/mes";
 
 interface InspectionForm {
   serialNumber: string;
   inspectionType: string;
   defectReason: string; 
   inspector: string;
-  result: string;
-}
-
-interface InspectionResponse {
-  success: boolean;
-  inspections?: InspectionItem[];
-  data?: InspectionItem[];
+  result: "PASS" | "FAIL";
 }
 
 export const SELECT_OPTIONS = [
@@ -76,39 +61,19 @@ const inspectionTypeLabel = (type: string) => {
   }
 };
 
+type InspectionResultFilter = "ALL" | "PASS" | "FAIL";
 export default function QualityPage() {
-  const queryClient = useQueryClient();
   const showAlert = useAlertStore(state=>state.showAlert);
 
   const [form, setForm] = useState<InspectionForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [resultFilter, setResultFilter] = useState("ALL");
+  const [resultFilter, setResultFilter] = 
+    useState<InspectionResultFilter>("ALL");
 
-  const { data:inspections=[], isError, isLoading, error, refetch }=useQuery({
-    queryKey: ['inspections'],
-    queryFn: async()=>{
-      const payload = await fetchInspection();
-      if(!payload.success){
-        throw new Error("검사 이력 조회에 실패했습니다.");
-      }
-      const data = payload.inspections ?? payload.data ?? [];
-      return Array.isArray(data) ? data : [];
-    }
-  })
+  const { data:inspections=[], isError, isLoading, error, refetch }=useGetInspections();
 
-  const {mutate, isPending: isSubmitting } =useMutation({
-    mutationFn: createInspection,
-    onSuccess:()=>{
-      showAlert("검사 결과가 등록되었습니다.", "success");
-      queryClient.invalidateQueries({ queryKey: ['inspections'] });
-      setForm({ ...INITIAL_STATE });
-    },
-    onError: (err)=>{
-      console.error("품질 검사 등록 오류:", err);
-      showAlert("검사 결과 등록에 실패했습니다.", "error");
-    }
-  })
+  const {mutate, isPending: isSubmitting } =useCreateInspections();
 
   const handleChange = <K extends keyof InspectionForm>(
     field: K,
@@ -120,7 +85,7 @@ export default function QualityPage() {
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!form.serialNumber.trim()) {
@@ -138,19 +103,28 @@ export default function QualityPage() {
       return;
     }
 
-     const formData={
-          serialNumber: form.serialNumber.trim(),
-          inspectionType: form.inspectionType,
-          result: form.result,
-          defectReason: form.result === "FAIL" ? form.defectReason.trim() : "",
-          inspector: form.inspector.trim(),
-        };
-      
-      mutate(formData);
+    const formData : InspectionRequest={
+        serialNumber: form.serialNumber.trim(),
+        inspectionType: form.inspectionType,
+        result: form.result,
+        defectReason: form.result === "FAIL" ? form.defectReason.trim() : "",
+        inspector: form.inspector.trim(),
+      };
+    
+    mutate(formData,{
+      onSuccess:()=>{
+        showAlert("검사 결과가 등록되었습니다.", "success");
+        setForm({ ...INITIAL_STATE });
+      },
+      onError: (err)=>{
+        console.error("품질 검사 등록 오류:", err);
+        showAlert("검사 결과 등록에 실패했습니다.", "error");
+      }
+    });
   };
 
   const summary = useMemo(() => {
-    // 의존성 배열에 inspections (inspections 참조값 변경시 useMemo 실행)
+    
     const total = inspections.length;
     const pass = inspections.filter((item) => item.result === "PASS").length;
     const fail = inspections.filter((item) => item.result === "FAIL").length;
@@ -312,9 +286,10 @@ export default function QualityPage() {
                 </S.Label>
    
                 <Select 
-                    id="type" value={form.inspectionType} 
+                    id="inspectionType" 
+                    value={form.inspectionType} 
                     options={TYPE_OPTIONS}
-                    onChange={(newValue)=>setForm(prev=>({...prev, inspectionType: newValue}))}
+                    onChange={newValue=> handleChange('inspectionType', newValue)}
                     > 
                       <Select.Toggle height="45px"><FaCamera/></Select.Toggle>
                       <Select.Menu/>
@@ -447,7 +422,7 @@ export default function QualityPage() {
                   검색 결과 {filteredInspections.length}건
                 </S.ResultCount>
                 <Select id="1"  options={SELECT_OPTIONS} value={resultFilter}
-                onChange={(newValue:string)=>setResultFilter(newValue)}
+                onChange={(newValue:string)=>setResultFilter(newValue as InspectionResultFilter)}
                 >
                   <Select.Toggle/>
                   <Select.Menu/>

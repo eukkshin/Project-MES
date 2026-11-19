@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FaArrowRotateRight,
   FaBullseye,
@@ -15,20 +14,11 @@ import {
 } from "react-icons/fa6";
 
 import * as S from "@/assets/css/admin/Analytics.styles";
-import { createRecords, fetchRecords } from "@/api/mes.http";
 import type { ChangeEvent, FormEvent } from "react";
 import { Select } from "@/ui/Select/Select";
+import { useCreateProductionRecord, useGetProductionRecord, type ProductionRecord } from "@/hooks/useProductionRecords";
 
-interface AnalyticsRecord {
-  id: number;
-  lineName: string;
-  targetCount: number;
-  actualCount: number;
-  defectCount: number;
-  yieldRate: number;
-}
-
-interface AnalyticsForm {
+interface ProductionRecordForm {
   lineName: string;
   targetCount: string;
   actualCount: string;
@@ -43,14 +33,14 @@ const FILTER_OPTION=[
     {label: "95% 미만", value:'LOW'},
 ]
 
-const INITIAL_STATE: AnalyticsForm = {
+const INITIAL_STATE: ProductionRecordForm = {
   lineName: "",
   targetCount: "1000",
   actualCount: "980",
   defectCount: "20",
 };
 
-const getYieldRate = (item: AnalyticsRecord) => {
+const getYieldRate = (item: ProductionRecord) => {
   const rate = Number(item.yieldRate);
 
   if (Number.isFinite(rate)) {
@@ -72,9 +62,7 @@ const getYieldTone = (rate: number) => {
 
 export default function AnalyticsPage() {
 
-  const queryClient = useQueryClient();
-  
-  const [form, setForm] = useState<AnalyticsForm>({ ...INITIAL_STATE });
+  const [form, setForm] = useState<ProductionRecordForm>({ ...INITIAL_STATE });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<FilterType>("ALL");
@@ -85,51 +73,10 @@ export default function AnalyticsPage() {
   } | null>(null);
   
 
-   const {data: records=[], isLoading, refetch, error } = useQuery<AnalyticsRecord[]>({
-        queryKey: ['analyticsRecords'],
-        queryFn: async()=>{
-            const data = await loadRecords();
-            return data;
-        }
-    })
+  const {data: records=[], isLoading, refetch, error,isError  } = useGetProductionRecord();
     
-    const {mutate, isPending:isSubmitting, isError } = useMutation({
-        mutationFn: createRecords,
-        onSuccess: ()=>{
-             setNotice({
-              type: "success",
-              message: "생산 실적이 정상적으로 등록되었습니다.",
-            });
-            setForm(INITIAL_STATE);
-            queryClient.invalidateQueries({queryKey: ['analyticsRecords'] })
-        },
-        onError: (err)=>{
-            console.error("생산 실적 등록 실패:", err);
-             setNotice({
-              type: "error",
-              message: "생산 실적 등록에 실패했습니다.",
-      });
-        }
-    })
-
-  const loadRecords = async (): Promise<AnalyticsRecord[]> => {
-  
-    const payload = await fetchRecords();
-
-    if (payload?.success === false) {
-      throw new Error(payload.message || "조회 실패");
-    }
-
-    const data = Array.isArray(payload)
-      ? payload
-      : (payload.records ?? payload.analytics ?? payload.data ?? []);
-
-    if (!Array.isArray(data)) {
-      throw new Error("잘못된 데이터 형식입니다.");
-    }
-    return [...data].sort((a, b) => Number(b.id) - Number(a.id));
-};
-  
+  const {mutate, isPending:isSubmitting  } = useCreateProductionRecord();
+        
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
@@ -194,8 +141,22 @@ export default function AnalyticsPage() {
           actualCount,
           defectCount,
           yieldRate,
+        },{
+          onSuccess: ()=>{
+             setNotice({
+              type: "success",
+              message: "생산 실적이 정상적으로 등록되었습니다.",
+            });
+            setForm(INITIAL_STATE);
+          },
+        onError: (err)=>{
+            console.error("생산 실적 등록 실패:", err);
+             setNotice({
+              type: "error",
+              message: "생산 실적 등록에 실패했습니다.",
         });
- 
+       }
+      })
   };
 
   const summary = useMemo(() => {

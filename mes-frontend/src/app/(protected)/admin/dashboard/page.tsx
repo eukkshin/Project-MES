@@ -30,28 +30,14 @@ import {
 } from 'react-icons/fa6';
 
 import {
-  fetchComponents,
-  fetchEquipment,
-  fetchInspection,
   fetchProcessLines,
-  fetchRecords,
 } from '@/api/mes.http';
 import * as S from '@/assets/css/admin/DashChart.styles';
 import { useMesAlertStore } from '@/store/useMesAlertStore';
-import { useFetchEquipment } from '@/hooks/useEquipment';
-import { useFetchComponents } from '@/hooks/useSCM';
-
-// 백엔드 응답 배열 정규화 유틸 (배열 또는 { data / records / ... } 형태 모두 안전하게 처리)
-function extractList<T>(payload: unknown, keys: string[]): T[] {
-  if (Array.isArray(payload)) return payload as T[];
-  if (payload && typeof payload === 'object') {
-    const obj = payload as Record<string, unknown>;
-    for (const key of keys) {
-      if (Array.isArray(obj[key])) return obj[key] as T[];
-    }
-  }
-  return [];
-}
+import { useGetEquipment } from '@/hooks/useEquipment';
+import { useGetProductionRecord } from '@/hooks/useProductionRecords';
+import { useGetInspections } from '@/hooks/useQualityInspections';
+import { useGetSCMComponents } from '@/hooks/useSCM';
 
 export default function DashboardPage() {
   // 시뮬레이션용 상태 (추후 삭제)
@@ -85,46 +71,22 @@ export default function DashboardPage() {
   });
 
   // 2. 생산 실적 조회 (PRODUCTION_RECORDS)
-  const recordsQuery = useQuery({
-    queryKey: ['analyticsRecords'],
-    queryFn: async () => {
-      const res = await fetchRecords();
-      return extractList<{
-        id: number;
-        lineName: string;
-        targetCount: number;
-        actualCount: number;
-        defectCount: number;
-        yieldRate: number;
-      }>(res, ['records', 'analytics', 'data']);
-    },
-    refetchInterval: 15000,
+  const recordsQuery = useGetProductionRecord({
+    refetchInterval: 15000
   });
 
   // 3. 품질 검사 조회 (QUALITY_INSPECTIONS)
-  const inspectionQuery = useQuery({
-    queryKey: ['inspections'],
-    queryFn: async () => {
-      const res = await fetchInspection();
-      return extractList<{
-        id: number;
-        serialNumber: string;
-        inspectionType: string;
-        result: 'PASS' | 'FAIL';
-        defectReason?: string;
-        inspector?: string;
-      }>(res, ['inspections', 'quality', 'data']);
-    },
+  const inspectionQuery = useGetInspections({
     refetchInterval: 15000,
   });
 
   // 4. 클린룸 설비 조회 (EQUIPMENTS)
-  const equipmentQuery = useFetchEquipment({
+  const equipmentQuery = useGetEquipment({
     refetchInterval: 15000,
   });
 
   //부품조회 components
-  const scmQuery = useFetchComponents({
+  const scmQuery = useGetSCMComponents({
     refetchInterval: 15000,
   });
 
@@ -183,9 +145,11 @@ export default function DashboardPage() {
         ]
       : baseAlertEquipments;
 
-    // 안전재고 미달 부품 건수 (시뮬레이션 모드일 때 가상 부족 부품 추가)
+    // 안전재고 미달 부품 건수 
     const baseLowStockComponents = components.filter(
-      (c) => Number(c.stockQuantity) < Number(c.minThreshold) || c.status !== 'NORMAL'
+      (c) => 
+        c.status?.toUpperCase() === "WARNING" ||
+        Number(c.stockQuantity) < Number(c.minThreshold) 
     );
     const lowStockComponents = isSimulating
       ? [

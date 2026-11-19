@@ -1,28 +1,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  fetchEquipment,
+  getEquipments,
   createEquipment,
   updateEquipmentStatus,
 } from "@/api/mes.http";
-
-// 설비 데이터 타입
-export interface EquipmentItem {
-  id: number;
-  equipmentName: string;
-  cleanroomZone: string;
-  temperature: number;
-  humidity: number;
-  status: string;
-}
-
-// 설비 등록 데이터 타입
-export interface EquipmentForm {
-  equipmentName: string;
-  cleanroomZone: string;
-  temperature: number;
-  humidity: number;
-}
+import type { EquipmentItem } from "@/types/mes";
 
 // API 응답 타입
 interface EquipmentResponse {
@@ -52,14 +35,13 @@ const extractEquipmentList = (
 };
 
 // 1. 설비 목록 조회
-export const useFetchEquipment = (options?: {
+export const useGetEquipment = (options?: {
   enabled?: boolean;
   refetchInterval?: number;
 }) => {
-  return useQuery({
+  return useQuery<EquipmentItem[]>({
     queryKey: ["equipment"],
-    queryFn: fetchEquipment,
-    select: extractEquipmentList,
+    queryFn: getEquipments,
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval,
   });
@@ -93,7 +75,7 @@ export const useUpdateEquipmentStatus = () => {
 
   return useMutation({
     mutationFn: ({ id, nextStatus }: UpdateEquipmentStatusRequest) =>
-      updateEquipmentStatus(id, { status: nextStatus }),
+      updateEquipmentStatus(id, nextStatus),
 
     onSuccess: () => {
       queryClient.invalidateQueries({

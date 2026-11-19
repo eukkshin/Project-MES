@@ -6,14 +6,14 @@ import {
     updateLineStatus,
 } from "@/api/mes.http";
 
-export const useFetchProcessLines = ()=>{
+export const useGetProcessLines = ()=>{
     return useQuery({
         queryKey: ["process-lines"],
         queryFn:fetchProcessLines,
     })
 }
 
-export const useFetchProcessHistory = (lineId?:number)=>{
+export const useGetProcessHistory = (lineId?:number)=>{
     return useQuery({
         queryKey: ["process-history", lineId],
         queryFn:()=> fetchProcessHistory(lineId),

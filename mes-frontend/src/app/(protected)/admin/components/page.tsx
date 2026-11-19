@@ -15,24 +15,34 @@ import {
   FaWarehouse,
 } from "react-icons/fa6";
 import {
-  useFetchComponents,
-  useCreateComponent,
-  type ComponentItem,
-  type ComponentForm,
+  useGetSCMComponents,
+  useCreateSCMComponent,
 } from "@/hooks/useSCM";
 
 import * as S from "@/assets/css/admin/Scm.styles";
 import { useAlertStore } from "@/store/useAlertStore";
+import type { ComponentItem, ComponentRequest } from "@/types/mes";
+import axios from "axios";
 
+interface ComponentForm {
+  componentName: string;
+  category: string;
+  stockQuantity: string;
+  minThreshold: string;
+  supplier: string;
+}
 
 const INITIAL_STATE: ComponentForm = {
   componentName: "",
   category: "",
-  stockQuantity: 0,
-  minThreshold: 100,
+  stockQuantity: "",
+  minThreshold: "100",
   supplier: "",
 };
-
+const isWarning = (item: ComponentItem) =>
+  item.status?.toUpperCase() === "WARNING" ||
+  item.stockQuantity < item.minThreshold;
+  
 export default function ScmPage() {
   const showAlert = useAlertStore(state=>state.showAlert);
   
@@ -46,9 +56,9 @@ export default function ScmPage() {
     isError,
     error,
     refetch,
-  } = useFetchComponents();
+  } = useGetSCMComponents();
 
-  const { mutate, isPending: isSubmitting } = useCreateComponent();
+  const { mutate, isPending: isSubmitting } = useCreateSCMComponent();
 
   const handleChange = <K extends keyof ComponentForm>(
     field: K,
@@ -60,7 +70,7 @@ export default function ScmPage() {
     }));
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (
@@ -73,22 +83,22 @@ export default function ScmPage() {
     }
 
     if (
-      !Number.isFinite(form.stockQuantity) ||
-      !Number.isFinite(form.minThreshold) ||
-      !Number.isInteger(form.stockQuantity) ||
-      !Number.isInteger(form.minThreshold) ||
-      form.stockQuantity < 0 ||
-      form.minThreshold < 0
+      form.stockQuantity.trim() === "" ||
+      form.minThreshold.trim() === "" ||
+      !Number.isInteger(Number(form.stockQuantity)) ||
+      !Number.isInteger(Number(form.minThreshold)) ||
+      Number(form.stockQuantity) < 0 ||
+      Number(form.minThreshold) < 0
     ) {
       showAlert("재고 수량은 0 이상의 정수로 입력해 주세요.", "info");
       return;
     }
 
-    const formData = {
+    const formData : ComponentRequest= {
       componentName: form.componentName.trim(),
       category: form.category.trim(),
-      stockQuantity: form.stockQuantity,
-      minThreshold: form.minThreshold,
+      stockQuantity: Number(form.stockQuantity),
+      minThreshold: Number(form.minThreshold),
       supplier: form.supplier.trim(),
       }
       mutate(formData, {
@@ -103,9 +113,7 @@ export default function ScmPage() {
       });
   };
 
-  const isWarning = (item: ComponentItem) =>
-    item.status?.toUpperCase() === "WARNING" ||
-    item.stockQuantity < item.minThreshold;
+
 
   const summary = useMemo(() => {
     // 의존성 배열에 components (components 참조값 변경시 useMemo 실행)
@@ -261,7 +269,7 @@ export default function ScmPage() {
                       step={1}
                       value={form.stockQuantity}
                       onChange={(e) =>
-                        handleChange("stockQuantity", Number(e.target.value))
+                        handleChange("stockQuantity", e.target.value)
                       }
                       required
                     />
@@ -282,7 +290,7 @@ export default function ScmPage() {
                       step={1}
                       value={form.minThreshold}
                       onChange={(e) =>
-                        handleChange("minThreshold", Number(e.target.value))
+                        handleChange("minThreshold",e.target.value)
                       }
                       required
                     />
@@ -364,7 +372,11 @@ export default function ScmPage() {
               ) : isError ? (
                 <S.EmptyState>
                   <FaTriangleExclamation />
-                  <strong>{(error as Error).message || '부품 데이터를 불러오지 못했습니다.'}</strong>
+                  <strong>
+                    {axios.isAxiosError(error)  
+                    ? error.response?.data?.message || '부품데이터를 불러오지 못했습니다.'
+                    : '부품 데이터를 불러오지 못했습니다.'}
+                  </strong>
 
                   <S.RetryButton
                     type="button"

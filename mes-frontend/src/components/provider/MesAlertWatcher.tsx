@@ -7,8 +7,8 @@ import { FaTriangleExclamation, FaXmark } from 'react-icons/fa6';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useMesAlertStore } from '@/store/useMesAlertStore';
 import * as S from '@/assets/css/components/LiveAlertToast.styles';
-import { useFetchEquipment } from '@/hooks/useEquipment';
-import { useFetchComponents } from '@/hooks/useSCM';
+import { useGetEquipment } from '@/hooks/useEquipment';
+import { useGetSCMComponents } from '@/hooks/useSCM';
 
 // 경보 기록 저장 키
 const ALERT_STORAGE_KEY = 'mes-alerted-keys';
@@ -28,12 +28,12 @@ export default function MesAlertWatcher() {
   // 컴포넌트가 유지되는 동안 경보 기록 관리
   const alertedKeysRef = useRef<Set<string> | null>(null);
 
-  const equipmentQuery = useFetchEquipment({
+  const equipmentQuery = useGetEquipment({
     enabled: isAuthenticated,
     refetchInterval: 15000,
   });
 
-  const scmQuery = useFetchComponents({
+  const scmQuery = useGetSCMComponents({
     enabled: isAuthenticated,
     refetchInterval: 15000,
   });
