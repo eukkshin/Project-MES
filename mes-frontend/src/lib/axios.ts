@@ -159,6 +159,9 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// 동시 다발적인 401 응답 시 로그아웃·리다이렉트 중복 실행 방지 플래그
+let isHandlingUnauthorized = false;
+
 // Response Interceptor
 api.interceptors.response.use(
   (response) => response,
@@ -199,15 +202,18 @@ api.interceptors.response.use(
       }
     }
 
-    // 401 : 인증 실패
+    // 401 : 인증 실패 (동시 401 발생 시 첫 1회만 처리)
     const isAuthError = status === 401 ;
       
     if (
       isAuthError && 
       typeof window !== "undefined" && 
       !isLoginRequest &&  
-      !isLoginPage
+      !isLoginPage &&
+      !isHandlingUnauthorized
     ) {
+      isHandlingUnauthorized = true;
+
       try {
         // 로그인 후 원래 접근하려던 페이지로 돌아가기
         const currentPath =
@@ -227,6 +233,7 @@ api.interceptors.response.use(
         window.location.assign(LOGIN_PATH);
         
       } catch {
+        isHandlingUnauthorized = false;
         window.location.assign(LOGIN_PATH);
       }
     }
