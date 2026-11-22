@@ -942,17 +942,55 @@ app.get("/api/equipment/status", verifyToken, async (req, res) => {
   }
 });
 
+// 온·습도 기준 상태 판정 헬퍼
+type EquipmentStatus = "NORMAL" | "WARNING" | "ERROR";
+
+// 온·습도 기준 상태 판정 헬퍼
+function resolveEquipmentStatus(
+  temperature: number | string,
+  humidity: number | string,
+  providedStatus?: string
+): EquipmentStatus {
+  if (
+    providedStatus === "NORMAL" ||
+    providedStatus === "WARNING" ||
+    providedStatus === "ERROR"
+  ) {
+    return providedStatus;
+  }
+
+  const temp = Number(temperature);
+  const hum = Number(humidity);
+
+  // 클린룸 적정 기준 (온도 20~24℃, 습도 40~50%)
+  if (temp < 18 || temp > 26 || hum < 35 || hum > 55) {
+    return "ERROR";
+  }
+  if (temp < 20 || temp > 24 || hum < 40 || hum > 50) {
+    return "WARNING";
+  }
+  return "NORMAL";
+}
+
 app.post("/api/equipment/status", verifyToken, async (req, res) => {
   try {
     const { equipmentName, cleanroomZone, temperature, humidity, status } =
       req.body;
+
+    const resolvedStatus = resolveEquipmentStatus(
+      temperature,
+      humidity,
+      status
+    );
+
     const equipment = await Equipment.create({
       equipmentName,
       cleanroomZone,
       temperature,
       humidity,
-      status,
+      status: resolvedStatus,
     });
+
     return res.status(201).json({
       success: true,
       equipment,
@@ -964,6 +1002,29 @@ app.post("/api/equipment/status", verifyToken, async (req, res) => {
     });
   }
 });
+
+// app.post("/api/equipment/status", verifyToken, async (req, res) => {
+//   try {
+//     const { equipmentName, cleanroomZone, temperature, humidity, status } =
+//       req.body;
+//     const equipment = await Equipment.create({
+//       equipmentName,
+//       cleanroomZone,
+//       temperature,
+//       humidity,
+//       status,
+//     });
+//     return res.status(201).json({
+//       success: true,
+//       equipment,
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "설비 상태 등록 실패",
+//     });
+//   }
+// });
 
 // 설비 상태 변경 API
 app.patch("/api/equipment/status/:id", verifyToken, async (req, res) => {
