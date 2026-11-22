@@ -296,16 +296,6 @@ const seedData = async () => {
             UPDATED_AT: new Date(),
           },
           {
-            COMPONENT_NAME: "48MP Telephoto Camera Module",
-            CATEGORY: "CAMERA",
-            STOCK_QUANTITY: 65,
-            MIN_THRESHOLD: 150,
-            SUPPLIER: "LG Innotek",
-            STATUS: "WARNING",
-            CREATED_AT: new Date(),
-            UPDATED_AT: new Date(),
-          },
-          {
             COMPONENT_NAME: "Grade 5 Titanium Frame",
             CATEGORY: "FRAME",
             STOCK_QUANTITY: 320,
