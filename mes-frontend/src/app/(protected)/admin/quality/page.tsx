@@ -285,7 +285,7 @@ export default function QualityPage() {
                   검사 유형 <S.Required>*</S.Required>
                 </S.Label>
    
-                <Select 
+                <Select
                     id="inspectionType" 
                     value={form.inspectionType} 
                     options={TYPE_OPTIONS}
@@ -421,7 +421,9 @@ export default function QualityPage() {
                 <S.ResultCount>
                   검색 결과 {filteredInspections.length}건
                 </S.ResultCount>
-                <Select id="1"  options={SELECT_OPTIONS} value={resultFilter}
+                <Select id="1" 
+                width="100px" 
+                options={SELECT_OPTIONS} value={resultFilter}
                 onChange={(newValue:string)=>setResultFilter(newValue as InspectionResultFilter)}
                 >
                   <Select.Toggle/>

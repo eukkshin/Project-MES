@@ -123,6 +123,23 @@ const apiBaseURL = normalizeApiBaseURL(
 // 로그인 페이지 경로
 const LOGIN_PATH = "/";
 
+const DEFAULT_REDIRECT_PATH = '/admin/dashboard';
+
+const getSafeRedirectPath = (rawPath:string | null) :string =>{
+  if(!rawPath) return DEFAULT_REDIRECT_PATH;
+
+  const trimmed = rawPath.trim();
+  if(!trimmed){
+    return DEFAULT_REDIRECT_PATH;
+  }
+
+  //// '/'로 시작하고 '//' 또는 '/\' 같은 외부/변칙 경로가 아닌 내부 경로만 허용
+  if(/^\/[^/\\]/.test(trimmed)){
+    return trimmed;
+  }
+  return DEFAULT_REDIRECT_PATH;
+}
+
 // Axios 인스턴스는 하나만 생성
 export const api: AxiosInstance = axios.create({
   baseURL: apiBaseURL,
@@ -204,7 +221,7 @@ api.interceptors.response.use(
 
     // 401 : 인증 실패 (동시 401 발생 시 첫 1회만 처리)
     const isAuthError = status === 401 ;
-      
+
     if (
       isAuthError && 
       typeof window !== "undefined" && 
@@ -219,8 +236,10 @@ api.interceptors.response.use(
         const currentPath =
           `${window.location.pathname}${window.location.search}`;
 
-        if (currentPath !== LOGIN_PATH) {
-          sessionStorage.setItem("postLoginRedirect", currentPath);
+        const safeCurrentPath = getSafeRedirectPath(currentPath);
+
+        if (safeCurrentPath !== LOGIN_PATH) {
+          sessionStorage.setItem("postLoginRedirect", safeCurrentPath);
         }
 
         useAuthStore.getState().logout();
