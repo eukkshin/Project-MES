@@ -19,6 +19,7 @@ import { useAlertStore } from "@/store/useAlertStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { AnimatePresence } from "motion/react";
 import { useGetMessagesReceived } from "@/hooks/useMessage";
+import { useQueryClient } from "@tanstack/react-query";
 
 const menuGroups = [
   {
@@ -66,6 +67,7 @@ const pageTitles: Record<string, string> = {
 export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
 
   const showAlert = useAlertStore(state=>state.showAlert);
 
@@ -116,8 +118,9 @@ export const Header = () => {
 }, []);
 
   const handleLogout = () => {
-      logout();
-      setIsMobileMenuOpen(false);
+      logout();              //Zustand 상태 + localStorage 비우기
+      queryClient.clear();  //React Query 메모리 캐시 비우기
+      setIsMobileMenuOpen(false); 
       router.replace("/");
   };
 

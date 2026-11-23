@@ -11,6 +11,7 @@ import { useAlertStore } from "@/store/useAlertStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { EditInfoPage } from "./edit-info/EditInfo";
 import { ChangeTheme } from "./change-theme/ChangeTheme";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MyPageProps {
   onClose: () => void;
@@ -18,6 +19,7 @@ interface MyPageProps {
 
 export default function MyPage({ onClose }: MyPageProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const showAlert =useAlertStore(state=> state.showAlert);
   const logout = useAuthStore(state=> state.logout);
   const [activeMenu, setActiveMenu] = useState("기본정보");
@@ -41,6 +43,7 @@ export default function MyPage({ onClose }: MyPageProps) {
 
   const handleLogout = () => {
     logout();
+    queryClient.clear();
     onClose();
     router.replace("/");
   };
