@@ -101,6 +101,20 @@ export const Header = () => {
     };
   }, [isMobileMenuOpen]);
 
+  useEffect(() => {
+  const mediaQuery = window.matchMedia("(min-width: 1025px)");
+
+  const syncDrawerWithViewport = () => {
+      if (mediaQuery.matches) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+  syncDrawerWithViewport();
+  mediaQuery.addEventListener("change", syncDrawerWithViewport);
+  
+  return () => mediaQuery.removeEventListener("change", syncDrawerWithViewport);
+}, []);
+
   const handleLogout = () => {
       logout();
       setIsMobileMenuOpen(false);

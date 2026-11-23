@@ -192,15 +192,21 @@ export const MobileOverlay = styled.div`
   position: fixed;
   inset: 0;
   z-index: 1000;
-
   background: rgba(15, 23, 42, 0.55);
+
+  @media (max-width: 700px) {
+    display: none;
+  }
+  @media (min-width: 1025px) {
+    display: none;
+  }
 `;
 
 export const MobileDrawer = styled.aside`
   display: flex;
   flex-direction: column;
 
-  width: min(300px, 85vw);
+  width: min(250px, 75vw);
   height: 100%;
 
   background: #111e32;
@@ -217,6 +223,10 @@ export const MobileDrawerHeader = styled.div`
   padding: 0 22px;
 
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (min-width: 1025px) {
+    display: none;
+  }
 `;
 
 export const MobileBrand = styled.a`
@@ -256,6 +266,28 @@ export const MobileDrawerContent = styled.nav`
   flex: 1;
   overflow-y: auto;
   padding: 24px 14px;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.35);
+  }
+
 `;
 
 export const MobileMenuSection = styled.div`
