@@ -174,6 +174,8 @@ export const LogoutButton = styled.button`
     }
   }
 `;
+const isLightMode = (theme?: { mode?: string }) =>
+  theme?.mode === "light" || !theme?.mode;
 
 export const MobileMenuToggle = styled.button`
   display: none;
@@ -183,11 +185,23 @@ export const MobileMenuToggle = styled.button`
   width: 38px;
   height: 38px;
 
-  border: 1px solid #e2e8f0;
   border-radius: 9px;
-  background: #ffffff;
 
-  color: #334155;
+  border: 1px solid
+    ${({ theme }) =>
+      isLightMode(theme)
+        ? "#e2e8f0"
+        : theme?.colors?.border?.default ?? "#334155"};
+  background: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#ffffff"
+      : theme?.colors?.bg?.surface ?? "#1e293b"};
+
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#334155"
+      : theme?.colors?.text?.primary ?? "#f8fafc"};
+
   font-size: 17px;
   cursor: pointer;
 
