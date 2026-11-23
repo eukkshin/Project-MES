@@ -81,6 +81,7 @@ app.use(
       "http://localhost:3000",
       "https://heartbreakkid.co.kr",
       "http://heartbreakkid.co.kr",
+      "http://www.heartbreakkid.co.kr",
     ] ,
     credentials: true,
   }),

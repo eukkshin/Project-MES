@@ -10,6 +10,7 @@ import DefaultInfo from "./default-info/DefaultInfo";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { EditInfoPage } from "./edit-info/EditInfo";
+import { ChangeTheme } from "./change-theme/ChangeTheme";
 
 interface MyPageProps {
   onClose: () => void;
@@ -29,20 +30,6 @@ export default function MyPage({ onClose }: MyPageProps) {
     };
   }, []);
 
-//   useEffect(() => {
-//   const scrollbarWidth =
-//     window.innerWidth - document.documentElement.clientWidth;
-
-//   document.body.style.overflow = "hidden";
-//   document.body.style.paddingRight = `${scrollbarWidth}px`;
-
-//   return () => {
-//     document.body.style.overflow = "";
-//     document.body.style.paddingRight = "";
-//   };
-// }, []);
-
- 
   const openLogoutModal = () => {
     showAlert(
       "정말 로그아웃하시겠습니까?",
@@ -111,10 +98,10 @@ export default function MyPage({ onClose }: MyPageProps) {
                 </S.SidebarItem>
 
                 <S.SidebarItem
-                  $isActive={activeMenu === "회원가입 정보 변경"}
-                  onClick={() => setActiveMenu("회원가입 정보 변경")}
+                  $isActive={activeMenu === "화면 테마 설정"}
+                  onClick={() => setActiveMenu("화면 테마 설정")}
                 >
-                  회원가입 정보 변경
+                  화면 테마 설정
                 </S.SidebarItem>
 
                 <S.SidebarItem
@@ -137,6 +124,8 @@ export default function MyPage({ onClose }: MyPageProps) {
             {activeMenu === "비밀번호 변경" && <ChangePassword />}
 
             {activeMenu === "계정 정보 변경" && <EditInfoPage />}
+
+            {activeMenu === "화면 테마 설정" && <ChangeTheme />}
             
             <S.CloseButton onClick={onClose}>+</S.CloseButton>
           </S.MainContent>

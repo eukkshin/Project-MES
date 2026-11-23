@@ -1,7 +1,6 @@
 "use client";
 import { createGlobalStyle } from "styled-components";
 
-//background-color: ${(props) => props.theme.colors.background || "#536692"};
 export const GlobalStyle = createGlobalStyle`
   * {
     @font-face {
@@ -70,17 +69,15 @@ export const GlobalStyle = createGlobalStyle`
     padding: 0;
     box-sizing: border-box;
   }
-  /* body {
-    color: ${(props) => props.theme.colors.text || "#333"};
-    font-family: 'Escoredream';
-    font-weight: 400;
-  } */
+
   html {
     /* 테마 모드에 맞춰 브라우저 기본 스크롤바, 폼 컨트롤 색상 자동 전환 */
     color-scheme: ${({ theme }) => (theme.mode === 'light' ? 'light' : 'dark')};
+    scrollbar-gutter: stable; 
   }
 
   body {
+    font-family: 'Escoredream';
     background-color: ${({ theme }) => theme.colors.bg.canvas};
     color: ${({ theme }) => theme.colors.text.primary};
     font-size: ${({ theme }) => theme.typography.fontSize.body};
@@ -103,21 +100,28 @@ export const GlobalStyle = createGlobalStyle`
 
   &::-webkit-scrollbar {
     width: 3px;
+    height: 6px;
   }
 
   &::-webkit-scrollbar-track {
     background: #f1f5f9;
     border-radius: 10px;
+    background: ${({ theme }) => theme.colors.bg.canvas};
+    border-radius: ${({ theme }) => theme.radius.round};
   }
 
   &::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border: 2px solid #f1f5f9;
     border-radius: 10px;
+    background: ${({ theme }) => theme.colors.border.input};
+    border: 1px solid ${({ theme }) => theme.colors.bg.canvas};
+    border-radius: ${({ theme }) => theme.radius.round};
   }
 
   &::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+    background: ${({ theme }) => theme.colors.text.disabled};
   }
   
 `;

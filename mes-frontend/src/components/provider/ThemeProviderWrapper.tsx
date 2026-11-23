@@ -24,7 +24,7 @@ const THEME_MAP: Record<ThemeMode, DefaultTheme> = {
 const ThemeModeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProviderWrapper({ children }: { children: React.ReactNode }) {
-  // SSR 안전성을 위해 초기 상태는 기본값('light')으로 고정
+  
   const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
 
   // 클라이언트 마운트 시 localStorage 또는 OS 다크 모드 설정 복원

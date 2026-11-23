@@ -21,6 +21,7 @@ export const DashboardHeader = styled.div`
 export const DashboardTitle = styled.h1`
   margin: 0;
   color: #172033;
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.8px;

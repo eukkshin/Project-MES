@@ -1,3 +1,5 @@
+"use client";
+
 import styled from "styled-components";
 
 export const PageContainer = styled.div`
@@ -49,6 +51,7 @@ export const PageTitle = styled.h1`
   margin: 0;
 
   color: #172033;
+  /* color: ${({ theme }) => theme.colors.text.primary}; */
 
   font-size: 27px;
 
@@ -67,6 +70,9 @@ export const PageDescription = styled.p`
   line-height: 1.6;
 `;
 
+const isLightMode = (theme?: { mode?: string }) =>
+  theme?.mode === "light" || !theme?.mode;
+
 export const RefreshButton = styled.button`
   display: flex;
 
@@ -80,13 +86,22 @@ export const RefreshButton = styled.button`
 
   padding: 0 15px;
 
-  background: #ffffff;
+  background: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#ffffff"
+      : theme?.colors?.bg?.surface ?? "#1e293b"};
 
-  border: 1px solid #e2e8f0;
+  border: 1px solid
+    ${({ theme }) =>
+      isLightMode(theme)
+        ? "#e2e8f0"
+        : theme?.colors?.border?.default ?? "#334155"};
 
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#475569"
+      : theme?.colors?.text?.primary ?? "#f8fafc"};
   border-radius: 9px;
-
-  color: #475569;
 
   font-size: 12px;
 
@@ -96,14 +111,28 @@ export const RefreshButton = styled.button`
 
   cursor: pointer;
 
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+
   &:hover:not(:disabled) {
-    background: #eff6ff;
+   background: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#eff6ff"
+        : theme?.colors?.bg?.elevated ?? "#334155"};
 
-    color: #2563eb;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#2563eb"
+        : theme?.colors?.primary?.default ?? "#66a3e0"};
 
-    border-color: #bfdbfe;
+    border-color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#bfdbfe"
+        : theme?.colors?.primary?.default ?? "#66a3e0"};
   }
-
   &:disabled {
     opacity: 0.6;
 
@@ -196,7 +225,7 @@ export const PanelIcon = styled.div`
 export const PanelTitle = styled.h2`
   margin: 0 0 6px;
 
-  color: #172033;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   font-size: 15px;
 
@@ -845,8 +874,16 @@ export const DashboardHeader = styled.div`
   flex-direction: column;
   gap: 8px;
 `;
+export const DashboardTitle = styled.div`
+    margin: 0;
+    /* color: #172033; */
+    color: ${({ theme }) => theme?.colors?.text?.primary ?? "#172033"};
+    font-size: 27px;
 
-export const DashboardTitle = PageTitle;
+    font-weight: 800;
+
+    letter-spacing: -0.7px;
+`;
 export const DashboardDescription = PageDescription;
 
 export const CalendarLayout = styled.div`

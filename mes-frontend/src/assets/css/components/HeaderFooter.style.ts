@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import styled from "styled-components";
 
 export const HeaderContainer = styled.header`
@@ -12,8 +11,7 @@ export const HeaderContainer = styled.header`
   height: 76px;
   padding: 0 36px;
 
-  background: #ffffff;
-  border-bottom: 1px solid #e9edf3;
+  background: ${({ theme }) => theme.colors.bg.surface};
   box-sizing: border-box;
 
   @media (max-width: 768px) {
@@ -37,6 +35,7 @@ export const Breadcrumb = styled.div`
 
   color: #94a3b8;
   font-size: 13px;
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   svg {
     flex-shrink: 0;
@@ -44,8 +43,8 @@ export const Breadcrumb = styled.div`
   }
 
   strong {
-    color: #172033;
-    font-weight: 700;
+    color: ${({ theme }) => theme.colors.text.primary};
+    font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -55,7 +54,6 @@ export const Breadcrumb = styled.div`
     span {
       display: none;
     }
-
     svg {
       display: none;
     }
@@ -80,6 +78,13 @@ export const UserAvatar = styled.div`
   border-radius: 11px;
   background: #eff6ff;
   color: #2563eb;
+  background: ${({ theme }) => theme.colors.primary.subtle};
+  color: ${({ theme }) => theme.colors.primary.default};
+  border: ${({theme})=> 
+  theme.mode === 'light'
+  ? 'none'
+  : `1px solid ${theme.colors.border.default}`
+  };
   font-size: 15px;
 
   @media (max-width: 480px) {
@@ -101,17 +106,19 @@ export const UserInfoButton = styled.button`
 
   strong {
     color: #172033;
+    color: ${({ theme }) => theme.colors.text.primary};
     font-size: 13px;
     font-weight: 700;
+    font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
   }
 
   span {
-    color: #94a3b8;
+    color: ${({ theme }) => theme.colors.text.secondary};
     font-size: 11px;
   }
 
   &:hover strong {
-    color: #2563eb;
+    color: ${({ theme }) => theme.colors.primary.default};
   }
 
   @media (max-width: 480px) {
@@ -126,6 +133,7 @@ export const HeaderDivider = styled.div`
   height: 26px;
   margin: 0 8px;
   background: #e2e8f0;
+  background: ${({ theme }) => theme.colors.border.default};
 
   @media (max-width: 480px) {
     display: none;
@@ -141,13 +149,13 @@ export const LogoutButton = styled.button`
   height: 38px;
   padding: 0 14px;
 
-  border: 1px solid #e2e8f0;
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 9px;
-  background: #ffffff;
+  background: ${({ theme }) => theme.colors.bg.surface};
 
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
   font-family: inherit;
   cursor: pointer;
 
@@ -376,8 +384,8 @@ export const FooterContainer = styled.footer`
   min-height: 72px;
   padding: 16px 36px;
 
-  border-top: 1px solid #e9edf3;
-  background: #ffffff;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.default};
+  background: ${({ theme }) => theme.colors.bg.surface};
   box-sizing: border-box;
 
   @media (max-width: 768px) {
@@ -391,6 +399,8 @@ export const FooterInfo = styled.div`
   color: #94a3b8;
   font-size: 12px;
   line-height: 1.7;
+  /* color: ${({ theme }) => theme.colors.text.secondary}; */
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
 
   strong {
     color: #64748b;

@@ -83,7 +83,7 @@ export const PageDashTitle = styled.div`
   align-items: center;
   gap: 20px;
   margin: 0;
-  color: #172033;
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.8px;

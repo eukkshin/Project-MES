@@ -41,9 +41,11 @@ export const MyPageContainer = styled(motion.div)`
   min-width: 0;
   min-height: 0;
 
-  background-color: #fff;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
+  background-color: ${({ theme }) => theme.colors.bg.elevated};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
+  border-radius: ${({ theme }) => theme.radius.md};
+  box-shadow: ${({ theme }) => theme.shadows.modal};
 
   z-index: 1000;
   overflow: hidden;
@@ -53,26 +55,26 @@ export const MyPageContainer = styled(motion.div)`
 
 export const MyPageSidebar = styled.div`
   width: 180px;
-  background-color: #f8f9fa;
-  border-right: 1px solid #eee;
-  padding: 24px 16px;
-  padding-right: 0;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
+  border-right: 1px solid ${({ theme }) => theme.colors.border.default};
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
 `;
 
 export const SidebarMainTitle = styled.h2`
-  padding: 0 0 24px 8px;
-  font-size: 18px;
-  font-weight: 600;
-  color: #000;
-  border-bottom: 1px solid #eee;
+  margin: 0 12px;
+  padding: 0 4px 20px 13px;
+  font-size: ${({theme})=> theme.typography.fontSize.h2};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
 `;
 
 export const SidebarDivider = styled.div`
-  border-bottom: 1px solid #eee;
-  margin: 0;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
+  margin: 0 12px;
 `;
 
 export const SidebarSection = styled.div`
@@ -80,9 +82,10 @@ export const SidebarSection = styled.div`
 `;
 
 export const SidebarTitle = styled.h4`
-  margin: 16px 0 16px 0;
+  margin: 16px 0;
+  padding: 0 12px;
   font-size: 12px;
-  color: #adb5bd;
+  color: ${({ theme }) => theme.colors.text.disabled};
   text-transform: uppercase;
   letter-spacing: 0.5px;
 `;
@@ -102,9 +105,9 @@ interface SidebarItemProps {
 
 export const SidebarItem = styled.li<SidebarItemProps>`
   display: block;
-  padding: 10px 0;
+  padding: 10px;
   margin-left: 4px;
-  color: #475569;
+  color: ${({ theme }) => theme.colors.text.secondary};
   text-decoration: none;
   font-size: 0.8rem;
   font-weight: 500;
@@ -114,10 +117,13 @@ export const SidebarItem = styled.li<SidebarItemProps>`
   cursor: pointer;
 
   &:hover {
-    background-color: #f1f5f9;
-    color: ${({ $isLogout }) => ($isLogout ? "#fa5252" : "#2563eb")};
-    border-right: ${({ $isLogout }) =>
-      $isLogout ? "3px solid #fa5252" : "3px solid #2563eb"};
+    background-color: ${({ theme }) => theme.colors.bg.surface};
+    color: ${({ $isLogout, theme }) =>
+      $isLogout ? theme.colors.status.danger.text : theme.colors.primary.default};
+    border-right: ${({ $isLogout, theme }) =>
+      $isLogout
+        ? `3px solid ${theme.colors.status.danger.text}`
+        : `3px solid ${theme.colors.primary.default}`};
   }
 
   ${(props) =>
@@ -132,6 +138,20 @@ export const SidebarItem = styled.li<SidebarItemProps>`
         background-color: #e7f5ff;
         color: #2563eb;
         border-right: 3px solid #2563eb;
+      }
+    `}
+  ${({ $isActive, theme }) =>
+    $isActive &&
+    `
+      background-color: ${theme.colors.primary.subtle};
+      color: ${theme.colors.primary.default};
+      border-right: 3px solid ${theme.colors.primary.default};
+      font-weight: 600;
+
+      &:hover {
+        background-color: ${theme.colors.primary.subtle};
+        color: ${theme.colors.primary.default};
+        border-right: 3px solid ${theme.colors.primary.default};
       }
     `}
 `;
@@ -169,27 +189,29 @@ export const ContentScroll = styled.div`
 
   &::-webkit-scrollbar-thumb {
     background-color: #dee2e6;
+    background-color: ${({ theme }) => theme.colors.border.input};
     border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
     background-color: #ced4da;
+    background-color: ${({ theme }) => theme.colors.text.disabled};
   }
 `;
 
 export const ContentTitle = styled.h3`
   margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
+  font-size: ${({ theme }) => theme.typography.fontSize.h2};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const PopupList = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0 0 20px 0;
-  border: 1px solid #eee;
-  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
+  border-radius: ${({ theme }) => theme.radius.md};
   overflow: hidden;
   flex: 1;
 `;
@@ -200,14 +222,14 @@ export const PopupItem = styled.li`
   padding: 14px 16px;
   cursor: pointer;
   gap: 10px;
-  background-color: #fff;
+  background-color: ${({ theme }) => theme.colors.bg.surface};
 
   &:hover {
-    background-color: #f9f9f9;
+    background-color: ${({ theme }) => theme.colors.bg.canvas};
   }
 
   & + & {
-    border-top: 1px solid #eee;
+    border-top: 1px solid ${({ theme }) => theme.colors.border.default};
   }
 `;
 
@@ -219,8 +241,8 @@ export const Icon = styled.span`
 
 export const ItemText = styled.span`
   padding-left: 10px;
-  border-left: 1px solid #e0e0e0;
-  color: #333;
+  border-left: 1px solid ${({ theme }) => theme.colors.border.default};
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 15px;
 `;
 
@@ -232,7 +254,7 @@ export const CloseButton = styled.button`
   background-color: transparent;
   border: none;
 
-  color: #000;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   font-size: 24px;
   font-weight: 500;
@@ -263,9 +285,9 @@ export const DeProfileCard = styled.div`
   display: flex;
   align-items: center;
   padding: 20px;
-  border: 1px solid #e9ecef;
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 10px;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.bg.surface};
 `;
 
 export const DeProfileImage = styled.div`
@@ -278,11 +300,15 @@ export const DeProfileImage = styled.div`
 
   flex-shrink: 0;
 
-  border-radius: 50%;
+  border-radius: ${({ theme }) => theme.radius.circle};
 
-  background-color: #e7f5ff;
-  color: #2563eb;
-
+  background-color: ${({ theme }) => theme.colors.primary.subtle};
+  color: ${({ theme }) => theme.colors.primary.default};
+  border: ${({theme})=> 
+  theme.mode === 'light'
+  ? 'transparent'
+  : `1px solid ${theme.colors.border.default}`
+  };
   font-size: 22px;
 `;
 
@@ -296,16 +322,16 @@ export const DeUserName = styled.h4`
   margin: 0;
 
   font-size: 17px;
-  font-weight: 600;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
 
-  color: #212529;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const DeUserRole = styled.p`
   margin: 5px 0 0;
 
   font-size: 13px;
-  color: #868e96;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const DeSection = styled.section`
@@ -316,16 +342,16 @@ export const DeSectionTitle = styled.h4`
   margin: 0 0 10px;
 
   font-size: 13px;
-  font-weight: 600;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
 
-  color: #495057;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const DeInfoCard = styled.div`
-  border: 1px solid #e9ecef;
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 10px;
 
-  background-color: #fff;
+  background-color: ${({ theme }) => theme.colors.bg.surface};
 
   overflow: hidden;
 `;
@@ -338,8 +364,14 @@ export const DeInfoItem = styled.div`
 
   padding: 10px 16px;
 
+  background-color: ${({ theme }) => theme.colors.bg.surface};
+  color: ${({ theme }) => theme.colors.text.primary};
   & + & {
-    border-top: 1px solid #f1f3f5;
+    border-top: 1px solid
+      ${({ theme }) =>
+        theme.mode === "light"
+         ? theme.colors.border.default ?? "#e0e0e0"
+         : "rgba(148, 163, 184, 0.16)"};
   }
 `;
 
@@ -355,8 +387,8 @@ export const DeInfoIcon = styled.div`
 
   border-radius: 7px;
 
-  background-color: #f8f9fa;
-  color: #868e96;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   font-size: 13px;
 `;
@@ -374,14 +406,14 @@ export const DeInfoLabel = styled.span`
   font-size: 11px;
   font-weight: 500;
 
-  color: #adb5bd;
+  color: ${({ theme }) => theme.colors.text.disabled};
 `;
 
 export const DeInfoValue = styled.span`
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.typography.fontSize.body};
   font-weight: 500;
 
-  color: #343a40;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const DeSecurityCard = styled.div`
@@ -392,9 +424,9 @@ export const DeSecurityCard = styled.div`
 
   padding: 16px 18px;
 
-  background-color: #fff;
+  background-color: ${({ theme }) => theme.colors.bg.surface};
 
-  border: 1px solid #e9ecef;
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 10px;
 `;
 
@@ -406,11 +438,11 @@ export const DeSecurityIcon = styled.div`
   align-items: center;
   justify-content: center;
 
-  background-color: #f8f9fa;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
 
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.radius.md};
 
-  color: #495057;
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   font-size: 15px;
 
@@ -427,29 +459,29 @@ export const DeSecurityContent = styled.div`
 `;
 
 export const DeSecurityTitle = styled.div`
-  font-size: 14px;
-  font-weight: 600;
+  font-size: ${({ theme }) => theme.typography.fontSize.body};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
 
-  color: #343a40;
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const DeSecurityDescription = styled.div`
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
 
-  color: #868e96;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const DeSecurityButton = styled.button`
   padding: 8px 14px;
 
-  background-color: #f1f3f5;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
 
-  border: none;
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 6px;
 
-  color: #495057;
+  color: ${({ theme }) => theme.colors.text.primary};
 
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
   font-weight: 500;
 
   cursor: pointer;
@@ -457,10 +489,10 @@ export const DeSecurityButton = styled.button`
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: #e9ecef;
+    background-color: ${({ theme }) => theme.colors.primary.subtle};
+    color: ${({ theme }) => theme.colors.primary.default};
   }
 `;
-
 
 export const DeEditActions = styled.div`
   display: flex;
@@ -481,16 +513,21 @@ export const DeSaveButton = styled.button`
   border: none;
   border-radius: 6px;
 
-  background-color: #2563eb;
-  color: #fff;
+  background-color: ${({ theme }) => theme.colors.primary.default};
+  color: ${({ theme }) => theme.colors.text.inverse};
 
   font-size: 13px;
-  font-weight: 600;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
 
   cursor: pointer;
 
+  &:hover:not(:disabled) {
+    background-color: ${({ theme }) => theme.colors.primary.hover};
+  }
+
   &:disabled {
-    background-color: #adb5bd;
+    background-color: ${({ theme }) => theme.colors.border.input};
+    color: ${({ theme }) => theme.colors.text.disabled};
     cursor: not-allowed;
   }
 `;
@@ -505,7 +542,6 @@ export const DeEditGrid = styled.form`
   gap: 20px 18px;
 
   padding: 5px 10px;
-
 `;
 
 export const DeEditField = styled.div<DeEditFieldProps>`
@@ -515,8 +551,7 @@ export const DeEditField = styled.div<DeEditFieldProps>`
 
   min-width: 0;
 
-  grid-column: ${({ $fullWidth }) =>
-    $fullWidth ? "1 / -1" : "auto"};
+  grid-column: ${({ $fullWidth }) => ($fullWidth ? "1 / -1" : "auto")};
 `;
 
 export const DeEditLabel = styled.label`
@@ -524,12 +559,12 @@ export const DeEditLabel = styled.label`
   align-items: center;
   gap: 8px;
 
-  font-size: 12px;
-  font-weight: 600;
-  color: #495057;
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   svg {
-    color: #868e96;
+    color: ${({ theme }) => theme.colors.text.disabled};
     font-size: 13px;
   }
 `;
@@ -539,19 +574,19 @@ export const DeEditInput = styled.input`
   height: 40px;
   padding: 0 12px;
 
-  border: 1px solid #e9ecef;
+  border: 1px solid ${({ theme }) => theme.colors.border.input};
   border-radius: 7px;
 
   outline: none;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.bg.surface};
 
-  color: #343a40;
+  color: ${({ theme }) => theme.colors.text.primary};
   font-size: 13px;
 
   transition: border-color 0.2s ease;
 
   &:focus {
-    border-color: #2563eb;
+    border-color: ${({ theme }) => theme.colors.border.focus};
   }
 `;
 
@@ -576,9 +611,10 @@ export const InfoCard = styled.div`
   padding: 24px;
   box-sizing: border-box;
 
-  background-color: #ffffff;
-  border: 1px solid #e9ecef;
+  background-color: ${({ theme }) => theme.colors.bg.surface};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 10px;
 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  box-shadow: ${({ theme }) => theme.shadows.subtle};
 `;

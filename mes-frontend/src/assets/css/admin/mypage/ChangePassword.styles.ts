@@ -9,6 +9,7 @@ export const PwContainer = styled.div`
   justify-content: center;
 
   padding: 8px 0;
+  margin-top: -30px;
 `;
 
 export const PwCard = styled.div`
@@ -17,9 +18,11 @@ export const PwCard = styled.div`
 
   padding: 24px;
 
-  background-color: #ffffff;
-  border: 1px solid #e9ecef;
+  background-color: ${({ theme }) => theme.colors.bg.surface};
+  color: ${({ theme }) => theme.colors.text.primary};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 10px;
+  box-shadow: ${({ theme }) => theme.shadows.subtle};
 `;
 
 export const PwHeader = styled.div`
@@ -36,13 +39,20 @@ export const PwIcon = styled.div`
   align-items: center;
   justify-content: center;
 
-  background-color: #f8f9fa;
-  border-radius: 8px;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
+  border-radius: ${({ theme }) => theme.radius.md};
 
-  color: #495057;
+  color: ${({ theme }) => theme.colors.text.secondary};
   font-size: 16px;
 
   flex-shrink: 0;
+
+  > svg {
+    position: relative;
+    left: 2px; 
+  }
+
 `;
 
 export const PwHeaderText = styled.div`
@@ -55,15 +65,15 @@ export const PwTitle = styled.h2`
   margin: 0;
 
   font-size: 16px;
-  font-weight: 600;
-  color: #343a40;
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
+  color: ${({ theme }) => theme.colors.text.primary};
 `;
 
 export const PwDescription = styled.p`
   margin: 0;
 
-  font-size: 12px;
-  color: #868e96;
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const PwDivider = styled.div`
@@ -72,7 +82,7 @@ export const PwDivider = styled.div`
 
   margin: 20px 0;
 
-  background-color: #f1f3f5;
+  background-color: ${({ theme }) => theme.colors.border.default};
 `;
 
 export const PwForm = styled.form`
@@ -90,7 +100,7 @@ export const PwField = styled.div`
 export const PwLabel = styled.label`
   font-size: 13px;
   font-weight: 500;
-  color: #495057;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const PwInput = styled.input`
@@ -101,47 +111,52 @@ export const PwInput = styled.input`
 
   box-sizing: border-box;
 
-  background-color: #ffffff;
-  border: 1px solid #dee2e6;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
+  border: 1px solid ${({ theme }) => theme.colors.border.input};
   border-radius: 7px;
 
   outline: none;
 
   font-size: 13px;
-  color: #343a40;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   transition:
     border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
 
   &::placeholder {
-    color: #adb5bd;
+    color: ${({ theme }) => theme.colors.text.disabled};
   }
 
   &:hover {
-    border-color: #ced4da;
+    border-color: ${({ theme }) => theme.colors.border.focus};
   }
 
   &:focus {
-    border-color: #94a3b8;
-    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
+    border-color: ${({ theme }) => theme.colors.border.focus};
+    box-shadow: 0 0 0 3px
+      ${({ theme }) =>
+        theme.mode === "light"
+          ? "rgba(37, 99, 235, 0.12)"
+          : "rgba(102, 163, 224, 0.2)"};
   }
 `;
 
 export const PwNotice = styled.div`
   padding: 13px 14px;
 
-  background-color: #f8f9fa;
-  border: 1px solid #f1f3f5;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: 7px;
 `;
 
 export const PwNoticeTitle = styled.div`
   margin-bottom: 4px;
 
-  font-size: 12px;
-  font-weight: 600;
-  color: #495057;
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.semiBold};
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const PwNoticeText = styled.p`
@@ -149,7 +164,7 @@ export const PwNoticeText = styled.p`
 
   font-size: 11px;
   line-height: 1.5;
-  color: #868e96;
+  color: ${({ theme }) => theme.colors.text.secondary};
 `;
 
 export const PwButton = styled.button`
@@ -161,8 +176,8 @@ export const PwButton = styled.button`
   border: none;
   border-radius: 7px;
 
-  background-color: #2563eb;
-  color: #ffffff;
+  background-color: ${({ theme }) => theme.colors.primary.default};
+  color: ${({ theme }) => theme.colors.text.inverse};
 
   font-size: 13px;
   font-weight: 500;
@@ -171,14 +186,18 @@ export const PwButton = styled.button`
 
   transition:
     background-color 0.15s ease,
-    transform 0.1s ease;
+    transform 0.1s ease,
+    filter 0.18s ease;
 
-  &:hover {
-    background-color: #1d4ed8;
+  &:hover:not(:disabled) {
+    background-color: ${({ theme }) => theme.colors.primary.hover};
   }
-
+  &:active:not(:disabled) {
+      transform: translateY(1px);
+    }
   &:disabled {
-    background-color: #adb5bd;
+    background-color: ${({ theme }) => theme.colors.border.input};
+    color: ${({ theme }) => theme.colors.text.disabled};
     cursor: not-allowed;
   }
 `;
@@ -187,5 +206,8 @@ export const PwValidation = styled.span<{ $isValid: boolean }>`
   font-size: 11px;
   font-weight: 500;
 
-  color: ${({ $isValid }) => ($isValid ? "#2f9e44" : "#e03131")};
+  color: ${({ theme, $isValid }) =>
+    $isValid
+      ? theme.colors.status.success.text
+      : theme.colors.status.danger.text};
 `;

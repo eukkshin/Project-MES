@@ -27,13 +27,11 @@ export const CalendarWrapper = styled.section`
 
   overflow: hidden;
 
-  background: #ffffff;
-
-  border: 1px solid #e5eaf1;
-
   border-radius: 16px;
 
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.035);
+  background: ${({ theme }) => theme.colors.bg.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
+  box-shadow: ${({ theme }) => theme.shadows.subtle};
 `;
 
 export const CalendarTopBar = styled.div`
@@ -58,10 +56,9 @@ export const CalendarTopBar = styled.div`
 
 export const CalendarTitleGroup = styled.div`
   display: flex;
-
-  align-items: flex-start;
-
+  align-items: center;
   gap: 14px;
+  min-width: 0;
 `;
 
 export const CalendarIcon = styled.div`
@@ -77,13 +74,19 @@ export const CalendarIcon = styled.div`
 
   height: 44px;
 
-  background: #eff6ff;
+  background: ${({ theme }) => theme.colors.primary.subtle};
 
   border-radius: 12px;
 
-  color: #2563eb;
+  color: ${({ theme }) => theme.colors.primary.default};
 
   font-size: 19px;
+
+ border: ${({ theme }) =>
+  theme?.mode === "light"
+    ? "none"
+    : `1px solid ${theme.colors.border.default}`
+  };
 `;
 
 export const CalendarEyebrow = styled.p`
@@ -100,8 +103,7 @@ export const CalendarEyebrow = styled.p`
 
 export const CalendarTitle = styled.h2`
   margin: 0;
-
-  color: #172033;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   font-size: 20px;
 
@@ -163,6 +165,12 @@ export const TodayButton = styled.button`
   font-size: 12px;
 
   font-weight: 700;
+  
+  background: ${({ theme }) => theme.colors.bg.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
+  border-radius: ${({ theme }) => theme.radius.md};
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
+  font-weight: ${({ theme }) => theme.typography.fontWeight.bold};
 
   font-family: inherit;
 
@@ -198,24 +206,22 @@ export const MonthArrowButton = styled.button`
 
   height: 36px;
 
-  background: #ffffff;
-
-  border: 1px solid #e2e8f0;
-
-  border-radius: 8px;
-
-  color: #64748b;
-
   font-size: 12px;
+
+  background: ${({ theme }) => theme.colors.bg.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border.default};
+  border-radius: ${({ theme }) => theme.radius.md};
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
 
   cursor: pointer;
 
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f5f9;
+    background: #eff6ff;
 
-    border-color: #cbd5e1;
+    border-color: #bfdbfe;
 
     color: #2563eb;
   }
@@ -230,17 +236,15 @@ export const MonthLabel = styled.span`
 
   text-align: center;
 
-  color: #172033;
+  color: ${({ theme }) => theme.colors.text.primary};
 
   font-size: 15px;
-
   font-weight: 800;
 
   letter-spacing: -0.4px;
 
   @media (max-width: 480px) {
     min-width: 100px;
-
     font-size: 14px;
   }
 `;
@@ -256,11 +260,13 @@ export const CalendarSummary = styled.div`
 
   padding: 15px 30px;
 
-  background: #fafbfd;
+  background: ${({ theme }) =>
+    theme?.mode === "light" || !theme?.mode
+      ? "#fafbfd"
+      : theme?.colors?.bg?.surface ?? "#1e293b"};
 
-  border-top: 1px solid #edf0f5;
-
-  border-bottom: 1px solid #edf0f5;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.default};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
 
   @media (max-width: 768px) {
     gap: 12px 18px;
@@ -276,9 +282,9 @@ export const CalendarSummaryItem = styled.div`
 
   gap: 8px;
 
-  color: #64748b;
-
   font-size: 12px;
+  color: ${({ theme }) => theme.colors.text.secondary};
+  font-size: ${({ theme }) => theme.typography.fontSize.caption};
 
   font-weight: 500;
 `;
@@ -320,7 +326,6 @@ export const CalendarGrid = styled.div`
 
   grid-template-columns: repeat(7, minmax(0, 1fr));
 
-  /* 泥??됱? ?붿씪 ?ㅻ뜑, ?댄썑 ?됱? ?좎쭨 二쇱감 */
   grid-template-rows: 52px;
   grid-auto-rows: minmax(0, 1fr);
 
@@ -347,7 +352,7 @@ export const DayName = styled.div`
 
   height: 52px;
 
-  color: #64748b;
+  color: ${({ theme }) => theme.colors.text.secondary};
 
   font-size: 12px;
 
@@ -400,15 +405,21 @@ export const DayCell = styled.button<DayCellProps>`
   padding: 9px 10px;
 
   border: 1px solid #edf0f5;
+  border: 1px solid ${({ theme }) => 
+    theme.mode === 'light' || !theme?.mode
+    ? '#edf0f5'
+    : theme.colors.border.default ?? '#334155'};
 
   border-radius: 0;
 
-  background: ${({ $isOutside, $isToday }) => {
-    if ($isOutside) return "#fafbfd";
-
-    if ($isToday) return "#f4f8ff";
-
-    return "#ffffff";
+  background: ${({ $isOutside, $isToday,theme }) => {
+    if ($isOutside) {
+      return theme?.mode === "light" || !theme?.mode
+        ? "#fafbfd"
+        : theme?.colors?.bg?.canvas ?? "#0f172a";
+    }
+    if ($isToday) return theme.colors.primary.subtle;
+    return theme.colors.bg.surface;
   }};
 
   color: ${({ $isOutside, $isHoliday, $isSunday, $isSaturday }) => {
@@ -432,10 +443,9 @@ export const DayCell = styled.button<DayCellProps>`
     box-shadow 0.18s ease;
 
   &:hover {
-    background: ${({ $isOutside }) => ($isOutside ? "#f1f5f9" : "#eff6ff")};
-
-    box-shadow: inset 0 0 0 1px #bfdbfe;
-
+    background: ${({ $isOutside }) => ($isOutside 
+      ? "#f1f5f9" 
+      : "#eff6ff")};
     z-index: 1;
   }
 
@@ -509,7 +519,11 @@ export const DayScheduleCount = styled.span`
 
   border-radius: 5px;
 
-  background: #ecfdf5;
+  background: ${({theme})=>
+  theme?.mode === 'light' || !theme?.mode 
+  ? "#ecfdf5"
+  : "transparent"
+};
 
   color: #059669;
 
@@ -533,7 +547,11 @@ export const HolidayLabel = styled.span`
 
   border-radius: 5px;
 
-  background: #fef2f2;
+  background: ${({theme})=>
+  theme?.mode === 'light' || !theme?.mode 
+  ? "#fef2f2"
+  : "transparent"
+};
 
   color: #ef4444;
 
@@ -663,7 +681,7 @@ export const CalendarBottomBar = styled.div`
 
   padding: 16px 30px;
 
-  border-top: 1px solid #edf0f5;
+  border-top: 1px solid ${({ theme }) => theme.colors.border.default};
 
   color: #94a3b8;
 
@@ -701,10 +719,16 @@ export const SchedulePreview = styled.div<{ $type: string }>`
   background: ${({ $type }) =>
   $type === "PUBLIC" ? "#FFF0D9" : "#EFF6FF"};
 
-color: ${({ $type }) =>
-  $type === "PUBLIC" ? "#A84B00" : "#2563EB"};
-  font-size: 10px;
-  font-weight: 600;
+  background: ${({ $type, theme }) => {
+    const isLight = theme?.mode === "light" || !theme?.mode;
+    if (!isLight) return "transparent";
+    return $type === "PUBLIC" ? "#FFF0D9" : "#EFF6FF";
+  }};
+
+  color: ${({ $type }) =>
+    $type === "PUBLIC" ? "#A84B00" : "#2563EB"};
+    font-size: 10px;
+    font-weight: 600;
 
   span {
     overflow: hidden;
@@ -759,6 +783,9 @@ export const CalendarMain = styled.div`
   min-height: 0;
 `;
 
+const isLightMode = (theme?: { mode?: string }) =>
+  theme?.mode === "light" || !theme?.mode;
+
 /* ==========================================================================
    오른쪽 일정 사이드 패널 (Apple Style)
    ========================================================================== */
@@ -771,12 +798,24 @@ export const ScheduleSidePanel = styled.aside<{ $isOpen: boolean }>`
   min-width: 0;
   overflow: hidden;
 
-  background: rgba(248, 250, 252, 0.95);
+  background: ${({ theme }) =>
+    isLightMode(theme)
+      ? "rgba(248, 250, 252, 0.95)"
+      : theme?.colors?.bg?.surface ?? "#1e293b"};
   backdrop-filter: blur(20px);
-  border: ${({ $isOpen }) => ($isOpen ? "1px solid #e2e8f0" : "none")};
+  border: ${({ $isOpen, theme }) =>
+    !$isOpen
+      ? "none"
+      : isLightMode(theme)
+        ? "1px solid #e2e8f0"
+        : `1px solid ${theme?.colors?.border?.default ?? "#334155"}`};
   border-radius: 20px;
-  box-shadow: ${({ $isOpen }) =>
-    $isOpen ? "0 10px 30px rgba(15, 23, 42, 0.06)" : "none"};
+  box-shadow: ${({ $isOpen, theme }) =>
+    !$isOpen
+      ? "none"
+      : isLightMode(theme)
+        ? "0 10px 30px rgba(15, 23, 42, 0.06)"
+        : theme?.shadows?.elevated ?? "0 4px 12px rgba(0, 0, 0, 0.5)"};
   opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
   transition:
     width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
@@ -799,7 +838,11 @@ export const SchedulePanelHeader = styled.div`
   justify-content: space-between;
   gap: 12px;
   padding: 24px 24px 16px;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid
+    ${({ theme }) =>
+      isLightMode(theme)
+        ? "#edf2f7"
+        : theme?.colors?.border?.default ?? "#334155"};
 `;
 
 export const SchedulePanelTitle = styled.div`
@@ -808,7 +851,10 @@ export const SchedulePanelTitle = styled.div`
   gap: 3px;
 
   small {
-    color: #94a3b8;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#94a3b8"
+        : theme?.colors?.text?.disabled ?? "#64748b"};
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 1px;
@@ -820,7 +866,10 @@ export const SchedulePanelTitle = styled.div`
     font-size: 18px;
     font-weight: 800;
     letter-spacing: -0.5px;
-    color: #0f172a;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#0f172a"
+        : theme?.colors?.text?.primary ?? "#f8fafc"};
   }
 `;
 
@@ -833,15 +882,27 @@ export const SchedulePanelClose = styled.button`
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: #f1f5f9;
-  color: #64748b;
+  background: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#f1f5f9"
+      : theme?.colors?.bg?.elevated ?? "#334155"};
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#64748b"
+      : theme?.colors?.text?.secondary ?? "#cbd5e1"};
   font-size: 18px;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: #e2e8f0;
-    color: #0f172a;
+    background: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#e2e8f0"
+        : theme?.colors?.border?.input ?? "#475569"};
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#0f172a"
+        : theme?.colors?.text?.primary ?? "#f8fafc"};
     transform: scale(1.05);
   }
 
@@ -854,8 +915,8 @@ export const ScheduleDateSummary = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 18px 24px; 
-  padding: 0 4px; 
+  margin: 18px 24px;
+  padding: 0 4px;
   background: transparent;
   border: none;
   box-shadow: none;
@@ -863,7 +924,10 @@ export const ScheduleDateSummary = styled.div`
   span {
     font-size: 13px;
     font-weight: 600;
-    color: #64748b;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#64748b"
+        : theme?.colors?.text?.secondary ?? "#cbd5e1"};
   }
 
   .date-display {
@@ -875,13 +939,19 @@ export const ScheduleDateSummary = styled.div`
       font-size: 24px;
       font-weight: 800;
       letter-spacing: -0.5px;
-      color: #2563eb;
+      color: ${({ theme }) =>
+        isLightMode(theme)
+          ? "#2563eb"
+          : theme?.colors?.primary?.default ?? "#66a3e0"};
     }
 
     small {
       font-size: 13px;
       font-weight: 600;
-      color: #64748b;
+      color: ${({ theme }) =>
+        isLightMode(theme)
+          ? "#64748b"
+          : theme?.colors?.text?.secondary ?? "#cbd5e1"};
     }
   }
 `;
@@ -890,40 +960,53 @@ export const ScheduleDateSummary = styled.div`
    일정 리스트 & 카드 영역
    ========================================================================== */
 
-   export const SchedulePanelList = styled.div`
-   display: flex;
-   flex-direction: column;
-   gap: 12px;
-   flex: 1;
-   min-height: 0;
-   overflow-y: auto;
-   padding: 6px 20px 24px;
- 
-   &::-webkit-scrollbar {
-     width: 4px;
-   }
- 
-   &::-webkit-scrollbar-thumb {
-     background: #cbd5e1;
-     border-radius: 10px;
-   }
- 
-   &::-webkit-scrollbar-track {
-     background: transparent;
-   }
- `;
+export const SchedulePanelList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 20px 24px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#cbd5e1"
+        : theme?.colors?.border?.input ?? "#475569"};
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+`;
 
 export const SchedulePanelCard = styled.div<{
-  $type: "PUBLIC" | "PERSONAL" | 'NOTICE';
+  $type: "PUBLIC" | "PERSONAL" | "NOTICE";
 }>`
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 16px 16px 16px 28px; 
-  background: #fff;
+  padding: 16px 16px 16px 28px;
+  background: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#fff"
+      : theme?.colors?.bg?.elevated ?? "#334155"};
+  border: ${({ theme }) =>
+    isLightMode(theme)
+      ? "1px solid transparent"
+      : `1px solid ${theme?.colors?.border?.default ?? "#475569"}`};
   border-radius: 18px;
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+  box-shadow: ${({ theme }) =>
+    isLightMode(theme)
+      ? "0 4px 16px rgba(15, 23, 42, 0.03)"
+      : theme?.shadows?.subtle ?? "0 2px 4px rgba(0, 0, 0, 0.4)"};
   overflow: hidden;
   cursor: pointer;
 
@@ -937,17 +1020,36 @@ export const SchedulePanelCard = styled.div<{
     bottom: 14px;
     width: 4px;
     border-radius: 9999px;
-    background: ${({ $type }) =>
-      $type === "PUBLIC" ? "#f59e0b" : "#2563eb"};
+    background: ${({ $type, theme }) => {
+      if (isLightMode(theme)) {
+        return $type === "PUBLIC" ? "#f59e0b" : "#2563eb";
+      }
+      return $type === "PUBLIC"
+        ? theme?.colors?.status?.warning?.text ?? "#fbbf24"
+        : theme?.colors?.primary?.default ?? "#66a3e0";
+    }};
     transition: all 0.25s ease;
   }
 
   &:hover {
-    border-color: ${({ $type }) =>
-      $type === "PUBLIC" ? "#fde68a" : "#bfdbfe"};
-    background: ${({ $type }) =>
-      $type === "PUBLIC" ? "#fffdfa" : "#fafcff"};
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.07);
+    border-color: ${({ $type, theme }) => {
+      if (isLightMode(theme)) {
+        return $type === "PUBLIC" ? "#fde68a" : "#bfdbfe";
+      }
+      return $type === "PUBLIC"
+        ? theme?.colors?.status?.warning?.border ?? "#fbbf24"
+        : theme?.colors?.primary?.default ?? "#66a3e0";
+    }};
+    background: ${({ $type, theme }) => {
+      if (isLightMode(theme)) {
+        return $type === "PUBLIC" ? "#fffdfa" : "#fafcff";
+      }
+      return theme?.colors?.bg?.surface ?? "#1e293b";
+    }};
+    box-shadow: ${({ theme }) =>
+      isLightMode(theme)
+        ? "0 10px 25px rgba(15, 23, 42, 0.07)"
+        : theme?.shadows?.elevated ?? "0 4px 12px rgba(0, 0, 0, 0.5)"};
     transform: translateY(-0.5px) scale(1.01);
 
     &::before {
@@ -971,7 +1073,7 @@ export const SchedulePanelCardTop = styled.div`
 
 // 애플 캡슐 배지 (아이콘 + 텍스트 조합)
 export const ScheduleTypeBadge = styled.span<{
-  $type: "PUBLIC" | "PERSONAL" | 'NOTICE';
+  $type: "PUBLIC" | "PERSONAL" | "NOTICE";
 }>`
   display: inline-flex;
   align-items: center;
@@ -981,10 +1083,31 @@ export const ScheduleTypeBadge = styled.span<{
   font-size: 11px;
   font-weight: 700;
   letter-spacing: -0.3px;
-  color: ${({ $type }) => ($type === "PUBLIC" ? "#d97706" : "#2563eb")};
-  background: ${({ $type }) => ($type === "PUBLIC" ? "#fff8eb" : "#eff6ff")};
+  color: ${({ $type, theme }) => {
+    if (isLightMode(theme)) {
+      return $type === "PUBLIC" ? "#d97706" : "#2563eb";
+    }
+    return $type === "PUBLIC"
+      ? theme?.colors?.status?.warning?.text ?? "#fbbf24"
+      : theme?.colors?.primary?.default ?? "#66a3e0";
+  }};
+  background: ${({ $type, theme }) => {
+    if (isLightMode(theme)) {
+      return $type === "PUBLIC" ? "#fff8eb" : "#eff6ff";
+    }
+    return $type === "PUBLIC"
+      ? theme?.colors?.status?.warning?.bg ?? "#431407"
+      : theme?.colors?.primary?.subtle ?? "#1e293b";
+  }};
   border: 1px solid
-    ${({ $type }) => ($type === "PUBLIC" ? "#fef3c7" : "#dbeafe")};
+    ${({ $type, theme }) => {
+      if (isLightMode(theme)) {
+        return $type === "PUBLIC" ? "#fef3c7" : "#dbeafe";
+      }
+      return $type === "PUBLIC"
+        ? theme?.colors?.status?.warning?.border ?? "#fbbf24"
+        : theme?.colors?.border?.default ?? "#475569";
+    }};
 
   svg {
     font-size: 10px;
@@ -998,11 +1121,17 @@ export const SchedulePanelTime = styled.div`
   gap: 5px;
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#94a3b8"
+      : theme?.colors?.text?.secondary ?? "#cbd5e1"};
 
   svg {
     font-size: 11px;
-    color: #cbd5e1;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#cbd5e1"
+        : theme?.colors?.text?.disabled ?? "#64748b"};
   }
 `;
 
@@ -1011,7 +1140,10 @@ export const SchedulePanelCardTitle = styled.strong`
   font-weight: 700;
   line-height: 1.4;
   letter-spacing: -0.4px;
-  color: #0f172a;
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#0f172a"
+      : theme?.colors?.text?.primary ?? "#f8fafc"};
   word-break: break-word;
 `;
 
@@ -1019,7 +1151,10 @@ export const SchedulePanelCardContent = styled.p`
   margin: 0;
   font-size: 12.5px;
   line-height: 1.55;
-  color: #64748b;
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#64748b"
+      : theme?.colors?.text?.secondary ?? "#cbd5e1"};
   word-break: break-word;
 `;
 
@@ -1030,7 +1165,11 @@ export const SchedulePanelCardFooter = styled.div`
   justify-content: space-between;
   margin-top: 4px;
   padding-top: 8px;
-  border-top: 1px dashed #f1f5f9;
+  border-top: 1px dashed
+    ${({ theme }) =>
+      isLightMode(theme)
+        ? "#f1f5f9"
+        : theme?.colors?.border?.default ?? "#475569"};
 `;
 
 export const ScheduleEmpty = styled.div`
@@ -1039,28 +1178,40 @@ export const ScheduleEmpty = styled.div`
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding-top: 100px; /* 위로 끌어올리고 상단 여백만 살짝 부여 */
+  padding-top: 100px;
   padding-bottom: 30px;
   gap: 10px;
-  color: #94a3b8;
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#94a3b8"
+      : theme?.colors?.text?.disabled ?? "#64748b"};
   text-align: center;
 
   svg {
     font-size: 32px;
-    color: #cbd5e1;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#cbd5e1"
+        : theme?.colors?.border?.input ?? "#475569"};
     margin-bottom: 2px;
   }
 
   strong {
     font-size: 14.5px;
     font-weight: 700;
-    color: #475569;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#475569"
+        : theme?.colors?.text?.secondary ?? "#cbd5e1"};
     letter-spacing: -0.3px;
   }
 
   span {
     font-size: 12px;
-    color: #94a3b8;
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#94a3b8"
+        : theme?.colors?.text?.disabled ?? "#64748b"};
   }
 `;
 
@@ -1069,15 +1220,24 @@ export const HeaderExpandingButton = styled.button`
   align-items: center;
   overflow: hidden;
   height: 32px;
-  padding: 0 10px;
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+  background: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#eff6ff"
+      : theme?.colors?.primary?.subtle ?? "#1e293b"};
+  color: ${({ theme }) =>
+    isLightMode(theme)
+      ? "#2563eb"
+      : theme?.colors?.primary?.default ?? "#66a3e0"};
+  border: 1px solid
+    ${({ theme }) =>
+      isLightMode(theme)
+        ? "#dbeafe"
+        : theme?.colors?.border?.default ?? "#334155"};
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 
-  width: 32px; 
+  width: 32px;
   padding: 0;
   justify-content: center;
 
@@ -1093,11 +1253,20 @@ export const HeaderExpandingButton = styled.button`
 
   /* 호버 시 폭이 늘어나며 글자가 나타남 */
   &:hover {
-    width: 88px; 
+    width: 88px;
     padding: 0 12px;
-    background: #2563eb;
-    color: #ffffff;
-    border-color: #2563eb;
+    background: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#2563eb"
+        : theme?.colors?.primary?.default ?? "#66a3e0"};
+    color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#ffffff"
+        : theme?.colors?.text?.inverse ?? "#0f172a"};
+    border-color: ${({ theme }) =>
+      isLightMode(theme)
+        ? "#2563eb"
+        : theme?.colors?.primary?.default ?? "#66a3e0"};
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
 
     span {

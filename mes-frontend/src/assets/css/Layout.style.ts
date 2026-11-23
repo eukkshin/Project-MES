@@ -4,7 +4,8 @@ export const PageWrapper = styled.div`
   display: flex;
   width: 100%;
   min-height: 100vh;
-  background: #f5f7fb;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
+  color: ${({ theme }) => theme.colors.text.primary};
   font-family: "Pretendard", sans-serif;
 `;
 
@@ -16,12 +17,15 @@ export const LnbWrapper = styled.aside`
   height: 100vh;
   flex-shrink: 0;
 
-  background: #111e32;
+  background-color: #111e32;
+  /* background-color: ${({ theme }) => theme.colors.bg.surface}; */
+  border-right: 1px solid ${({ theme }) => theme.colors.border.default};
   z-index: 10;
 
   @media (max-width: 1024px) {
     display: none;
   }
+
 `;
 
 export const Workspace = styled.div`
@@ -36,6 +40,8 @@ export const TopArea = styled.div`
   position: sticky;
   top: 0;
   z-index: 90;
+  background-color: ${({ theme }) => theme.colors.bg.surface};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
 `;
 
 export const ContentArea = styled.main`
@@ -44,7 +50,7 @@ export const ContentArea = styled.main`
   width: 100%;
   padding: 32px 36px;
 
-  background: #f5f7fb;
+  background-color: ${({ theme }) => theme.colors.bg.canvas};
   box-sizing: border-box;
 
   @media (max-width: 768px) {

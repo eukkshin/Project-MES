@@ -1,14 +1,4 @@
-// export const theme = {
-//   colors: {
-//     background: "#fff",
-//     // background: "#536692",
-//     primary: "#4e73df",
-//     text: "#333",
-//   },
-// };
-
 // export type ThemeType = typeof theme;
-
 import { DefaultTheme } from 'styled-components';
 
 /**
@@ -17,13 +7,16 @@ import { DefaultTheme } from 'styled-components';
  */
 const palette = {
   blue: {
-    50: '#eef5fc',
+    50: '#eff6ff',
     100: '#d4e5f7',
     300: '#66a3e0', // 다크 모드용 고명도 블루
     400: '#3385d6', // 고대비 모드용 블루
     500: '#007bff', // Secondary 강조 블루
-    600: '#004b9c', // MES 브랜드 기본 Primary
-    700: '#003876', // Primary Hover / Active
+    600: '#2563eb', // MES 기본 Primary (#2563eb로 변경)
+    // 600: '#004b9c',
+  // 사이드바: background-color: #111e32;
+    //
+    700: '#1d4ed8', // Primary Hover / Active
   },
   gray: {
     0: '#ffffff',
@@ -48,7 +41,6 @@ const palette = {
 
 /**
  * 공통 디자인 토큰 (타이포그래피, 모서리, 그림자)
- * 기존 Project-MES 컴포넌트에서 추출한 규칙을 표준화했습니다.
  */
 const baseTokens = {
   typography: {
@@ -95,12 +87,14 @@ export const lightTheme: DefaultTheme = {
     },
     text: {
       primary: palette.gray[900],
-      secondary: palette.gray[600],
+      secondary: '#64748b',
       disabled: palette.gray[500],
       inverse: palette.gray[0],
     },
     border: {
-      default: palette.gray[200],
+      //e9edf3
+      // default: palette.gray[200],
+      default: '#e2e8f0',
       input: palette.gray[300],
       focus: palette.blue[600],
     },
@@ -128,7 +122,7 @@ export const lightTheme: DefaultTheme = {
     },
   },
   shadows: {
-    subtle: '0 2px 4px rgba(0, 0, 0, 0.05)',
+    subtle: '0 4px 24px rgba(15, 23, 42, 0.035)',
     elevated: '0 4px 12px rgba(0, 0, 0, 0.1)',
     modal: '0 8px 24px rgba(0, 0, 0, 0.15)',
   },
