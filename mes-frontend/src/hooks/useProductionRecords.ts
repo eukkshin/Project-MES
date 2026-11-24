@@ -1,6 +1,7 @@
 import { getProductionRecord,createProductionRecord } from "@/api/mes.http";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ProductionRecord } from "@/types/mes";
+export type { ProductionRecord };
 
 
 const QUERY_KEY = ["analyticsRecords"] as const;

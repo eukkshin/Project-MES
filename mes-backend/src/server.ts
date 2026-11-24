@@ -28,6 +28,9 @@ const Message = require('./model/Message');
 
 const seedData = require("../seed");
 
+import { createAiDashboardRouter } from "./routes/aiDashboardRouter";
+import { aiMonitorService } from "./services/aiMonitorService";
+
 //============================================
 // 👇 모델 관계 설정
 //============================================
@@ -2054,21 +2057,14 @@ app.delete(
   }
 );
 
+// AI 관제 대시보드 라우터 등록
+app.use(
+  "/api/admin/dashboard/ai",
+  createAiDashboardRouter(verifyToken, verifyAdmin)
+);
+
 // 서버 실행
 const PORT = Number(process.env.PORT) || 4000;
-
-// sequelize
-//   .sync({ force: false })
-//   .then(() => {
-//     console.log("😄 데이터베이스 연결 완료");
-
-//     app.listen(PORT, "0.0.0.0", () => {
-//       console.log(`Server running on port ${PORT}`);
-//     });
-//   })
-//   .catch((error: unknown) => {
-//     console.error("데이터베이스 연결 오류:", error);
-//   });
 
   sequelize
   .authenticate()
@@ -2084,6 +2080,8 @@ const PORT = Number(process.env.PORT) || 4000;
 
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
+      // 실시간 MES 이상 상태 모니터링 시작 (5초 주기)
+      aiMonitorService.start(5000);
     });
   })
   .catch((error: unknown) => {
