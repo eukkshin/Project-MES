@@ -20,6 +20,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { AnimatePresence } from "motion/react";
 import { useGetMessagesReceived } from "@/hooks/useMessage";
 import { useQueryClient } from "@tanstack/react-query";
+import  HeaderAlertDropdown from "./HeaderAlertDropdown";
+import type { HeaderAlertItem } from "./HeaderAlertDropdown";
+import { useMesAlertStore } from "@/store/useMesAlertStore";
 
 const menuGroups = [
   {
@@ -70,6 +73,9 @@ export const Header = () => {
   const queryClient = useQueryClient();
 
   const showAlert = useAlertStore(state=>state.showAlert);
+  const alerts = useMesAlertStore((state) => state.alerts);
+  const markAlertAsRead = useMesAlertStore((state) => state.markAlertAsRead);
+
 
   const username = useAuthStore(state=> state.username);
   const logout = useAuthStore(state=>state.logout);
@@ -77,7 +83,7 @@ export const Header = () => {
   const isAuth = useAuthStore(state=> state.isAuth);
 
   const {data: receivedMessages =[]} = useGetMessagesReceived(undefined, isAuth && isInitialized);
-  
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMyPageOpen, setIsMyPageOpen] = useState(false);
 
@@ -135,6 +141,9 @@ export const Header = () => {
 
   const unreadCount = receivedMessages.filter(message=> message.isRead === 'N').length;
 
+  const handleMarkAlertRead = (id: number | string) => {
+    markAlertAsRead(id);
+  };
   return (
     <>
       <S.HeaderContainer>
@@ -154,6 +163,7 @@ export const Header = () => {
           </S.Breadcrumb>
         </S.HeaderLeft>
 
+         {/* 쪽지함  */}
         <S.UserSection>
           <S.MessageButton
           type="button"
@@ -169,6 +179,13 @@ export const Header = () => {
           >
             <FaCommentDots/>
           </S.MessageButton>
+
+          {/* alert알람 */}
+          <HeaderAlertDropdown
+          items={alerts}
+          onMarkRead={handleMarkAlertRead}
+            
+          />
           
           <S.UserAvatar>
             <FaUser />

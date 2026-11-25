@@ -6,7 +6,7 @@ import React from "react";
 import * as S from "@/assets/css/Layout.style";
 
 import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
+import { Header } from "@/components/layout/header/Header";
 import { SideBar } from "@/components/layout/SideBar";
 
 interface LayoutProps {
